@@ -5,6 +5,7 @@ export interface Review {
   action: "accept" | "reject";
   reason?: string;
   reviewedAt: string;
+  roundDigest?: string;
 }
 
 export interface Comparison {
@@ -23,16 +24,18 @@ export type Evidence =
 
 export interface PlanItem {
   id: string;
-  title?: string;
-  category?: string;
-  method?: string;
-  expected?: string;
-  requiredEvidence?: string[];
+  title: string;
+  category: string;
+  verifier: "program" | "agent" | "llm";
+  method: string;
+  expected: string;
+  requiredEvidence: string[];
+  supersedes: string[];
 }
 
 export interface DatasetField {
   key: string;
-  type?: "string" | "number" | "boolean" | string;
+  type: "string" | "number" | "boolean" | "category" | "temporal";
   label?: string;
 }
 
@@ -102,7 +105,7 @@ export interface CaseItem {
 
 export interface ItemHistory {
   round: string;
-  index: number;
+  index: number | null;
   createdAt: string;
   status: Status;
   review: Review | null;
@@ -115,14 +118,32 @@ export interface DeliveryItem {
   review: Review | null;
   status: Status;
   sourceRound: string;
-  sourceIndex: number;
+  sourceIndex: number | null;
+  sourceSequence?: number;
   evidenceTexts: Record<string, string>;
   history: ItemHistory[];
+  held: boolean;
+  staleReview: Review | null;
+}
+
+export interface ValidationDiagnostic {
+  code: string;
+  source: "lobehub-public" | "compat-assumption" | "local-safety";
+  effect: "reject" | "hold" | "drop" | "normalize" | "advisory";
+  path: string;
+  message: string;
+  ruleVersion: string;
+  details?: Record<string, unknown>;
+  round?: string;
 }
 
 export interface RoundSummary {
   id: string;
-  index: number;
+  sequence: number | null;
+  state: "ready" | "held" | "rejected" | "legacy";
+  outcome: "ready" | "held" | "rejected";
+  ruleset: string;
+  diagnostics: ValidationDiagnostic[];
   title: string;
   createdAt: string;
   verdict: Verdict;
@@ -157,6 +178,10 @@ export interface Delivery {
   report: string;
   items: DeliveryItem[];
   rounds: RoundSummary[];
+  validationOutcome: "ready" | "held" | "rejected" | "legacy";
+  ruleset: string;
+  digest: string;
+  diagnostics: ValidationDiagnostic[];
   pendingReview: number;
 }
 

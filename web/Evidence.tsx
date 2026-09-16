@@ -38,7 +38,7 @@ function Media({
     );
   }
   if (/\.(mp4|webm)$/.test(lower)) return <video controls preload="metadata" src={source} />;
-  if (/\.(mp3|wav|ogg)$/.test(lower)) return <audio controls preload="metadata" src={source} />;
+  if (/\.(mp3|wav|m4a|aac|flac|ogg|opus)$/.test(lower)) return <audio controls preload="metadata" src={source} />;
   if (text !== undefined) {
     if (/\.json$/i.test(name)) {
       return (

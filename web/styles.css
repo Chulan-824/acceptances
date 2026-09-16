@@ -81,6 +81,9 @@ code { font-size: 12px; }
 .badge.fail, .badge.reject, .badge.dead { background: #fdecec; color: var(--fail); }
 .badge.blocked, .badge.partial { background: #fff4e5; color: var(--blocked); }
 .badge.not-run, .badge.unset { background: var(--chip); color: var(--muted); }
+.badge.ready, .badge.normalize { background: #e8f7ee; color: var(--pass); }
+.badge.held, .badge.hold, .badge.legacy, .badge.advisory, .badge.drop { background: #fff4e5; color: var(--blocked); }
+.badge.rejected, .badge.reject { background: #fdecec; color: var(--fail); }
 
 .delivery-shell {
   align-items: start;
@@ -157,6 +160,15 @@ code { font-size: 12px; }
 .observation { margin: 0 0 8px; }
 .detail-line, .source-note { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
 .source-note { color: var(--blocked); }
+
+.diagnostics { margin-top: 24px; }
+.diagnostics h2 { display: flex; gap: 8px; align-items: center; }
+.diagnostics ol { display: grid; gap: 8px; padding: 0; list-style: none; }
+.diagnostic { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: white; }
+.diagnostic.reject { border-color: #fecaca; }
+.diagnostic.hold { border-color: #fed7aa; }
+.diagnostic p { margin: 6px 0; }
+.diagnostic small { color: var(--muted); }
 
 .evidence {
   display: grid;

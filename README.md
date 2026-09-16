@@ -38,13 +38,20 @@ Agent 应按以下顺序执行：
 2. 写出可由人判断的 `plan[]`，再启动或复用产品服务。
 3. 检查目标页面、登录态和真实路由。认证失败时执行下方“认证阻断”。
 4. 用 `agent-browser` 完成页面操作并把证据写入新的 Round。
-5. 在项目根目录登记 `.acceptances/`：
+5. 在交付前校验并封存新 Round：
+
+   ```bash
+   node /Users/chulan/project/my-project/acceptances/bin/cli.js validate \
+     /absolute/path/to/project/.acceptances/<subject>/<round> --seal
+   ```
+
+6. 在项目根目录登记 `.acceptances/`：
 
    ```bash
    node /Users/chulan/project/my-project/acceptances/bin/cli.js register "$PWD"
    ```
 
-6. 启动或复用本项目的 5173 服务，把本地交付页 URL 和 `coverage: N/N` 交给用户。
+7. 启动或复用本项目的 5173 服务，把本地交付页 URL 和 `coverage: N/N` 交给用户。
 
 每次修复后重新验证都创建新 Round，不覆盖旧证据。`result.json` 记录机器跑测结论，`reviews.json` 只记录交付页上的人审。
 
@@ -129,6 +136,8 @@ token 仍无效时再次停止，请用户刷新 token。Agent 不点击 AMC 登
 cd /Users/chulan/project/my-project/acceptances
 bun run build
 node bin/cli.js register /absolute/path/to/project
+node bin/cli.js validate /absolute/path/to/project/.acceptances --json
+node bin/cli.js validate /absolute/path/to/project/.acceptances/<subject>/<round> --seal
 node bin/cli.js serve --open
 ```
 
@@ -141,6 +150,9 @@ node bin/cli.js serve --open
 - 最新 plan 没有对应 case 时显示“未执行”，且不能人审。
 - 每项显示最近证据、结构化可视化、人审和迭代历史。
 - `reviews.json` 是唯一写回文件。拒绝必须填写评论。
+- 未封存的旧 Round 显示为 `legacy`，不进入跨轮 union 或人审。
+- `held` Round 可查看和拒绝，但不能验收通过；`rejected` Round 只显示校验诊断。
+- Published Round 的摘要记录在 `.acceptances/.meta/`，Raw Round 改变后会显示 `ROUND_TAMPERED`。
 
 ## 边界
 

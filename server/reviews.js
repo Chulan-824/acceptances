@@ -5,7 +5,14 @@ import { loadRound } from "./acceptances.js";
 import { shanghaiNow } from "./time.js";
 
 export function writeReview(root, subject, round, { id, action, reason }) {
-  const { dir, result, reviews } = loadRound(root, subject, round);
+  const record = loadRound(root, subject, round);
+  const { dir, result, reviews } = record;
+  if (!record.published || record.state === "rejected") {
+    throw Object.assign(new Error("round is not sealed and reviewable"), { status: 409 });
+  }
+  if (!record.reviewTrusted) {
+    throw Object.assign(new Error("review overlay is invalid"), { status: 409 });
+  }
   const ids = new Set((result.cases || []).map((entry) => entry.id));
   if (!ids.has(id)) {
     throw Object.assign(new Error(`unknown case id: ${id}`), { status: 400 });
@@ -15,8 +22,19 @@ export function writeReview(root, subject, round, { id, action, reason }) {
       status: 400,
     });
   }
+  if (
+    action === "accept" &&
+    (record.validation.heldIds.includes(id) ||
+      (record.validation.outcome === "held" && record.validation.heldIds.length === 0))
+  ) {
+    throw Object.assign(new Error("held checks cannot be accepted"), { status: 409 });
+  }
 
-  const entry = { action, reviewedAt: shanghaiNow() };
+  const entry = {
+    action,
+    reviewedAt: shanghaiNow(),
+    roundDigest: record.receipt.digest,
+  };
   if (action === "reject") {
     const text = String(reason ?? "").trim();
     if (!text) {
@@ -29,7 +47,11 @@ export function writeReview(root, subject, round, { id, action, reason }) {
 
   const next = {
     updatedAt: shanghaiNow(),
-    reviews: { ...(reviews.reviews || {}), [id]: entry },
+    reviews: {
+      ...(record.staleReviews || {}),
+      ...(reviews.reviews || {}),
+      [id]: entry,
+    },
   };
   fs.writeFileSync(
     path.join(dir, "reviews.json"),

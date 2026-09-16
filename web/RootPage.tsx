@@ -28,16 +28,14 @@ export function RootPage() {
             {subject.rounds.map((round) => (
               <li key={round.id}>
                 <a
-                  href={url("/subject", {
-                    root,
-                    subject: subject.name,
-                    r: round.index,
-                  })}
+                  href={round.sequence
+                    ? url("/subject", { root, subject: subject.name, r: round.sequence })
+                    : url("/round", { root, subject: subject.name, round: round.id })}
                 >
-                  第 {round.index} 轮 · {round.title}
+                  {round.sequence ? `第 ${round.sequence} 轮` : "未封存"} · {round.title}
                 </a>{" "}
-                <span className={`badge ${round.verdict || "unset"}`}>
-                  {round.verdict || "无结论"}
+                <span className={`badge ${round.state}`}>
+                  {round.state}
                 </span>{" "}
                 <span className="muted">{round.createdAt || round.id}</span>
               </li>

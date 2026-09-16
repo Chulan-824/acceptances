@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
@@ -9,69 +7,15 @@ import { CATALOG_PATH } from "../server/catalog.js";
 import { buildDelivery } from "../server/delivery.js";
 import { isLocalHost, isLocalOrigin } from "../server/http.js";
 import { writeReview } from "../server/reviews.js";
-
-function makeRoot() {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), "acceptances-"));
-  const root = path.join(base, ".acceptances");
-  fs.mkdirSync(root);
-  return root;
-}
-
-function writeRound(root, id, result, reviews) {
-  const dir = path.join(root, "demo", id);
-  fs.mkdirSync(path.join(dir, "assets"), { recursive: true });
-  fs.writeFileSync(path.join(dir, "result.json"), JSON.stringify(result));
-  fs.writeFileSync(path.join(dir, "report.md"), `# ${id}\n`);
-  fs.writeFileSync(path.join(dir, "assets", "note.txt"), id);
-  if (reviews) fs.writeFileSync(path.join(dir, "reviews.json"), JSON.stringify(reviews));
-}
-
-function result(title, plan, cases) {
-  return {
-    title,
-    createdAt: `2026-09-0${title === "round-1" ? "1" : "2"}T12:00:00+08:00`,
-    plan,
-    cases,
-    summary: {
-      total: cases.length,
-      passed: cases.filter((entry) => entry.status === "pass").length,
-      failed: cases.filter((entry) => entry.status === "fail").length,
-      blocked: 0,
-      verdict: cases.some((entry) => entry.status === "fail") ? "fail" : "pass",
-    },
-  };
-}
+import { caseItem, makeRoot, plan, result, seal, writeRound } from "./helpers.js";
 
 test("union keeps old checks and marks a newer plan without a case as not-run", () => {
   const root = makeRoot();
-  writeRound(
-    root,
-    "20260901-120000-first",
-    result(
-      "round-1",
-      [
-        { id: "repeat", title: "repeat", category: "flow" },
-        { id: "old", title: "old", category: "flow" },
-      ],
-      [
-        { id: "repeat", status: "pass", evidence: ["assets/note.txt"] },
-        { id: "old", status: "pass", evidence: ["assets/note.txt"] },
-      ],
-    ),
-    { reviews: { old: { action: "accept", reviewedAt: "now" } } },
-  );
-  writeRound(
-    root,
-    "20260902-120000-second",
-    result(
-      "round-2",
-      [
-        { id: "repeat", title: "repeat", category: "flow" },
-        { id: "new", title: "new", category: "flow" },
-      ],
-      [{ id: "new", status: "fail", evidence: ["assets/note.txt"] }],
-    ),
-  );
+  writeRound(root, "20260901-120000-first", result("round-1", [plan("repeat"), plan("old")], [caseItem("repeat"), caseItem("old")]));
+  seal(root, "20260901-120000-first");
+  writeReview(root, "demo", "20260901-120000-first", { id: "old", action: "accept" });
+  writeRound(root, "20260902-120000-second", result("round-2", [plan("repeat"), plan("new")], [caseItem("new", { status: "fail" })]));
+  seal(root, "20260902-120000-second");
 
   const delivery = buildDelivery(root, "demo");
   const byId = new Map(delivery.items.map((item) => [item.id, item]));
@@ -79,7 +23,6 @@ test("union keeps old checks and marks a newer plan without a case as not-run", 
   assert.equal(byId.get("repeat").status, "not-run");
   assert.equal(byId.get("repeat").case, null);
   assert.equal(byId.get("old").status, "pass");
-  assert.equal(byId.get("old").sourceIndex, 1);
   assert.equal(byId.get("new").status, "fail");
   assert.equal(delivery.summary.notRun, 1);
   assert.equal(delivery.summary.verdict, "fail");
@@ -87,45 +30,33 @@ test("union keeps old checks and marks a newer plan without a case as not-run", 
 
 test("round selection stays an immutable snapshot", () => {
   const root = makeRoot();
-  writeRound(
-    root,
-    "20260901-120000-first",
-    result(
-      "round-1",
-      [{ id: "planned", title: "planned" }],
-      [],
-    ),
-  );
+  writeRound(root, "20260901-120000-first", result("round-1", [plan("planned")], []));
+  seal(root, "20260901-120000-first");
   const delivery = buildDelivery(root, "demo", { r: "1" });
   assert.equal(delivery.mode, "round");
   assert.equal(delivery.items[0].status, "not-run");
   assert.equal(delivery.pendingReview, 0);
+  assert.equal(delivery.validationOutcome, "held");
 });
 
-test("review rejects empty reasons and never serves HAR files", () => {
+test("review rejects empty reasons, held accepts, and unsealed rounds", () => {
   const root = makeRoot();
-  writeRound(
-    root,
-    "20260901-120000-first",
-    result(
-      "round-1",
-      [{ id: "check", title: "check" }],
-      [{ id: "check", status: "pass", evidence: ["assets/note.txt"] }],
-    ),
-  );
-  assert.throws(
-    () => writeReview(root, "demo", "20260901-120000-first", { id: "check", action: "reject", reason: " " }),
-    /non-empty reason/,
-  );
-  const written = writeReview(root, "demo", "20260901-120000-first", {
-    id: "check",
-    action: "accept",
-  });
-  assert.equal(written.reviews.check.action, "accept");
-  assert.throws(
-    () => assetFile(root, "demo", "20260901-120000-first", "secret.har"),
-    /har is not served/,
-  );
+  writeRound(root, "20260901-120000-first", result("round-1", [plan("check")], [caseItem("check")]));
+  assert.throws(() => writeReview(root, "demo", "20260901-120000-first", { id: "check", action: "accept" }), /not sealed/);
+  seal(root, "20260901-120000-first");
+  assert.throws(() => writeReview(root, "demo", "20260901-120000-first", { id: "check", action: "reject", reason: " " }), /non-empty reason/);
+
+  writeRound(root, "20260902-120000-held", result("held", [plan("missing", { requiredEvidence: ["video"] })], [caseItem("missing")]));
+  seal(root, "20260902-120000-held");
+  assert.throws(() => writeReview(root, "demo", "20260902-120000-held", { id: "missing", action: "accept" }), /held checks/);
+});
+
+test("nested assets are served and HAR files are blocked", () => {
+  const root = makeRoot();
+  const value = result("round", [plan("nested")], [caseItem("nested", { evidence: ["assets/nested/note.txt"] })]);
+  writeRound(root, "20260901-120000-first", value, { assets: { "nested/note.txt": "proof" } });
+  assert.equal(assetFile(root, "demo", "20260901-120000-first", "nested/note.txt"), path.join(root, "demo", "20260901-120000-first", "assets", "nested", "note.txt"));
+  assert.throws(() => assetFile(root, "demo", "20260901-120000-first", "secret.har"), /har/);
 });
 
 test("HTTP writes accept only loopback hosts and origins", () => {
@@ -137,8 +68,5 @@ test("HTTP writes accept only loopback hosts and origins", () => {
 });
 
 test("catalog lives outside both the skill and source project", () => {
-  assert.equal(
-    CATALOG_PATH,
-    path.join(os.homedir(), ".local", "share", "acceptances", "catalog.json"),
-  );
+  assert.equal(CATALOG_PATH, path.join(process.env.HOME, ".local", "share", "acceptances", "catalog.json"));
 });

@@ -15,7 +15,7 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
     "check": "bun run lint && bun run typecheck && bun run test && bun run build"
   },
   "dependencies": {

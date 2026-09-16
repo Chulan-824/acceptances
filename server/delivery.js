@@ -1,4 +1,5 @@
 import { listRounds, loadRound, pickRound } from "./acceptances.js";
+import { validateHistory } from "./validation-history.js";
 
 function uniqueIds(result) {
   const ids = [];
@@ -23,7 +24,7 @@ function itemHistory(records, id) {
       const entry = record.result.cases?.find((candidate) => candidate.id === id);
       return {
         round: record.id,
-        index: record.index,
+        index: record.sequence,
         createdAt: record.createdAt,
         status: entry?.status || "not-run",
         review: entry ? record.reviews.reviews?.[id] || null : null,
@@ -48,6 +49,8 @@ function itemFromSnapshot(record, records, id) {
     sourceIndex: record.index,
     evidenceTexts: entry ? record.evidenceTexts : {},
     history: itemHistory(records, id),
+    held: record.validation.heldIds.includes(id) || (record.validation.outcome === "held" && record.validation.heldIds.length === 0),
+    staleReview: entry ? record.staleReviews?.[id] || null : null,
   };
 }
 
@@ -81,7 +84,7 @@ function unionItems(records) {
     const state = stateById.get(id);
     const notRun =
       state.planRecord &&
-      (!state.caseRecord || state.planRecord.index > state.caseRecord.index);
+      (!state.caseRecord || state.planRecord.sequence > state.caseRecord.sequence);
     const source = notRun ? state.planRecord : state.caseRecord;
     const entry = notRun ? null : state.case || null;
     return {
@@ -91,9 +94,12 @@ function unionItems(records) {
       review: entry ? source.reviews.reviews?.[id] || null : null,
       status: entry?.status || "not-run",
       sourceRound: source.id,
-      sourceIndex: source.index,
+      sourceIndex: source.sequence,
+      sourceSequence: source.sequence,
       evidenceTexts: entry ? source.evidenceTexts : {},
       history: itemHistory(records, id),
+      held: source.validation.heldIds.includes(id) || (source.validation.outcome === "held" && source.validation.heldIds.length === 0),
+      staleReview: entry ? source.staleReviews?.[id] || null : null,
     };
   });
 }
@@ -119,27 +125,45 @@ export function buildDelivery(root, subject, selection = {}) {
   if (!rounds.length) {
     throw Object.assign(new Error("no rounds"), { status: 404 });
   }
-  const records = [...rounds]
-    .sort((a, b) => a.index - b.index)
-    .map((summary) => recordFor(root, subject, summary));
+  const records = [...rounds].map((summary) => recordFor(root, subject, summary));
+  const published = records
+    .filter((record) => record.published && record.validation.outcome !== "rejected")
+    .sort((a, b) => a.sequence - b.sequence);
+  const historyValidation = validateHistory(published);
   const selected = pickRound(rounds, selection);
   const current = selected
     ? records.find((record) => record.id === selected.id)
-    : records.at(-1);
-  const items = selected ? snapshotItems(current, records) : unionItems(records);
+    : published.at(-1) || records.sort((a, b) => a.id.localeCompare(b.id)).at(-1);
+  const items = selected
+    ? current.validation.result && current.state !== "rejected"
+      ? snapshotItems(current, published)
+      : []
+    : unionItems(published);
   const summary = selected
     ? {
         ...current.result.summary,
         notRun: items.filter((item) => item.status === "not-run").length,
       }
     : unionSummary(items);
+  const diagnostics = selected
+    ? current.validation.diagnostics
+    : [...records.flatMap((record) => record.validation.diagnostics.map((entry) => ({ ...entry, round: record.id }))), ...historyValidation.diagnostics];
+  const validationOutcome = selected
+    ? current.state
+    : historyValidation.outcome === "rejected"
+      ? "rejected"
+      : historyValidation.outcome === "held" || published.some((record) => record.validation.outcome === "held")
+        ? "held"
+        : published.length
+          ? "ready"
+          : "legacy";
 
   return {
     mode: selected ? "round" : "union",
     root,
     subject,
     selectedRound: selected?.id || null,
-    selectedIndex: selected?.index || null,
+    selectedIndex: selected?.sequence || null,
     title: current.result.title || subject,
     createdAt: current.result.createdAt || current.id,
     branch: current.result.branch || "",
@@ -149,6 +173,10 @@ export function buildDelivery(root, subject, selection = {}) {
     report: current.report,
     items,
     rounds,
+    validationOutcome,
+    ruleset: current.validation.ruleset,
+    digest: current.receipt?.digest || "",
+    diagnostics,
     pendingReview: items.filter((item) => item.case && !item.review).length,
   };
 }
