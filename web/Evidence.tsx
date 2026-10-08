@@ -1,3 +1,12 @@
+/*
+ * Provenance notice (recorded 2026-10-08); renderer origin/derivation remains pending.
+ * Evidence comparison protocol and UI information architecture have upstream correspondences.
+ * AI-assisted local rewrite referenced lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0.
+ * Applicable upstream portions retain LobeHub Community License + Apache-2.0 and
+ * Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved.
+ * See ../LICENSE-SCOPE.md, ../NOTICE and ../docs/licensing/lobehub-provenance.md.
+ * This notice does not certify the whole component as derived or grant MIT.
+ */
 import { useEffect, useRef, useState } from "react";
 
 import { url } from "./api";

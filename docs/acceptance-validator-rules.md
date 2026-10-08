@@ -1,5 +1,7 @@
 # Acceptance validator rule matrix
 
+> 来源与修改说明（2026-10-08）：公开规则经 AI 参考后整理，增加本地安全／兼容假设分类。基准为 `lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0`；上游规则表达及改写保留 LobeHub Community License + Apache-2.0，Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved. 本地表达待核实。见 [范围](../LICENSE-SCOPE.md)、[NOTICE](../NOTICE)、[来源修改记录](../docs/licensing/lobehub-provenance.md)。
+
 Ruleset: `lobehub-acceptance-public@0.1.0`
 
 本表是第一阶段的完成清单。`source` 区分公开规则、兼容假设和本地安全边界。

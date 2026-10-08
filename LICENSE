@@ -1,0 +1,10 @@
+# Acceptances 许可范围 / License scope
+
+本仓库按内容区分许可，没有覆盖全仓的统一 MIT 授权。逐目录、逐文件及混合内容的范围见 [LICENSE-SCOPE.md](LICENSE-SCOPE.md)；归属与修改说明见 [NOTICE](NOTICE)。
+
+- 已确认的 LobeHub 沿用／改写表达保留固定提交 `1c7a7116313bcc2d675937139554a244f7adf7a0` 的 [LobeHub Community License 原文](LICENSES/LobeHub-Community-1c7a711.txt)及其引用的 [Apache License 2.0 正文](LICENSES/Apache-2.0.txt)。两份文本一起阅读；不能以 Apache-2.0 单独替换 Community License 的附加条件。生产者与版权人保持上游原名。
+- 只有经证据核实、且权利人有权授权的原创范围才采用 MIT。候选 MIT 版权署名已确认为 `Copyright (c) 2026 acceptances`，但具体原创授权范围仍待确认，**已生效的项目原创 MIT 范围为空**；署名确认不构成原创范围或上游分发授权确认。第三方自身的 MIT 许可继续适用其内容。
+- 混合文件的本地新增表达、尚未确定来源的 renderer、新 V1 基础工程、生成内容和其他未列明材料均按范围表标为待核实。本说明不给这些内容新增复制、修改或分发授权，也不削减上游已有许可。
+- 依赖、工具链、镜像及归档的第三方材料保留各自条款与版权，不能因位于本仓库而自动成为 MIT 或 LobeHub Community License。
+
+公开分发范围及条件尚未确认，A35 仍 blocked。本地许可整理不代表完整合规认证、全仓 OSI 开源声明或已取得上游额外授权。与 LobeHub 无隶属或合作关系。

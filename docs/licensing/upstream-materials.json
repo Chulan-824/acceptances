@@ -1,0 +1,24 @@
+{
+  "repository": "lobehub/lobehub",
+  "commit": "1c7a7116313bcc2d675937139554a244f7adf7a0",
+  "checkedOn": "2026-10-08",
+  "treeUrl": "https://api.github.com/repos/lobehub/lobehub/git/trees/1c7a7116313bcc2d675937139554a244f7adf7a0?recursive=1",
+  "treeResponseSha256": "0b5161df41ee54a81e76fb3a20be0b892f70c9affcc27044f5e87f21b37ce598",
+  "treeTruncated": false,
+  "noticePaths": ["apps/desktop/THIRD_PARTY_NOTICES.md"],
+  "noticeScope": "No root NOTICE or NOTICE in ancestors of the compared acceptance paths. apps/desktop/THIRD_PARTY_NOTICES.md is outside the compared content; this is not a repository-wide notice clearance. Unidentified deployed skill bundle remains pending.",
+  "materials": [
+    {
+      "path": "LICENSES/LobeHub-Community-1c7a711.txt",
+      "url": "https://raw.githubusercontent.com/lobehub/lobehub/1c7a7116313bcc2d675937139554a244f7adf7a0/LICENSE",
+      "sha256": "790a8c42f10beb4f5e9122e05a8e65d5522de49f89ac69cd31063c0f2be93ea4",
+      "size": 1118
+    },
+    {
+      "path": "LICENSES/Apache-2.0.txt",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358
+    }
+  ]
+}

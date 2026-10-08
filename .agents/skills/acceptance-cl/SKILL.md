@@ -8,6 +8,8 @@ description: >
 
 # 本地验收
 
+> 来源与修改说明（2026-10-08）：模板及工作流经 AI 参考后压缩改写；new_round 改变量名，去除 Cloud 命令并增加本地 overlay／Receipt／seal。已确认基准为 `lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0`，部署 bundle 身份仍待核实。上游表达及改写保留 LobeHub Community License + Apache-2.0；Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved. 本地新增表达待核实，非整文件 MIT。见 [范围](../../../LICENSE-SCOPE.md)、[NOTICE](../../../NOTICE)、[来源修改记录](../../../docs/licensing/lobehub-provenance.md)。
+
 你是 Round builder。交付物是磁盘上的新 Round、validator Receipt、本地 catalog 登记和可供人审的页面。口头测试结论不能替代 Round。
 
 完整回路：

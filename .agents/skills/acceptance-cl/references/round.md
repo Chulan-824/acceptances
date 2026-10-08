@@ -1,5 +1,7 @@
 # 磁盘上的 Round
 
+> 来源与修改说明（2026-10-08）：字段、词表、计划／证据与 Round 流程经 AI 参考后压缩改写，增加本地 overlay／Receipt 约束。已确认基准为 `lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0`，部署 bundle 身份仍待核实。上游表达及改写保留 LobeHub Community License + Apache-2.0；Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved. 本地新增表达待核实，非整文件 MIT。见 [范围](../../../../LICENSE-SCOPE.md)、[NOTICE](../../../../NOTICE)、[来源修改记录](../../../../docs/licensing/lobehub-provenance.md)。
+
 一份 Round 是一个带时间戳的目录。校验封存前是 Draft Round；`validate --seal` 成功后成为 Published Round。封存后，Raw Round 中的 `result.json`、`report.md` 和 `assets/` 保持不变。人审页面只写 overlay 文件 `reviews.json`。
 
 ```text

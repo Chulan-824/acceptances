@@ -1,0 +1,23 @@
+# 来源与归属通知
+
+本文件由 Acceptances 在 2026-10-08 整理，非上游 NOTICE 副本；不修改任何许可条款，也不证明已取得商业许可或公开分发许可。
+
+## LobeHub / LobeChat
+
+适用的上游原版权声明（保持原文）：
+
+Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved.
+
+上游生产者／版权人名称保留为 LobeHub / LobeHub LLC，作品名保留为 LobeChat；不会以 Acceptances 替换许可正文中的原名称。
+
+已确认参考版本为 lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0。本地 acceptance-cl 模板／文档及部分 validator 规则经 AI 参考后改写；renderer 的部分协议、信息架构和短片段也有对应，但独立范围尚未完全确定。
+
+沿用／改写部分保留 [LobeHub Community License](LICENSES/LobeHub-Community-1c7a711.txt)与其引用的 [Apache License 2.0](LICENSES/Apache-2.0.txt)。适用文件、混合范围及未决边界见 [LICENSE-SCOPE.md](LICENSE-SCOPE.md)；固定路径与修改性质见 [来源修改记录](docs/licensing/lobehub-provenance.md)。与 LobeHub 无隶属或合作关系。
+
+## 其他第三方材料
+
+各依赖、生成器、运行时和镜像的原有版权、许可／NOTICE 继续适用。适合公开的精确版本声明、来源、归属及证据限制见 [第三方许可摘要](docs/licensing/dependency-summary.md)。该摘要不是完整依赖清单或最终发行产物的归属通知；实际打包内容与随附材料仍须确认。
+
+补查中原归属包括 Yusuke Suzuki、Luke Childs、Jared Wray、Lauri Rooden；uri-js-replace 的精确包 author 为 https://github.com/andreinwald，@humanfs/types 的 author 为 Nicholas C. Zakas。author 字段不是完整版权持有人证明，不为缺少的上游版权行补造姓名或年份。证据限制保留在上述公开摘要中。
+
+候选 MIT 版权署名已由用户确认为 `Copyright (c) 2026 acceptances`。此处只记录拟用于经确认原创范围的署名；原创授权范围仍 pending，当前无项目原创 MIT 生效范围，也不替换任何上游版权行。

@@ -1,0 +1,49 @@
+openapi: 3.1.0
+info:
+  title: Acceptances foundation API
+  version: 0.1.0-dev.1
+  description: 仅描述已实现的工程基础端点，不声明支持业务协议。
+paths:
+  /api/v1/capabilities:
+    get:
+      operationId: capabilities
+      responses:
+        "200":
+          description: 基础构建信息
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [version, commit, phase]
+                properties:
+                  version: { type: string }
+                  commit: { type: string }
+                  phase: { type: string, const: foundation }
+  /health/live:
+    get:
+      operationId: liveness
+      responses:
+        "200":
+          description: 进程存活
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, const: alive }
+  /health/ready:
+    get:
+      operationId: readiness
+      responses:
+        "503":
+          description: 业务尚未实现，不能用于验收
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, code]
+                properties:
+                  status: { type: string, const: not_ready }
+                  code: { type: string, const: FOUNDATION_ONLY }

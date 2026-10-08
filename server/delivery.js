@@ -1,3 +1,12 @@
+/*
+ * Source/modification notice (recorded 2026-10-08).
+ * Changed for local use: rewrote stable-ID aggregation for filesystem Rounds and local reviews; derivation boundary pending.
+ * Upstream portions: Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved.
+ * Reference: lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0.
+ * Retain LobeHub Community License + Apache-2.0 for upstream expression/adaptations;
+ * see ../LICENSE-SCOPE.md, ../NOTICE and ../docs/licensing/lobehub-provenance.md.
+ * Local additions and the exact mixed-content boundary remain pending; no file-wide MIT grant.
+ */
 import { listRounds, loadRound, pickRound } from "./acceptances.js";
 import { validateHistory } from "./validation-history.js";
 

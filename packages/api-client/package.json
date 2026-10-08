@@ -1,0 +1,16 @@
+{
+  "name": "@acceptances/api-client",
+  "private": true,
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "version": "0.1.0-dev.1",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  }
+}

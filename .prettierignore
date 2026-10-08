@@ -1,0 +1,9 @@
+node_modules/
+.cache/
+.pnpm-store/
+artifacts/
+dist/
+build/
+.acceptances/
+.scratch/
+README.legacy.md

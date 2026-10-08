@@ -1,5 +1,7 @@
 # ADR-0001: 本地兼容 LobeHub acceptance 公开校验规则
 
+> 来源与修改说明（2026-10-08）：本 ADR 是旧工具决策；公开规则表达经参考后改写，增加本地 filesystem／Receipt／overlay 边界。不以“公开规则”证明可重许可为 MIT。基准为 `lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0`；上游规则表达及改写保留 LobeHub Community License + Apache-2.0，Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved. 本地表达待核实。见 [范围](../../LICENSE-SCOPE.md)、[NOTICE](../../NOTICE)、[来源修改记录](../../docs/licensing/lobehub-provenance.md)。
+
 Status: Accepted
 
 ## Context
