@@ -9,4 +9,4 @@ type Info struct {
 	Phase   string `json:"phase"`
 }
 
-func Current() Info { return Info{Version: Version, Commit: Commit, Phase: "foundation"} }
+func Current() Info { return Info{Version: Version, Commit: Commit, Phase: "local-v1"} }

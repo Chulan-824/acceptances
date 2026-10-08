@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "target",
+  "id": "00000000-0000-4000-8000-000000000011",
+  "projectId": "00000000-0000-4000-8000-000000000001",
+  "repositories": [
+    {
+      "repositoryId": "00000000-0000-4000-8000-000000000002",
+      "revision": {
+        "kind": "commit",
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  ]
+}

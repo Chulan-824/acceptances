@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acceptances.local/schemas/target.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "kind": {
+      "const": "target"
+    },
+    "id": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "projectId": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/repositoryRevision"
+      },
+      "minItems": 1
+    },
+    "extensions": {
+      "$ref": "common.json#/$defs/extensions"
+    }
+  },
+  "required": ["schemaVersion", "kind", "id", "projectId", "repositories"]
+}

@@ -26,11 +26,18 @@ const version = JSON.parse(
     encoding: "utf8",
   }),
 );
-assert.equal(version.phase, "foundation");
+assert.equal(version.phase, "local-v1");
 const child = spawn(
   "./build/server",
   ["--listen", "127.0.0.1:0", "--web-dir", "apps/web/dist"],
-  { stdio: ["ignore", "ignore", "pipe"] },
+  {
+    stdio: ["ignore", "ignore", "pipe"],
+    env: Object.fromEntries(
+      Object.entries(process.env).filter(
+        ([key]) => !key.startsWith("ACCEPTANCES_"),
+      ),
+    ),
+  },
 );
 let output = "";
 let spawnError;
@@ -56,7 +63,7 @@ try {
   assert.equal((await get("/health/live")).status, 200);
   const ready = await get("/health/ready");
   assert.equal(ready.status, 503);
-  assert.equal((await ready.json()).code, "FOUNDATION_ONLY");
+  assert.equal((await ready.json()).code, "DATABASE_NOT_CONFIGURED");
   assert.deepEqual(await (await get("/api/v1/capabilities")).json(), version);
   const page = await get("/");
   assert.equal(page.status, 200);

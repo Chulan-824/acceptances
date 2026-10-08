@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Acceptances foundation API
+  title: Acceptances V1 API
   version: 0.1.0-dev.1
-  description: 仅描述已实现的工程基础端点，不声明支持业务协议。
+  description: local V1 机器契约。工单 12–18 实现候选，x-implementation-status 标记已实现但尚待运行验收。
 paths:
   /api/v1/capabilities:
     get:
@@ -15,11 +15,36 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [version, commit, phase]
+                required:
+                  - version
+                  - commit
+                  - phase
                 properties:
-                  version: { type: string }
-                  commit: { type: string }
-                  phase: { type: string, const: foundation }
+                  version:
+                    type: string
+                  commit:
+                    type: string
+                  phase:
+                    type: string
+                    enum:
+                      - foundation
+                      - local-v1
+                  schemaVersions:
+                    type: array
+                    items:
+                      type: string
+                  rulesetVersions:
+                    type: array
+                    items:
+                      type: string
+                  apiVersions:
+                    type: array
+                    items:
+                      type: string
+                  encodingVersions:
+                    type: array
+                    items:
+                      type: string
   /health/live:
     get:
       operationId: liveness
@@ -30,9 +55,12 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [status]
+                required:
+                  - status
                 properties:
-                  status: { type: string, const: alive }
+                  status:
+                    type: string
+                    const: alive
   /health/ready:
     get:
       operationId: readiness
@@ -43,7 +71,2642 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [status, code]
+                required:
+                  - status
+                  - code
                 properties:
-                  status: { type: string, const: not_ready }
-                  code: { type: string, const: FOUNDATION_ONLY }
+                  status:
+                    type: string
+                    const: not_ready
+                  code:
+                    type: string
+                    const: FOUNDATION_ONLY
+  /api/v1/session:
+    post:
+      operationId: v1Operation1
+      description: PUBLIC。local V1 实现候选，运行验收待回填。
+      x-required-scope: PUBLIC
+      x-implementation-status: implemented-unverified
+      security: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SessionLogin"
+                  requestId: &id001
+                    type: string
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                username: *id001
+                password: *id001
+              required:
+                - username
+                - password
+    get:
+      operationId: v1Operation2
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Session"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: v1Operation3
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "204":
+          description: 成功
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+  /api/v1/sessions:
+    delete:
+      operationId: v1Operation4
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "204":
+          description: 成功
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+  /api/v1/session/activity:
+    post:
+      operationId: v1Operation5
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Activity"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties: {}
+              required: []
+  /api/v1/projects:
+    get:
+      operationId: v1Operation6
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ProjectPage"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          schema: *id001
+    post:
+      operationId: v1Operation7
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Project"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                id: &id002
+                  $ref: "#/components/schemas/ID"
+                name: *id001
+              required:
+                - id
+                - name
+  /api/v1/projects/{projectId}/repositories:
+    get:
+      operationId: v1Operation8
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/RepositoryPage"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          schema: *id001
+    post:
+      operationId: v1Operation9
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Repository"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                id: *id002
+                displayName: *id001
+                locator: *id001
+              required:
+                - id
+                - displayName
+                - locator
+  /api/v1/projects/{projectId}/tokens:
+    get:
+      operationId: v1Operation10
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TokenPage"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          schema: *id001
+    post:
+      operationId: v1Operation11
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TokenCreated"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                id: *id002
+                name: *id001
+                scopes:
+                  type: array
+                  items:
+                    enum:
+                      - definitions:write
+                      - campaigns:write
+                      - runs:write
+                      - evidence:write
+                      - results:read
+                      - feedback:read
+                      - evidence:read
+                expiresAt:
+                  type:
+                    - string
+                    - "null"
+                  format: date-time
+              required:
+                - id
+                - name
+                - scopes
+  /api/v1/projects/{projectId}/tokens/{tokenId}:
+    delete:
+      operationId: v1Operation12
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "204":
+          description: 成功
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: tokenId
+          in: path
+          required: true
+          schema: *id002
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+  /api/v1/projects/{projectId}/definitions/{documentId}:
+    put:
+      operationId: v1Operation13
+      description: definitions:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: definitions:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DocumentImported"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DocumentImported"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: documentId
+          in: path
+          required: true
+          schema: *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Definitions"
+  /api/v1/projects/{projectId}/campaigns:
+    post:
+      operationId: v1Operation14
+      description: campaigns:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: campaigns:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Campaign"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                id: *id002
+                title: *id001
+                externalRefs:
+                  type: object
+                  additionalProperties: *id001
+              required:
+                - id
+                - title
+                - externalRefs
+    get:
+      operationId: v1Operation15
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CampaignPage"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          schema: *id001
+  /api/v1/projects/{projectId}/campaigns/{campaignId}:
+    get:
+      operationId: v1Operation16
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Campaign"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/plans/{planId}:
+    put:
+      operationId: v1Operation17
+      description: campaigns:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: campaigns:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DocumentImported"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DocumentImported"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: planId
+          in: path
+          required: true
+          schema: *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Plan"
+    get:
+      operationId: v1Operation18
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Plan"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: planId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/targets/{targetId}:
+    put:
+      operationId: v1Operation19
+      description: campaigns:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: campaigns:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DocumentImported"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DocumentImported"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: targetId
+          in: path
+          required: true
+          schema: *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Target"
+    get:
+      operationId: v1Operation20
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Target"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: targetId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/basis:
+    patch:
+      operationId: v1Operation21
+      description: campaigns:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: campaigns:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BasisChanged"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: If-Match
+          in: header
+          required: true
+          schema: *id001
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                planId: *id002
+                targetId: *id002
+                reason: *id001
+              required:
+                - planId
+                - targetId
+                - reason
+  /api/v1/projects/{projectId}/runs:
+    post:
+      operationId: v1Operation22
+      description: runs:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: runs:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/RunCreated"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                id: *id002
+                campaignId: *id002
+                planId: *id002
+                targetId: *id002
+                producer:
+                  $ref: ./schemas/common.json#/$defs/producer
+              required:
+                - id
+                - campaignId
+                - planId
+                - targetId
+                - producer
+  /api/v1/projects/{projectId}/runs/{runId}:
+    get:
+      operationId: v1Operation23
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Run"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/runs/{runId}/revisions:
+    post:
+      operationId: v1Operation24
+      description: runs:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: runs:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Revision"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Revision"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevisionInput"
+  /api/v1/projects/{projectId}/runs/{runId}/revisions/{revisionId}:
+    get:
+      operationId: v1Operation25
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Revision"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+    patch:
+      operationId: v1Operation26
+      description: runs:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: runs:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Revision"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: If-Match
+          in: header
+          required: true
+          schema: *id001
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevisionInput"
+  /api/v1/projects/{projectId}/runs/{runId}/revisions/{revisionId}/assets/{assetId}/content:
+    put:
+      operationId: v1Operation27
+      description: evidence:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: evidence:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AssetVerified"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: assetId
+          in: path
+          required: true
+          schema: *id002
+        - name: X-Upload-Generation
+          in: header
+          required: true
+          schema:
+            $ref: "#/components/schemas/Version"
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+  /api/v1/projects/{projectId}/runs/{runId}/revisions/{revisionId}/finalize:
+    post:
+      operationId: v1Operation28
+      description: runs:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: runs:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/JobAccepted"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: "#/components/schemas/Revision"
+                      - $ref: "#/components/schemas/JobAccepted"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                generation:
+                  $ref: "#/components/schemas/Version"
+              required:
+                - generation
+  /api/v1/projects/{projectId}/runs/{runId}/revisions/{revisionId}/resume:
+    post:
+      operationId: v1Operation29
+      description: runs:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: runs:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/JobAccepted"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: "#/components/schemas/Revision"
+                      - $ref: "#/components/schemas/JobAccepted"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: If-Match
+          in: header
+          required: true
+          schema: *id001
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties: {}
+              required: []
+  /api/v1/projects/{projectId}/runs/{runId}/revisions/{revisionId}/evaluations:
+    post:
+      operationId: v1Operation30
+      description: runs:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: runs:write
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/EvaluationAccepted"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                rulesetVersion: *id001
+              required:
+                - rulesetVersion
+  /api/v1/projects/{projectId}/runs/{runId}/revisions/{revisionId}/evaluations/{evaluationId}:
+    get:
+      operationId: v1Operation31
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: "#/components/schemas/Evaluation"
+                      - $ref: "#/components/schemas/EvaluationPending"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/EvaluationPending"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: runId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: evaluationId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/evaluation-adoptions:
+    post:
+      operationId: v1Operation32
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BasisVersion"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: If-Match
+          in: header
+          required: true
+          schema: *id001
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                evaluationIds:
+                  type: array
+                  items: *id002
+                reason: *id001
+              required:
+                - evaluationIds
+                - reason
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/selections:
+    post:
+      operationId: v1Operation33
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/IDResult"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: If-Match
+          in: header
+          required: true
+          schema: *id001
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                planItemId: *id002
+                resultRef:
+                  $ref: "#/components/schemas/ResultRef"
+                reason: *id001
+              required:
+                - planItemId
+                - resultRef
+                - reason
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/snapshot:
+    get:
+      operationId: v1Operation34
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CurrentSnapshot"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SnapshotPending"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/snapshots/{snapshotId}:
+    get:
+      operationId: v1Operation35
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CurrentSnapshot"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "202":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SnapshotPending"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: snapshotId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/reviews:
+    get:
+      operationId: v1Operation36
+      description: feedback:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: feedback:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ReviewPage"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          schema: *id001
+    post:
+      operationId: v1Operation37
+      description: OWNER。local V1 实现候选，运行验收待回填。
+      x-required-scope: OWNER
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+      responses:
+        "201":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ReviewCreated"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ReviewCreated"
+                  requestId:
+                    type: string
+                required:
+                  - data
+                  - requestId
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: If-Match
+          in: header
+          required: true
+          schema: *id001
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: *id001
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+  /api/v1/projects/{projectId}/campaigns/{campaignId}/gate:
+    get:
+      operationId: v1Operation38
+      description: results:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: results:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Gate"
+                  requestId: *id001
+                required:
+                  - data
+                  - requestId
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: campaignId
+          in: path
+          required: true
+          schema: *id002
+        - name: mode
+          in: query
+          required: true
+          schema:
+            enum:
+              - ready
+              - accepted
+        - name: allowRisk
+          in: query
+          schema:
+            type: boolean
+            default: false
+  /api/v1/projects/{projectId}/revisions/{revisionId}/assets/{assetId}/content:
+    get:
+      operationId: v1Operation39
+      description: evidence:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: evidence:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: assetId
+          in: path
+          required: true
+          schema: *id002
+    head:
+      operationId: v1Operation40
+      description: evidence:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: evidence:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: revisionId
+          in: path
+          required: true
+          schema: *id002
+        - name: assetId
+          in: path
+          required: true
+          schema: *id002
+  /api/v1/projects/{projectId}/documents/{documentId}/content:
+    get:
+      operationId: v1Operation41
+      description: evidence:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: evidence:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: documentId
+          in: path
+          required: true
+          schema: *id002
+    head:
+      operationId: v1Operation42
+      description: evidence:read。local V1 实现候选，运行验收待回填。
+      x-required-scope: evidence:read
+      x-implementation-status: implemented-unverified
+      security:
+        - ownerSession: []
+        - projectToken: []
+      responses:
+        "200":
+          description: 成功
+        default:
+          description: 稳定错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: *id002
+        - name: documentId
+          in: path
+          required: true
+          schema: *id002
+components:
+  schemas:
+    ID:
+      $ref: ./schemas/common.json#/$defs/id
+    Version:
+      type: string
+      pattern: ^[0-9]+$
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+            - code
+            - phase
+            - message
+            - retryable
+            - details
+            - requestId
+          properties:
+            code:
+              type: string
+            phase:
+              type: string
+            message:
+              type: string
+            retryable:
+              type: boolean
+            requestId:
+              type: string
+            details:
+              type: array
+              items:
+                $ref: ./schemas/common.json#/$defs/diagnostic
+    Definitions:
+      $ref: ./schemas/definitions.json
+    Target:
+      $ref: ./schemas/target.json
+    Plan:
+      $ref: ./schemas/plan.json
+    Report:
+      $ref: ./schemas/report.json
+    Manifest:
+      $ref: ./schemas/manifest.json
+    Evaluation:
+      $ref: ./schemas/evaluation.json
+    Snapshot:
+      $ref: ./schemas/snapshot.json
+    RevisionInput:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id002
+        reportBase64:
+          type: string
+          contentEncoding: base64
+        manifestBase64:
+          type: string
+          contentEncoding: base64
+      required:
+        - id
+        - reportBase64
+        - manifestBase64
+    ResultRef:
+      $ref: ./schemas/common.json#/$defs/resultRef
+    ReviewInput:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id002
+        snapshotId: *id002
+        action:
+          enum:
+            - comment
+            - reject_item
+            - resolve_rejection
+            - accept
+            - reject
+            - accept_risk
+            - withdraw
+        itemId: *id002
+        reason: *id001
+        riskItems:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              itemId: *id002
+              reason: *id001
+            required:
+              - itemId
+              - reason
+        resolvesEventIds:
+          type: array
+          items: *id002
+      required:
+        - id
+        - snapshotId
+        - action
+    Gate:
+      type: object
+      additionalProperties: false
+      properties:
+        satisfied:
+          type: boolean
+        snapshotId:
+          type:
+            - string
+            - "null"
+        basisVersion:
+          $ref: "#/components/schemas/Version"
+        reviewVersion:
+          $ref: "#/components/schemas/Version"
+        reasons:
+          type: array
+          items:
+            $ref: ./schemas/common.json#/$defs/diagnostic
+      required:
+        - satisfied
+        - snapshotId
+        - basisVersion
+        - reviewVersion
+        - reasons
+    SessionLogin:
+      type: object
+      additionalProperties: false
+      properties:
+        csrfToken: &id003
+          type: string
+      required:
+        - csrfToken
+    Session:
+      type: object
+      additionalProperties: false
+      properties:
+        username: *id003
+        csrfToken: *id003
+        expiresAt: &id004
+          type: string
+          format: date-time
+      required:
+        - username
+        - csrfToken
+        - expiresAt
+    Activity:
+      type: object
+      additionalProperties: false
+      properties:
+        active: &id010
+          type: boolean
+      required:
+        - active
+    Project:
+      type: object
+      additionalProperties: false
+      properties:
+        id: &id005
+          $ref: "#/components/schemas/UUID"
+        name: *id003
+        createdAt: *id004
+      required:
+        - id
+        - name
+    Repository:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        displayName: *id003
+        locator: *id003
+        createdAt: *id004
+      required:
+        - id
+        - displayName
+        - locator
+    Token:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        name: *id003
+        scopes:
+          type: array
+          items: *id003
+        expiresAt: &id006
+          type:
+            - string
+            - "null"
+        revokedAt: *id006
+        createdAt: *id004
+      required:
+        - id
+        - name
+        - scopes
+        - expiresAt
+    TokenCreated:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        name: *id003
+        scopes:
+          type: array
+          items: *id003
+        expiresAt: *id006
+        secret: *id003
+      required:
+        - id
+        - name
+        - scopes
+        - expiresAt
+        - secret
+    DocumentImported:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        sha256: &id011
+          type: string
+          pattern: ^[0-9a-f]{64}$
+      required:
+        - id
+        - sha256
+    IDResult:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+      required:
+        - id
+    Campaign:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        title: *id003
+        externalRefs:
+          type: object
+          additionalProperties:
+            type: string
+        planId: &id007
+          type:
+            - string
+            - "null"
+        targetId: *id007
+        snapshotId: *id007
+        basisVersion: &id008
+          $ref: "#/components/schemas/Version"
+        reviewVersion: *id008
+      required:
+        - id
+        - title
+    BasisChanged:
+      type: object
+      additionalProperties: false
+      properties:
+        planId: *id005
+        targetId: *id005
+        basisVersion: *id008
+      required:
+        - planId
+        - targetId
+        - basisVersion
+    BasisVersion:
+      type: object
+      additionalProperties: false
+      properties:
+        basisVersion: *id008
+      required:
+        - basisVersion
+    RunCreated:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        campaignId: *id005
+        planId: *id005
+        targetId: *id005
+        producer:
+          $ref: ./schemas/common.json#/$defs/producer
+      required:
+        - id
+        - campaignId
+        - planId
+        - targetId
+        - producer
+    RunRevisionSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        phase: &id009
+          type: string
+          enum:
+            - draft
+            - uploading
+            - verifying
+            - sealed
+            - failed
+            - expired
+        replacesRevisionId: *id007
+      required:
+        - id
+        - phase
+        - replacesRevisionId
+    Run:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        campaignId: *id005
+        planId: *id005
+        targetId: *id005
+        revisions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunRevisionSummary"
+      required:
+        - id
+        - campaignId
+        - planId
+        - targetId
+        - revisions
+    Revision:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        runId: *id005
+        phase: *id009
+        generation: *id008
+        sealDigest: *id006
+        failureCode: *id006
+        retryable: *id010
+        report:
+          oneOf:
+            - $ref: "#/components/schemas/Report"
+            - type: "null"
+        missingAssets:
+          type: array
+          items: *id005
+      required:
+        - id
+        - runId
+        - phase
+        - generation
+        - sealDigest
+        - failureCode
+        - retryable
+        - report
+        - missingAssets
+    AssetVerified:
+      type: object
+      additionalProperties: false
+      properties:
+        verified: *id010
+      required:
+        - verified
+    JobAccepted:
+      type: object
+      additionalProperties: false
+      properties:
+        phase: *id009
+        statusUrl: *id003
+        generation: *id008
+      required:
+        - phase
+    EvaluationAccepted:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        phase: *id009
+        statusUrl: *id003
+      required:
+        - id
+        - phase
+        - statusUrl
+    EvaluationPending:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        phase: *id009
+        failureCode: *id006
+      required:
+        - id
+        - phase
+        - failureCode
+    SnapshotPending:
+      type: object
+      additionalProperties: false
+      properties:
+        basisPending:
+          const: true
+        integrityInvalid: *id010
+      required:
+        - basisPending
+    CurrentSnapshot:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        sha256: *id011
+        basisVersion: *id008
+        reviewVersion: *id008
+        current: *id010
+        snapshot:
+          $ref: "#/components/schemas/Snapshot"
+      required:
+        - id
+        - sha256
+        - basisVersion
+        - reviewVersion
+        - current
+        - snapshot
+    ReviewCreated:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        action: *id003
+        snapshotId: *id005
+      required:
+        - id
+    ReviewEvent:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id005
+        snapshotId: *id005
+        action: *id003
+        itemId: *id007
+        reason: *id006
+        riskItems:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              itemId: *id005
+              reason: *id003
+            required:
+              - itemId
+              - reason
+        resolvesEventIds:
+          type: array
+          items: *id005
+        createdAt: *id004
+        seq: *id008
+      required:
+        - id
+        - snapshotId
+        - action
+        - itemId
+        - reason
+        - riskItems
+        - resolvesEventIds
+        - createdAt
+        - seq
+    ProjectPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        nextCursor: *id006
+      required:
+        - items
+        - nextCursor
+    RepositoryPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Repository"
+        nextCursor: *id006
+      required:
+        - items
+        - nextCursor
+    TokenPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Token"
+        nextCursor: *id006
+      required:
+        - items
+        - nextCursor
+    CampaignPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Campaign"
+        nextCursor: *id006
+      required:
+        - items
+        - nextCursor
+    ReviewPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewEvent"
+        nextCursor: *id006
+      required:
+        - items
+        - nextCursor
+    UUID:
+      $ref: ./schemas/common.json#/$defs/id
+  securitySchemes:
+    ownerSession:
+      type: apiKey
+      in: cookie
+      name: acceptances_session
+    projectToken:
+      type: http
+      scheme: bearer

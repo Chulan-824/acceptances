@@ -6,6 +6,12 @@ services:
       dockerfile: deploy/Dockerfile
     ports:
       - "127.0.0.1:8765:8765"
+    environment:
+      ACCEPTANCES_DATABASE_URL: postgres://acceptances@postgres:5432/acceptances?sslmode=disable
+      ACCEPTANCES_DATABASE_PASSWORD_FILE: /var/lib/acceptances/postgres-password
+      ACCEPTANCES_DATA_DIR: /var/lib/acceptances
+      ACCEPTANCES_PUBLIC_ORIGIN: http://127.0.0.1:8765
+    secrets: [postgres_password]
     read_only: true
     tmpfs:
       - /tmp

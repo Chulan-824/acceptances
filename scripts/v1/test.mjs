@@ -4,10 +4,19 @@ if (process.env.ACCEPTANCES_EXTERNAL_CI !== "1") {
   );
   process.exit(2);
 }
-if (process.argv[2] !== "platform") {
+if (process.argv[2] === "contract") {
+  await import("./contract-check.mjs");
+} else if (process.argv[2] === "platform") {
+  await import("./platform-check.mjs");
+} else if (
+  ["domain", "cli", "postgres", "storage-local"].includes(process.argv[2])
+) {
+  await import("./go-check.mjs");
+} else if (process.argv[2] === "e2e") {
+  await import("./e2e-check.mjs");
+} else {
   console.error(
-    "基础阶段仅定义 SUITE=platform；其他分组尚未实现，不记为通过。",
+    "可用 SUITE=platform|contract|domain|cli|postgres|storage-local|e2e；e2e 需要外部真实浏览器驱动。",
   );
   process.exit(2);
 }
-await import("./platform-check.mjs");

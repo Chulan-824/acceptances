@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acceptances.local/schemas/report.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "kind": {
+      "const": "report"
+    },
+    "id": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "projectId": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "runId": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "campaignId": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "planRef": {
+      "$ref": "common.json#/$defs/documentRef"
+    },
+    "targetRef": {
+      "$ref": "common.json#/$defs/documentRef"
+    },
+    "producer": {
+      "$ref": "common.json#/$defs/producer"
+    },
+    "sourceSnapshots": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/sourceSnapshot"
+      }
+    },
+    "observedBuild": {
+      "$ref": "common.json#/$defs/observedBuild"
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "unknownEnvironment": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "startedAt": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "endedAt": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/result"
+      }
+    },
+    "replacesRevisionId": {
+      "anyOf": [
+        {
+          "$ref": "common.json#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "correctionReason": {
+      "type": "string"
+    },
+    "extensions": {
+      "$ref": "common.json#/$defs/extensions"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "id",
+    "projectId",
+    "runId",
+    "campaignId",
+    "planRef",
+    "targetRef",
+    "producer",
+    "sourceSnapshots",
+    "observedBuild",
+    "environment",
+    "startedAt",
+    "endedAt",
+    "results",
+    "replacesRevisionId",
+    "correctionReason"
+  ]
+}

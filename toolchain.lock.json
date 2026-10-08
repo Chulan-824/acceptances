@@ -14,26 +14,6 @@
     "runtime": "debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587"
   },
   "reservedGoModules": {
-    "github.com/jackc/pgx/v5": {
-      "version": "v5.11.0",
-      "go": "1.25.0",
-      "issue": 13
-    },
-    "github.com/sqlc-dev/sqlc": {
-      "version": "v1.31.1",
-      "go": "1.26.0",
-      "issue": 13
-    },
-    "github.com/pressly/goose/v3": {
-      "version": "v3.28.0",
-      "go": "1.26.0",
-      "issue": 13
-    },
-    "github.com/santhosh-tekuri/jsonschema/v6": {
-      "version": "v6.0.3",
-      "go": "1.21",
-      "issue": 12
-    },
     "github.com/aws/aws-sdk-go-v2/config": {
       "version": "v1.33.7",
       "go": "1.24",
@@ -57,5 +37,39 @@
     "https://hub.docker.com/_/postgres",
     "https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/welcome.html",
     "https://github.com/aliyun/alibabacloud-oss-go-sdk-v2"
-  ]
+  ],
+  "activeGoModules": {
+    "github.com/jackc/pgx/v5": {
+      "version": "v5.11.0",
+      "go": "1.25.0",
+      "issue": 13
+    },
+    "github.com/sqlc-dev/sqlc": {
+      "version": "v1.31.1",
+      "go": "1.26.0",
+      "issue": 13
+    },
+    "github.com/pressly/goose/v3": {
+      "version": "v3.28.0",
+      "go": "1.26.0",
+      "issue": 13
+    },
+    "github.com/santhosh-tekuri/jsonschema/v6": {
+      "version": "v6.0.3",
+      "go": "1.21",
+      "issue": 12
+    },
+    "golang.org/x/crypto": {
+      "version": "v0.55.0",
+      "issue": 13
+    },
+    "golang.org/x/term": {
+      "version": "v0.45.0",
+      "issue": 13
+    },
+    "golang.org/x/text": {
+      "version": "v0.41.0",
+      "issue": 12
+    }
+  }
 }

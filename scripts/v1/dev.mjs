@@ -3,7 +3,14 @@ const children = [
   spawn(
     "go",
     ["run", "./cmd/server", "--listen", "127.0.0.1:8765", "--web-dir="],
-    { stdio: "inherit", detached: true },
+    {
+      stdio: "inherit",
+      detached: true,
+      env: {
+        ...process.env,
+        ACCEPTANCES_PUBLIC_ORIGIN: "http://127.0.0.1:5173",
+      },
+    },
   ),
   spawn("pnpm", ["--filter", "@acceptances/web", "dev"], {
     stdio: "inherit",

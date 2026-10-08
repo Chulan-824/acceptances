@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acceptances.local/schemas/definitions.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "kind": {
+      "const": "definitions"
+    },
+    "id": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "projectId": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "repositoryId": {
+      "$ref": "common.json#/$defs/id"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "$ref": "common.json#/$defs/commit"
+        },
+        "definitionPath": {
+          "$ref": "common.json#/$defs/path"
+        }
+      },
+      "required": ["commit", "definitionPath"]
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/case"
+      },
+      "minItems": 1
+    },
+    "executionDefinitions": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/executionDefinition"
+      },
+      "minItems": 1
+    },
+    "suites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "common.json#/$defs/id"
+          },
+          "title": {
+            "type": "string"
+          },
+          "caseIds": {
+            "type": "array",
+            "items": {
+              "$ref": "common.json#/$defs/id"
+            }
+          },
+          "moduleIds": {
+            "type": "array",
+            "items": {
+              "$ref": "common.json#/$defs/id"
+            }
+          }
+        },
+        "required": ["id", "title", "caseIds", "moduleIds"]
+      }
+    },
+    "moduleTags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "common.json#/$defs/id"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"]
+      }
+    },
+    "extensions": {
+      "$ref": "common.json#/$defs/extensions"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "id",
+    "projectId",
+    "repositoryId",
+    "source",
+    "cases",
+    "executionDefinitions",
+    "suites",
+    "moduleTags"
+  ]
+}

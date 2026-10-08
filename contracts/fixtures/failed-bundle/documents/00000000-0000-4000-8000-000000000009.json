@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "definitions",
+  "id": "00000000-0000-4000-8000-000000000009",
+  "projectId": "00000000-0000-4000-8000-000000000001",
+  "repositoryId": "00000000-0000-4000-8000-000000000002",
+  "source": {
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "definitionPath": "acceptance/definitions.json"
+  },
+  "cases": [
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "versionId": "00000000-0000-4000-8000-000000000005",
+      "ownerRepositoryId": "00000000-0000-4000-8000-000000000002",
+      "title": "无权限用户不能保存",
+      "intent": "未经授权不能修改业务数据",
+      "checkItems": [
+        {
+          "id": "00000000-0000-4000-8000-000000000008",
+          "description": "尝试保存",
+          "expected": "返回 403，数据不变"
+        }
+      ]
+    }
+  ],
+  "executionDefinitions": [
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "versionId": "00000000-0000-4000-8000-000000000007",
+      "caseRef": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "versionId": "00000000-0000-4000-8000-000000000005"
+      },
+      "kind": "agent",
+      "instructions": "使用无保存权限测试身份操作保存，并检查接口和业务数据。",
+      "evidenceRequirements": [
+        {
+          "checkItemId": "00000000-0000-4000-8000-000000000008",
+          "allowedKinds": ["text"],
+          "minCount": 1
+        }
+      ]
+    }
+  ],
+  "suites": [],
+  "moduleTags": []
+}
