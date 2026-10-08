@@ -95,12 +95,12 @@ node bin/cli.js validate /path/to/round --seal
 
 校验结果分为：
 
-| 状态 | 含义 |
-| --- | --- |
-| `ready` | 满足发布规则，可以进入人工验收 |
-| `held` | 可以查看，但缺少完成验收所需的证据或信息 |
-| `rejected` | 数据结构、安全规则或历史关系不合法 |
-| `legacy` | 尚未使用当前 Ruleset 封存的旧 Round |
+| 状态       | 含义                                     |
+| ---------- | ---------------------------------------- |
+| `ready`    | 满足发布规则，可以进入人工验收           |
+| `held`     | 可以查看，但缺少完成验收所需的证据或信息 |
+| `rejected` | 数据结构、安全规则或历史关系不合法       |
+| `legacy`   | 尚未使用当前 Ruleset 封存的旧 Round      |
 
 完整规则见 [Acceptance validator rule matrix](docs/acceptance-validator-rules.md)。
 
@@ -114,7 +114,7 @@ node bin/cli.js validate /path/to/round --seal
 4. 人工接受或拒绝每个检查项，结论写入 `reviews.json`。
 5. 功能修复后创建新 Round，通过 `supersedes` 连接上一轮记录。
 
-Validator 不改写原始 Round。人工验收也不会修改 `result.json`、`report.md` 或 `assets/`。领域术语见 [CONTEXT.md](CONTEXT.md)。
+Validator 不改写原始 Round。人工验收也不会修改 `result.json`、`report.md` 或 `assets/`。领域术语见 [GLOSSARY.md](GLOSSARY.md)。
 
 ## 页面行为
 

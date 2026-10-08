@@ -4,6 +4,8 @@
 
 Status: Accepted
 
+领域术语入口为根目录的 [GLOSSARY.md](../../GLOSSARY.md)。该词汇表定义当前 V1 用语；本 ADR 保留旧工具的 Round、Receipt 等历史术语与决策，不作为 V1 架构约束。
+
 ## Context
 
 本地 acceptance 已能原位读取 Round、聚合历史并记录人审，但此前没有运行时 validator。页面可读不代表 Round 符合 LobeHub acceptance 的公开输入和证据规则。

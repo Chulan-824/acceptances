@@ -10,4 +10,4 @@ Five canonical roles, label strings equal to role names (`needs-triage`, `needs-
 
 ### Domain docs
 
-Single-context: one `CONTEXT.md` at the repo root and ADRs in `docs/adr/`. See `docs/agents/domain.md`.
+Single-context: one `GLOSSARY.md` at the repo root and ADRs in `docs/adr/`. See `docs/agents/domain.md`.
