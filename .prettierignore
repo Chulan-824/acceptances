@@ -6,6 +6,3 @@ dist/
 build/
 .acceptances/
 .scratch/
-
-# Evidence fixture raw bytes are part of the protocol digest contract.
-contracts/fixtures/failed-bundle/

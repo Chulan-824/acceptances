@@ -1,169 +1,209 @@
 package api
 
 import (
-	"bytes"
 	"context"
+	"crypto/rand"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
-	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/Chulan-824/acceptances/internal/config"
-	"github.com/Chulan-824/acceptances/internal/database"
-	"github.com/Chulan-824/acceptances/internal/identity"
-	"github.com/Chulan-824/acceptances/internal/protocol"
-	"github.com/Chulan-824/acceptances/internal/storage"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+	_ "modernc.org/sqlite"
 )
 
 type Server struct {
-	Storage  *storage.Local
-	Store    *database.Store
-	Auth     *identity.Auth
-	Config   config.Config
-	loginMu  sync.Mutex
-	attempts map[string][]time.Time
+	db  *sql.DB
+	dir string
+	mu  sync.Mutex
+}
+type Project struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"createdAt"`
 }
 
-func New(store *database.Store, c config.Config) *Server {
-	return &Server{Store: store, Auth: &identity.Auth{Store: store}, Config: c, attempts: map[string][]time.Time{}}
-}
+func Open(dir string) (*Server, error) {
+	if err := os.MkdirAll(filepath.Join(dir, "evidence"), 0700); err != nil {
+		return nil, err
+	}
+	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(1)
+	s := &Server{db: db, dir: dir}
+	if _, err = db.Exec("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;"); err != nil {
+		db.Close()
+		return nil, err
+	}
+	var version int
+	if err = db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if version > 1 {
+		db.Close()
+		return nil, fmt.Errorf("database schema version %d is newer than supported version 1", version)
+	}
+	if version == 0 {
+		if _, err = db.Exec(`BEGIN;
 
-type endpoint func(http.ResponseWriter, *http.Request, identity.Principal) error
-
-func (s *Server) route(mux *http.ServeMux, pattern, scope string, handler endpoint) {
-	mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasSuffix(r.URL.Path, "/content") {
-			ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-			defer cancel()
-			r = r.WithContext(ctx)
-			controller := http.NewResponseController(w)
-			controller.SetReadDeadline(time.Now().Add(30 * time.Second))
-			defer controller.SetReadDeadline(time.Time{})
+ CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY,name TEXT NOT NULL,description TEXT NOT NULL,created_at TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS repositories (id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,name TEXT NOT NULL,source TEXT NOT NULL,UNIQUE(project_id,source));
+ CREATE TABLE IF NOT EXISTS campaigns (id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,title TEXT NOT NULL,description TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',latest_run_id TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY,campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,submission_id TEXT NOT NULL UNIQUE,hash TEXT NOT NULL,report TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',void_reason TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,kind TEXT NOT NULL,body TEXT NOT NULL,created_at TEXT NOT NULL);
+ PRAGMA user_version=1; COMMIT;`); err != nil {
+			db.Close()
+			return nil, err
 		}
-		var p identity.Principal
-		var err error
-		if scope != "PUBLIC" {
-			p, err = s.Auth.Authenticate(r)
-			if err == nil {
-				if scope == "OWNER" && !p.Owner {
-					err = protocol.Failure("FORBIDDEN", "", "owner session required")
-				} else if scope != "OWNER" {
-					err = p.Require(r.PathValue("projectId"), scope)
-				}
-			}
-			if err == nil && r.Method != "GET" && r.Method != "HEAD" {
-				err = p.CheckCSRF(r)
-			}
-		}
-		if err == nil {
-			err = handler(w, r, p)
-		}
-		if err != nil {
-			writeError(w, err)
-		}
-	})
+	}
+	if err = s.cleanupOrphans(); err != nil {
+		db.Close()
+		return nil, err
+	}
+	return s, nil
 }
+func (s *Server) Close() error                    { return s.db.Close() }
+func (s *Server) Ready(ctx context.Context) error { return s.db.PingContext(ctx) }
+func id() string {
+	b := make([]byte, 16)
+	if _, e := rand.Read(b); e != nil {
+		panic(e)
+	}
+	b[6] = b[6]&15 | 64
+	b[8] = b[8]&63 | 128
+	h := hex.EncodeToString(b)
+	return h[:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:]
+}
+func now() string { return time.Now().UTC().Format(time.RFC3339Nano) }
+func respond(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if v != nil {
+		_ = json.NewEncoder(w).Encode(v)
+	}
+}
+func fail(w http.ResponseWriter, status int, code string) {
+	respond(w, status, map[string]string{"code": code, "message": strings.ReplaceAll(strings.ToLower(code), "_", " ")})
+}
+func decode(w http.ResponseWriter, r *http.Request, v any) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(v); err != nil {
+		fail(w, 400, "INVALID_INPUT")
+		return false
+	}
+	var extra any
+	if d.Decode(&extra) != io.EOF {
+		fail(w, 400, "INVALID_INPUT")
+		return false
+	}
+	return true
+}
+func (s *Server) Handler() http.Handler { m := http.NewServeMux(); s.Register(m); return s.Guard(m) }
 func (s *Server) Guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			origin, _ := url.Parse(s.Config.PublicOrigin)
-			if r.Host != origin.Host {
-				writeError(w, protocol.Failure("FORBIDDEN", "", "host does not match configured loopback origin"))
-				return
-			}
-			if supplied := r.Header.Get("Origin"); supplied != "" && supplied != s.Config.PublicOrigin {
-				writeError(w, protocol.Failure("CSRF_REJECTED", "", "origin mismatch"))
-				return
-			}
-			if r.Method != "GET" && r.Method != "HEAD" {
-				if _, err := r.Cookie("acceptances_session"); err == nil || r.URL.Path == "/api/v1/session" {
-					if r.Header.Get("Origin") != s.Config.PublicOrigin {
-						writeError(w, protocol.Failure("CSRF_REJECTED", "", "same-origin browser request required"))
-						return
-					}
-				}
-			}
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Cache-Control", "no-store")
+		host := r.Host
+		if parsed, _, err := net.SplitHostPort(host); err == nil {
+			host = parsed
+		}
+		ip := net.ParseIP(host)
+		if host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+			fail(w, 403, "LOCAL_HOST_REQUIRED")
+			return
+		}
+		if r.Header.Get("Origin") != "" && r.Header.Get("Origin") != "http://"+r.Host && r.Header.Get("Origin") != "https://"+r.Host {
+			fail(w, 403, "ORIGIN_NOT_ALLOWED")
+			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
-func (s *Server) Register(mux *http.ServeMux) {
-	s.registerIdentity(mux)
-	s.registerDefinitions(mux)
-	s.registerPublication(mux)
-	s.registerReviews(mux)
+func (s *Server) Register(m *http.ServeMux) {
+	m.HandleFunc("POST /api/v1/projects", s.createProject)
+	m.HandleFunc("GET /api/v1/projects", s.listProjects)
+	m.HandleFunc("GET /api/v1/projects/{id}", s.getProject)
+	m.HandleFunc("GET /api/v1/projects/{id}/repositories", s.repositories)
+	m.HandleFunc("POST /api/v1/projects/{id}/repositories", s.repositories)
+	m.HandleFunc("GET /api/v1/projects/{id}/campaigns", s.campaigns)
+	m.HandleFunc("POST /api/v1/projects/{id}/campaigns", s.campaigns)
+	m.HandleFunc("GET /api/v1/campaigns/{id}", s.getCampaign)
+	m.HandleFunc("POST /api/v1/campaigns/{id}/runs", s.submitRun)
+	m.HandleFunc("GET /api/v1/campaigns/{id}/runs", s.listRuns)
+	m.HandleFunc("GET /api/v1/runs/{id}", s.getRun)
+	m.HandleFunc("GET /api/v1/runs/{id}/evidence/{filename}", s.evidence)
+	m.HandleFunc("POST /api/v1/runs/{id}/reviews", s.review)
+	m.HandleFunc("POST /api/v1/runs/{id}/void", s.voidRun)
+	for _, kind := range []string{"projects", "campaigns", "runs"} {
+		m.HandleFunc("GET /api/v1/"+kind+"/{id}/delete-preview", func(w http.ResponseWriter, r *http.Request) { s.deleteScope(w, r, kind, false) })
+		m.HandleFunc("DELETE /api/v1/"+kind+"/{id}", func(w http.ResponseWriter, r *http.Request) { s.deleteScope(w, r, kind, true) })
+	}
 }
-func decode(w http.ResponseWriter, r *http.Request, dst any) error {
-	if strings.Split(r.Header.Get("Content-Type"), ";")[0] != "application/json" {
-		return protocol.Failure("INVALID_ARGUMENT", "", "application/json required")
+func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
+	var p Project
+	var input struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
 	}
-	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, protocol.DocumentLimit))
-	if err != nil {
-		return protocol.Failure("LIMIT_EXCEEDED", "", "request too large")
+	if !decode(w, r, &input) {
+		return
 	}
-	if _, err = protocol.Decode(raw); err != nil {
-		return err
+	if strings.TrimSpace(input.Name) == "" {
+		fail(w, 400, "NAME_REQUIRED")
+		return
 	}
-	rememberBody(r, raw)
-	d := json.NewDecoder(bytes.NewReader(raw))
-	d.DisallowUnknownFields()
-	if err = d.Decode(dst); err != nil {
-		return protocol.Failure("SCHEMA_INVALID", "", "request fields invalid")
+	p = Project{id(), input.Name, input.Description, now()}
+	if _, e := s.db.ExecContext(r.Context(), "INSERT INTO projects VALUES(?,?,?,?)", p.ID, p.Name, p.Description, p.CreatedAt); e != nil {
+		fail(w, 500, "SAVE_FAILED")
+		return
 	}
-	return nil
+	respond(w, 201, p)
 }
-func reply(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]any{"data": data, "requestId": protocol.NewID()})
+func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
+	p, e := s.project(r.PathValue("id"))
+	if e != nil {
+		fail(w, 404, "PROJECT_NOT_FOUND")
+		return
+	}
+	respond(w, 200, p)
 }
-func writeError(w http.ResponseWriter, err error) {
-	var p *protocol.Error
-	if !errors.As(err, &p) {
-		if errors.Is(err, pgx.ErrNoRows) {
-			p = protocol.Failure("RESOURCE_NOT_FOUND", "", "resource not found")
-		} else {
-			var pg *pgconn.PgError
-			if errors.As(err, &pg) && pg.Code == "23505" {
-				p = protocol.Failure("ID_CONTENT_CONFLICT", "", "identity already exists")
-			} else if errors.As(err, &pg) && pg.Code == "23503" {
-				p = protocol.Failure("REFERENCE_INVALID", "", "referenced resource unavailable")
-			} else {
-				p = protocol.Failure("INTERNAL_ERROR", "", "operation failed")
-			}
+func (s *Server) project(key string) (Project, error) {
+	var p Project
+	e := s.db.QueryRow("SELECT id,name,description,created_at FROM projects WHERE id=?", key).Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt)
+	return p, e
+}
+func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
+	rows, e := s.db.QueryContext(r.Context(), "SELECT id,name,description,created_at FROM projects ORDER BY created_at,id")
+	if e != nil {
+		fail(w, 500, "READ_FAILED")
+		return
+	}
+	defer rows.Close()
+	out := []Project{}
+	for rows.Next() {
+		var p Project
+		if e = rows.Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt); e != nil {
+			fail(w, 500, "READ_FAILED")
+			return
 		}
+		out = append(out, p)
 	}
-	copy := *p
-	copy.RequestID = protocol.NewID()
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(copy.HTTPStatus())
-	json.NewEncoder(w).Encode(map[string]any{"error": copy})
-}
-func validID(id string) error {
-	if !protocol.ValidID(id) {
-		return protocol.Failure("INVALID_ARGUMENT", "/id", "expected lowercase UUID v4")
+	if e = rows.Err(); e != nil {
+		fail(w, 500, "READ_FAILED")
+		return
 	}
-	return nil
-}
-func (s *Server) Ready(ctx context.Context) error {
-	deadline, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	if err := s.Store.Ready(deadline); err != nil {
-		return err
-	}
-	if s.Storage == nil {
-		return protocol.Failure("STORAGE_UNAVAILABLE", "", "local storage unavailable")
-	}
-	if err := s.Storage.CheckWritable(); err != nil {
-		return protocol.Failure("STORAGE_UNAVAILABLE", "", "local storage unavailable")
-	}
-	return nil
+	respond(w, 200, map[string]any{"items": out})
 }
