@@ -47,7 +47,7 @@ docker-build:
 	$(DOCKER_COMPOSE) build app
 
 docker-prepare:
-	$(DOCKER_COMPOSE) run --rm --no-deps --user 0 --cap-add CHOWN --cap-add DAC_OVERRIDE --entrypoint /usr/bin/install app -m 600 -o 10001 -g 10001 /run/secrets/postgres_password /var/lib/acceptances/postgres-password
+	$(DOCKER_COMPOSE) run --rm --no-deps --user 0 --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --entrypoint /usr/bin/install app -m 600 -o 10001 -g 10001 /run/secrets/postgres_password /var/lib/acceptances/postgres-password
 
 docker-up: docker-prepare
 	$(DOCKER_COMPOSE) up -d
