@@ -36,6 +36,7 @@ export function Project({
   );
   const repositories = useResource<{ items: Repository[] }>(
     `/projects/${id}/repositories`,
+    revision,
   );
   const base = `/projects/${id}`;
   async function create(form: HTMLFormElement) {
@@ -86,7 +87,10 @@ export function Project({
       <section>
         <div className="section-heading">
           <h2>{project.data.name}</h2>
-          <DeleteButton path={base} label="项目" onDeleted={onDeleted} />
+          <div className="actions">
+            <button onClick={() => setRevision((r) => r + 1)}>刷新项目</button>
+            <DeleteButton path={base} label="项目" onDeleted={onDeleted} />
+          </div>
         </div>
         <p>{project.data.description}</p>
         <h3>关联代码来源</h3>
