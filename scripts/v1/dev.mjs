@@ -8,6 +8,8 @@ const children = [
       detached: true,
       env: {
         ...process.env,
+        ACCEPTANCES_DATA_DIR:
+          process.env.ACCEPTANCES_DATA_DIR || ".cache/dev-data",
         ACCEPTANCES_PUBLIC_ORIGIN: "http://127.0.0.1:5173",
       },
     },

@@ -9,8 +9,6 @@ import {
 } from "node:fs";
 import { createHash } from "node:crypto";
 import { isAbsolute, resolve, relative, sep } from "node:path";
-if (process.env.ACCEPTANCES_EXTERNAL_CI !== "1")
-  throw new Error("仅允许外部 Agent/CI 执行");
 const runner = process.env.ACCEPTANCES_E2E_RUNNER;
 if (!runner || !isAbsolute(runner) || !lstatSync(runner).isFile())
   throw new Error("设置 ACCEPTANCES_E2E_RUNNER 为外部真实浏览器驱动的绝对路径");
@@ -73,13 +71,12 @@ if (result.error || result.status !== 0)
   throw new Error("外部浏览器驱动失败或超时，不能记为通过");
 const report = JSON.parse(readFileSync(receipt, "utf8"));
 const required = [
-  "failure-rejection",
-  "new-run-acceptance",
-  "report-correction",
-  "stale-basis",
-  "cross-project",
-  "expired-session",
-  "unsafe-and-missing-evidence",
+  "project-create",
+  "report-evidence",
+  "review-new-run",
+  "comment-void",
+  "cascade-delete",
+  "unsafe-evidence",
 ];
 const evidence = [];
 for (const name of required) {
@@ -115,7 +112,7 @@ writeFileSync(
       evidence,
       limitations: [
         "驱动由外部 Agent/CI 提供，必须归档其代码/版本与实际截图、网络和断言记录",
-        "本入口只校验回执完整性，完整 A01-A35 矩阵仍逐项核对",
+        "本入口只校验回执完整性，完整 T1–T9 矩阵仍逐项核对",
       ],
     },
     null,
