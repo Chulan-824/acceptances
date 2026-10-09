@@ -118,8 +118,27 @@ func TestLocalPublicationPostgres(t *testing.T) {
 	base := "/api/v1/projects/" + project
 	camp := base + "/campaigns/" + campaign
 	must(call("POST", "/api/v1/projects", encoded(map[string]any{"id": project, "name": "fixture"}), nil), 201)
-	must(call("POST", base+"/repositories", encoded(map[string]any{"id": "00000000-0000-4000-8000-000000000002", "displayName": "fixture", "locator": "local://fixture"}), nil), 201)
-	must(call("POST", base+"/campaigns", encoded(map[string]any{"id": campaign, "title": "fixture", "externalRefs": map[string]any{}}), nil), 201)
+	limited := must(call("POST", base+"/tokens", encoded(map[string]any{"id": protocol.NewID(), "name": "read-only", "scopes": []string{"results:read"}}), nil), 201)
+	tokenID := protocol.NewID()
+	writer := must(call("POST", base+"/tokens", encoded(map[string]any{"id": tokenID, "name": "repository-writer", "scopes": []string{"repositories:write", "results:read", "campaigns:write"}}), nil), 201)
+	repositoryBody := encoded(map[string]any{"id": "00000000-0000-4000-8000-000000000002", "displayName": "fixture", "locator": "local://fixture"})
+	machine := map[string]string{"Authorization": "Bearer " + text(writer, "secret"), "Idempotency-Key": "repository-fixture"}
+	must(call("POST", base+"/repositories", repositoryBody, map[string]string{"Authorization": "Bearer " + text(limited, "secret")}), 403)
+	must(call("POST", "/api/v1/projects/"+protocol.NewID()+"/repositories", repositoryBody, machine), 403)
+	must(call("POST", base+"/tokens", encoded(map[string]any{"id": protocol.NewID(), "name": "escalation", "scopes": []string{"repositories:write"}}), machine), 403)
+	must(call("POST", "/api/v1/projects", encoded(map[string]any{"id": protocol.NewID(), "name": "escalation"}), machine), 403)
+	must(call("POST", base+"/repositories", repositoryBody, machine), 201)
+	must(call("POST", base+"/repositories", repositoryBody, machine), 201)
+	must(call("POST", base+"/campaigns", encoded(map[string]any{"id": campaign, "title": "fixture", "externalRefs": map[string]any{"acceptances/requirement": "fixture-issue"}}), nil), 201)
+	if text(object(must(call("GET", camp, nil, machine), 200)["externalRefs"]), "acceptances/requirement") != "fixture-issue" {
+		t.Fatal("campaign requirement identity missing from detail")
+	}
+	page := must(call("GET", base+"/campaigns", nil, machine), 200)
+	if text(object(object(list(page["items"])[0])["externalRefs"]), "acceptances/requirement") != "fixture-issue" {
+		t.Fatal("campaign requirement identity missing from list")
+	}
+	must(call("DELETE", base+"/tokens/"+tokenID, nil, nil), 204)
+	must(call("POST", base+"/repositories", repositoryBody, machine), 401)
 	for _, kind := range []string{"definitions", "target", "plan"} {
 		for _, ref := range bundle.Manifest.Documents {
 			if ref.Kind != kind {

@@ -375,11 +375,12 @@ paths:
           schema: *id001
     post:
       operationId: v1Operation9
-      description: OWNER。local V1 实现候选，运行验收待回填。
-      x-required-scope: OWNER
+      description: repositories:write。local V1 实现候选，运行验收待回填。
+      x-required-scope: repositories:write
       x-implementation-status: implemented-unverified
       security:
         - ownerSession: []
+        - projectToken: []
       responses:
         "201":
           description: 成功
@@ -412,7 +413,8 @@ paths:
           schema: *id001
         - name: X-CSRF-Token
           in: header
-          required: true
+          description: 所有者会话写入必需；机器 token 不需要。
+          required: false
           schema: *id001
       requestBody:
         required: true
@@ -524,6 +526,7 @@ paths:
                   type: array
                   items:
                     enum:
+                      - repositories:write
                       - definitions:write
                       - campaigns:write
                       - runs:write

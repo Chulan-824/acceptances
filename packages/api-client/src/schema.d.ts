@@ -133,7 +133,7 @@ export interface paths {
     /** @description results:read。local V1 实现候选，运行验收待回填。 */
     get: operations["v1Operation8"];
     put?: never;
-    /** @description OWNER。local V1 实现候选，运行验收待回填。 */
+    /** @description repositories:write。local V1 实现候选，运行验收待回填。 */
     post: operations["v1Operation9"];
     delete?: never;
     options?: never;
@@ -1550,7 +1550,8 @@ export interface operations {
       query?: never;
       header: {
         "Idempotency-Key": string;
-        "X-CSRF-Token": string;
+        /** @description 所有者会话写入必需；机器 token 不需要。 */
+        "X-CSRF-Token"?: string;
       };
       path: {
         projectId: components["schemas"]["id"];
@@ -1644,6 +1645,7 @@ export interface operations {
           id: components["schemas"]["id"];
           name: string;
           scopes: (
+            | "repositories:write"
             | "definitions:write"
             | "campaigns:write"
             | "runs:write"

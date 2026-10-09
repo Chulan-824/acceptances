@@ -68,7 +68,7 @@ func (s *Server) registerIdentity(mux *http.ServeMux) {
 	s.route(mux, "GET /api/v1/projects", "OWNER", func(w http.ResponseWriter, r *http.Request, p identity.Principal) error {
 		return s.listIdentity(w, r, "projects", "")
 	})
-	s.route(mux, "POST /api/v1/projects/{projectId}/repositories", "OWNER", s.createRepository)
+	s.route(mux, "POST /api/v1/projects/{projectId}/repositories", "repositories:write", s.createRepository)
 	s.route(mux, "GET /api/v1/projects/{projectId}/repositories", "results:read", func(w http.ResponseWriter, r *http.Request, p identity.Principal) error {
 		return s.listIdentity(w, r, "repositories", r.PathValue("projectId"))
 	})
@@ -224,7 +224,7 @@ func (s *Server) createToken(w http.ResponseWriter, r *http.Request, p identity.
 	if err := validID(r.PathValue("projectId")); err != nil {
 		return err
 	}
-	allowed := map[string]bool{"definitions:write": true, "campaigns:write": true, "runs:write": true, "evidence:write": true, "results:read": true, "feedback:read": true, "evidence:read": true}
+	allowed := map[string]bool{"repositories:write": true, "definitions:write": true, "campaigns:write": true, "runs:write": true, "evidence:write": true, "results:read": true, "feedback:read": true, "evidence:read": true}
 	seen := map[string]bool{}
 	for _, scope := range v.Scopes {
 		if !allowed[scope] || seen[scope] {

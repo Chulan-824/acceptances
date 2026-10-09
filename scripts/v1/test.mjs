@@ -4,7 +4,11 @@ if (process.env.ACCEPTANCES_EXTERNAL_CI !== "1") {
   );
   process.exit(2);
 }
-if (process.argv[2] === "contract") {
+if (process.argv[2] === "agent") {
+  await import("./agent-check.mjs");
+} else if (process.argv[2] === "agent-process") {
+  await import("./agent-process-check.mjs");
+} else if (process.argv[2] === "contract") {
   await import("./contract-check.mjs");
 } else if (process.argv[2] === "platform") {
   await import("./platform-check.mjs");
@@ -16,7 +20,7 @@ if (process.argv[2] === "contract") {
   await import("./e2e-check.mjs");
 } else {
   console.error(
-    "可用 SUITE=platform|contract|domain|cli|postgres|storage-local|e2e；e2e 需要外部真实浏览器驱动。",
+    "可用 SUITE=agent|agent-process|platform|contract|domain|cli|postgres|storage-local|e2e；e2e 需要外部真实浏览器驱动。",
   );
   process.exit(2);
 }

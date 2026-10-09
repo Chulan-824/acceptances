@@ -65,6 +65,23 @@ curl --fail http://127.0.0.1:8765/health/ready
 
 `docker-init-owner` 交互输入用户名和密码，重复初始化返回冲突，不覆盖已有所有者。应用启动不会自动迁移。数据库尚未迁移或所有者未初始化时 readiness 为 503。仅应用端口绑定 `127.0.0.1:8765`，数据库不发布宿主端口。应用非 root、代码层只读。PostgreSQL 18 的卷挂载 `/var/lib/postgresql`。数据库初始化后修改密码文件不会自动修改已有数据库密码。不要复用旧数据库卷或将该基础服务暴露到公网。
 
+## 在业务项目中调用 Codex 自动验证
+
+服务启动后，你只需在 Web 创建 Project。安装 V1 skill：
+
+```sh
+make build
+make install-skill
+```
+
+默认安装到 `$CODEX_HOME/skills/acceptances-v1`，未设置 CODEX_HOME 时为 `~/.codex/skills/acceptances-v1`。已有同名 skill 不会覆盖。新聊天加载技能后，在业务仓库说：
+
+> 使用 $acceptances-v1，调用 Acceptances 对 XX 需求完成自动化验证。需求依据是……，验证环境是……。
+
+首次调用引导你创建项目 token，并通过隐藏输入工具保存到仓库外文件、关联 Project。新 token 需包含 repositories:write；旧 token 不会自动增加权限。之后 agent 自动登记仓库、按需求标识复用交付活动、执行验证和发布证据。首次自动采用依据，已有依据变化则请求你确认；人工接受和拒绝仍在 Web 完成。验证指令不授权修复业务代码。
+
+工具命令与权限见 [V1 Agent 接入](docs/agents/v1-integration.md)。辅助工具测试用 `ACCEPTANCES_EXTERNAL_CI=1 make test SUITE=agent`；数据库权限和业务发布测试使用新的专用测试数据库运行 postgres 分组，不复用日常 Compose 卷。
+
 ## 目录
 
 | 目录                        | 职责                                      |

@@ -5,7 +5,7 @@ export GOMODCACHE := $(CURDIR)/.cache/go-mod
 SUITE ?=
 DOCKER_COMPOSE := docker compose --env-file "$(HOME)/.config/acceptances/compose.env" -p acceptances-v1 -f deploy/compose.yaml
 
-.PHONY: dev generate fmt lint typecheck test build toolchain docker-build docker-up docker-rebuild docker-prepare docker-migrate docker-init-owner sqlc
+.PHONY: dev generate fmt lint typecheck test build toolchain docker-build docker-up docker-rebuild docker-prepare docker-migrate docker-init-owner sqlc install-skill
 
 toolchain:
 	node scripts/v1/toolchain.mjs
@@ -25,12 +25,12 @@ generate: toolchain sqlc
 	pnpm exec prettier --write packages/api-client/src/schema.d.ts
 
 fmt:
-	pnpm exec prettier --write package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client contracts deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md db/README.md
+	pnpm exec prettier --write package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client contracts deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md db/README.md skills/acceptances-v1
 	go fmt ./cmd/... ./internal/... ./contracts/... ./db/...
 
 lint: toolchain
-	pnpm exec prettier --check package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client contracts deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md db/README.md
-	pnpm exec eslint apps/web packages/api-client scripts/v1 eslint.config.js
+	pnpm exec prettier --check package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client contracts deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md db/README.md skills/acceptances-v1
+	pnpm exec eslint apps/web packages/api-client scripts/v1 skills/acceptances-v1/scripts eslint.config.js
 	go vet ./cmd/... ./internal/... ./contracts/... ./db/...
 	@test -z "$$(gofmt -l cmd internal contracts db)" || (echo '请执行 make fmt'; exit 1)
 
@@ -62,3 +62,6 @@ docker-rebuild: docker-build docker-up
 
 test:
 	node scripts/v1/test.mjs "$(SUITE)"
+
+install-skill:
+	python3 scripts/v1/install-skill.py

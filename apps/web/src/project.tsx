@@ -10,6 +10,7 @@ import {
 } from "./client";
 import { Campaign } from "./campaign";
 const scopes = [
+  "repositories:write",
   "definitions:write",
   "campaigns:write",
   "runs:write",

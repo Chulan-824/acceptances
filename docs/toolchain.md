@@ -46,4 +46,8 @@ Docker 另在 Linux amd64/arm64 隔离执行：创建独立密码文件，设置
 
 完整 A34/A35 仍为 pending：平台矩阵、容器运行、浏览器证据与全仓来源/许可证核查不能用静态编译代替。工单 12–18 按用户本次授权实施；各工单等待相应外部证据后关闭。
 
-产品测试入口：`SUITE=contract|domain|cli|postgres|storage-local|platform|e2e`，均要求 `ACCEPTANCES_EXTERNAL_CI=1`。postgres/storage-local 还要求 `ACCEPTANCES_TEST_DATABASE_URL` 指向全新的 `acceptances_test_*` 数据库及 `ACCEPTANCES_TEST_ISOLATED=1`。测试不会 drop/truncate 既有数据库；检测到已有 projects 表即失败。每次重跑创建新的专用数据库，不使用日常 Compose 卷。e2e 入口调用外部真实浏览器驱动并校验回执，具体驱动接口见交接。
+产品测试入口：`SUITE=agent|agent-process|contract|domain|cli|postgres|storage-local|platform|e2e`，均要求 `ACCEPTANCES_EXTERNAL_CI=1`。postgres/storage-local 还要求 `ACCEPTANCES_TEST_DATABASE_URL` 指向全新的 `acceptances_test_*` 数据库及 `ACCEPTANCES_TEST_ISOLATED=1`。测试不会 drop/truncate 既有数据库；检测到已有 projects 表即失败。每次重跑创建新的专用数据库，不使用日常 Compose 卷。e2e 入口调用外部真实浏览器驱动并校验回执，具体驱动接口见交接。
+
+`SUITE=agent` 构建当前原生 CLI，运行 V1 接入辅助工具、JCS 和本地权限单测。辅助工具 HTTP 为受控本机服务，不能当作 Docker 或真实浏览器验收。新增仓库机器权限的数据库路由矩阵在 postgres 分组中。
+
+`SUITE=agent-process` 使用新的 `acceptances_test_*` 数据库，先检查无 projects 表，再启动真实 Go 进程并用现有 CLI 完成接入、仓库登记、活动复用、失败夹具发布和稳定重试。要求 `ACCEPTANCES_EXTERNAL_CI=1 ACCEPTANCES_TEST_ISOLATED=1 ACCEPTANCES_TEST_DATABASE_URL`；默认使用 psql 检查数据库，Docker 测试服务可指定 `ACCEPTANCES_TEST_POSTGRES_CONTAINER` 使用容器内 psql。该报告明确区分真实服务执行与合成业务输入，不代表浏览器或业务需求通过。

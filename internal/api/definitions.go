@@ -377,7 +377,7 @@ func (s *Server) createCampaign(w http.ResponseWriter, r *http.Request, p identi
 func (s *Server) getCampaign(w http.ResponseWriter, r *http.Request, _ identity.Principal) error {
 	var raw json.RawMessage
 	var version int64
-	err := s.Store.Pool.QueryRow(r.Context(), `SELECT jsonb_build_object('id',id,'title',title,'planId',current_plan_id,'targetId',current_target_id,'snapshotId',current_snapshot_id,'basisVersion',basis_version::text,'reviewVersion',review_version::text),basis_version FROM campaigns WHERE project_id=$1 AND id=$2`, r.PathValue("projectId"), r.PathValue("campaignId")).Scan(&raw, &version)
+	err := s.Store.Pool.QueryRow(r.Context(), `SELECT jsonb_build_object('id',id,'title',title,'externalRefs',external_refs,'planId',current_plan_id,'targetId',current_target_id,'snapshotId',current_snapshot_id,'basisVersion',basis_version::text,'reviewVersion',review_version::text),basis_version FROM campaigns WHERE project_id=$1 AND id=$2`, r.PathValue("projectId"), r.PathValue("campaignId")).Scan(&raw, &version)
 	if err != nil {
 		return err
 	}
@@ -493,7 +493,7 @@ func (s *Server) listCampaigns(w http.ResponseWriter, r *http.Request, _ identit
 			return protocol.Failure("INVALID_ARGUMENT", "/limit", "limit must be 1..200")
 		}
 	}
-	rows, err := s.Store.Pool.Query(r.Context(), "SELECT jsonb_build_object('id',id,'title',title,'planId',current_plan_id,'targetId',current_target_id,'snapshotId',current_snapshot_id),created_at,id::text FROM campaigns WHERE project_id=$1 AND (created_at,id)>($2,$3::uuid) ORDER BY created_at,id LIMIT $4", project, cursor.Time, cursor.ID, limit+1)
+	rows, err := s.Store.Pool.Query(r.Context(), "SELECT jsonb_build_object('id',id,'title',title,'externalRefs',external_refs,'planId',current_plan_id,'targetId',current_target_id,'snapshotId',current_snapshot_id),created_at,id::text FROM campaigns WHERE project_id=$1 AND (created_at,id)>($2,$3::uuid) ORDER BY created_at,id LIMIT $4", project, cursor.Time, cursor.ID, limit+1)
 	if err != nil {
 		return err
 	}

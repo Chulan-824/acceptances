@@ -82,8 +82,11 @@ func human(out io.Writer, value any) {
 	}
 }
 func run(args []string, log io.Writer) (any, error) {
+	if len(args) > 0 && args[0] == "fingerprint" {
+		return fingerprint(args[1:], log)
+	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
-		return map[string]any{"commands": []string{"version [--json]", "validate <bundle> [--json]", "publish <bundle> [--wait 120s] [--json]", "status --project <id> --run <id> --revision <id> [--json]", "feedback --project <id> --campaign <id> [--cursor <value>] [--json]", "check --project <id> --campaign <id> --mode ready|accepted [--allow-risk] [--json]"}}, nil
+		return map[string]any{"commands": []string{"version [--json]", "fingerprint --repo <path> --repository <id> --base <commit> --scope <json-file> [--json]", "validate <bundle> [--json]", "publish <bundle> [--wait 120s] [--json]", "status --project <id> --run <id> --revision <id> [--json]", "feedback --project <id> --campaign <id> [--cursor <value>] [--json]", "check --project <id> --campaign <id> --mode ready|accepted [--allow-risk] [--json]"}}, nil
 	}
 	if args[0] == "version" {
 		if len(args) > 2 || len(args) == 2 && args[1] != "--json" {

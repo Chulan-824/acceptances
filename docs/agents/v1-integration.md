@@ -4,7 +4,7 @@
 
 ## 初始化服务与身份
 
-从本仓库按 README 构建、启动、迁移并初始化所有者。在 Web 创建 Project、登记参与交付的 Repository、创建 Campaign。记录这些 UUID。给现有 Agent 创建项目 token，按工作需要选择 definitions:write、campaigns:write、runs:write、evidence:write、results:read、feedback:read；原始证据需要额外 evidence:read。机器 token 无人审能力。
+从本仓库按 README 构建、启动、迁移并初始化所有者。在 Web 创建 Project、登记参与交付的 Repository、创建 Campaign。记录这些 UUID。给现有 Agent 创建项目 token，自动登记仓库需要 repositories:write，其余按工作需要选择 definitions:write、campaigns:write、runs:write、evidence:write、results:read、feedback:read；原始证据需要额外 evidence:read。机器 token 无人审能力。
 
 把 token 写入仓库外 mode 600 文件，向执行 Agent 的终端提供文件路径；不把秘密写入业务仓库或提示词：
 
@@ -41,5 +41,9 @@ export ACCEPTANCES_TOKEN_FILE="$HOME/.config/acceptances/agent-token"
 拒绝后 Agent 读取 feedback，在业务仓库修复并执行新 Run。严格交付门禁使用 accepted；只有外部交付策略明确允许时才使用 `--allow-risk`。平台不会运行测试或自动修复业务项目。
 
 ## 当前交接边界
+
+新增 Codex 接入 skill 位于 `skills/acceptances-v1`，使用 `make install-skill` 安装。只预先创建 Project，首次调用引导创建 token、仓库外配置关联；之后自动登记仓库和创建/复用 Campaign。辅助工具保留现有 Go CLI 的上传协议，命令与首次配置见 [操作参考](../../skills/acceptances-v1/references/workflow.md)。
+
+使用新 skill 发布时，首次自动采用验收依据；当前依据发生变化时返回 ETag 并等待用户确认。上文直接使用 Go CLI 的发布仍不自动采用依据。
 
 12–18 的代码与夹具尚待运行验收，见 [实现交接](../v1-implementation-handoff.md)。旧 acceptance-cl skill 的本地 Round、旧 Node CLI 与 V1 HTTP 协议不同，尚不能用旧流程启动或证明 V1 能力。
