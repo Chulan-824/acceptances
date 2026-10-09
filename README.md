@@ -96,7 +96,7 @@ make install-skill
 
 统一命令、锁定依据和外部验证步骤见 [工具链与交接](docs/toolchain.md)。现有项目与 Agent 的文件发布流程见 [V1 Agent 接入](docs/agents/v1-integration.md)，本次范围与未完成验收见 [12–18 交接](docs/v1-implementation-handoff.md)。
 
-旧 CLI 入口 `bin/cli.js` 已移除。旧 Node 服务、`web/`、Bun 锁文件和根 Vite/TS 配置暂存原处，退出默认构建，不做 V1 兼容；旧说明原文见 [历史 README](README.legacy.md)，其中旧 CLI 命令不再可用。不迁移或删除用户已有 `.acceptances` 数据。旧 skill 尚未接入 V1，不能用于证明新协议支持。
+旧 Node 服务、Web、CLI、测试、Bun 锁文件、根 Vite/TS 配置及本地 Round skill 已从工作树移除；旧实现仍可从 Git 历史查看。V1 不兼容旧 Round 协议，仓库中的 `.acceptances` 数据未迁移或删除。当前 Agent 接入使用 `skills/acceptances-v1`。
 
 ## 许可与分发状态
 

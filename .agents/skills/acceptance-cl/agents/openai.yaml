@@ -1,7 +1,0 @@
-interface:
-  display_name: "Acceptance CL"
-  short_description: "生成、校验、封存并展示可人工审核的本地验收 Round"
-  default_prompt: "Use $acceptance-cl to create and deliver a locally reviewable acceptance Round."
-
-policy:
-  allow_implicit_invocation: true

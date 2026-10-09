@@ -6,7 +6,6 @@ dist/
 build/
 .acceptances/
 .scratch/
-README.legacy.md
 
 # Evidence fixture raw bytes are part of the protocol digest contract.
 contracts/fixtures/failed-bundle/

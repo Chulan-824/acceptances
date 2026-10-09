@@ -46,4 +46,4 @@ export ACCEPTANCES_TOKEN_FILE="$HOME/.config/acceptances/agent-token"
 
 使用新 skill 发布时，首次自动采用验收依据；当前依据发生变化时返回 ETag 并等待用户确认。上文直接使用 Go CLI 的发布仍不自动采用依据。
 
-12–18 的代码与夹具尚待运行验收，见 [实现交接](../v1-implementation-handoff.md)。旧 acceptance-cl skill 的本地 Round、旧 Node CLI 与 V1 HTTP 协议不同，尚不能用旧流程启动或证明 V1 能力。
+12–18 的代码与夹具尚待运行验收，见 [实现交接](../v1-implementation-handoff.md)。仓库内旧本地 Round skill 和 Node CLI 已移除；既有 `.acceptances` 数据仍保留，不能用旧流程证明 V1 HTTP 协议能力。

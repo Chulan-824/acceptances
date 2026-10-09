@@ -10,7 +10,7 @@ Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved.
 
 上游生产者／版权人名称保留为 LobeHub / LobeHub LLC，作品名保留为 LobeChat；不会以 Acceptances 替换许可正文中的原名称。
 
-已确认参考版本为 lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0。本地 acceptance-cl 模板／文档及部分 validator 规则经 AI 参考后改写；renderer 的部分协议、信息架构和短片段也有对应，但独立范围尚未完全确定。
+已确认参考版本为 lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0。已从工作树移除的旧 acceptance-cl 模板／文档及部分 validator 规则曾经 AI 参考后改写；旧 renderer 的部分协议、信息架构和短片段也有对应，但独立范围尚未完全确定。历史来源记录仍保留在 Git 与 [来源修改记录](docs/licensing/lobehub-provenance.md)中。
 
 沿用／改写部分保留 [LobeHub Community License](LICENSES/LobeHub-Community-1c7a711.txt)与其引用的 [Apache License 2.0](LICENSES/Apache-2.0.txt)。适用文件、混合范围及未决边界见 [LICENSE-SCOPE.md](LICENSE-SCOPE.md)；固定路径与修改性质见 [来源修改记录](docs/licensing/lobehub-provenance.md)。与 LobeHub 无隶属或合作关系。
 

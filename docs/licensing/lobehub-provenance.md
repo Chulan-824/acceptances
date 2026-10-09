@@ -2,6 +2,8 @@
 
 记录日期：2026-10-08。范围以根 [LICENSE-SCOPE.md](../../LICENSE-SCOPE.md)为准。本地旧文件经 AI 参考后重写；下表没有把整文件都判定为逐字复制，也没有把改写等同于独立原创。
 
+2026-10-09 迁移收尾：下表所述旧工程文件已从工作树移除，保留此记录作为 Git 历史中旧内容的来源说明；它不表示这些旧文件仍参与 V1 构建或分发。移除前的版本可从提交 `2f90c210a74d4dd9bf8dde7ebe992bca5fa157c0` 查看。
+
 固定上游仓库：[`lobehub/lobehub@1c7a7116313bcc2d675937139554a244f7adf7a0`](https://github.com/lobehub/lobehub/tree/1c7a7116313bcc2d675937139554a244f7adf7a0)。适用的根 [Community License](../../LICENSES/LobeHub-Community-1c7a711.txt)保持原文，附上其引用的 [Apache 2.0](../../LICENSES/Apache-2.0.txt)正文；版权归属见 [NOTICE](../../NOTICE)。文件摘要及 NOTICE 查找范围见 [材料清单](upstream-materials.json)。
 
 | 本地范围                                                               | 固定上游文件                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 本地修改／证据边界                                                                                                                                             |
