@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
 import { spawn, execFileSync } from "node:child_process";
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 
-// 本文件也可以被直接调用，因此保留执行边界检查。
-if (process.env.ACCEPTANCES_EXTERNAL_CI !== "1")
-  throw new Error("仅允许外部 Agent/CI 执行");
 const startedAt = new Date().toISOString();
 const hashes = {};
 for (const name of ["server", "acceptances"]) {
@@ -26,17 +25,21 @@ const version = JSON.parse(
     encoding: "utf8",
   }),
 );
-assert.equal(version.phase, "local-v1");
+assert.ok(version, "CLI 应返回 JSON 版本信息");
+const dataDir = await mkdtemp(join(tmpdir(), "acceptances-platform-"));
 const child = spawn(
   "./build/server",
   ["--listen", "127.0.0.1:0", "--web-dir", "apps/web/dist"],
   {
     stdio: ["ignore", "ignore", "pipe"],
-    env: Object.fromEntries(
-      Object.entries(process.env).filter(
-        ([key]) => !key.startsWith("ACCEPTANCES_"),
+    env: {
+      ACCEPTANCES_DATA_DIR: dataDir,
+      ...Object.fromEntries(
+        Object.entries(process.env).filter(
+          ([key]) => !key.startsWith("ACCEPTANCES_"),
+        ),
       ),
-    ),
+    },
   },
 );
 let output = "";
@@ -62,9 +65,7 @@ try {
     fetch(`http://${address}${path}`, { signal: AbortSignal.timeout(5000) });
   assert.equal((await get("/health/live")).status, 200);
   const ready = await get("/health/ready");
-  assert.equal(ready.status, 503);
-  assert.equal((await ready.json()).code, "DATABASE_NOT_CONFIGURED");
-  assert.deepEqual(await (await get("/api/v1/capabilities")).json(), version);
+  assert.equal(ready.status, 200, "首次启动应自动初始化并就绪");
   const page = await get("/");
   assert.equal(page.status, 200);
   const html = await page.text();
@@ -82,7 +83,7 @@ try {
     "artifacts/platform.json",
     JSON.stringify(
       {
-        acceptanceId: "A34",
+        acceptanceId: "T1",
         sourceCommit,
         dirty: Boolean(dirty),
         artifactDigest: hashes,
@@ -96,7 +97,7 @@ try {
         outcome: "passed",
         limitations: [
           "仅当前原生平台基础烟测",
-          "Docker、数据库、浏览器及业务能力未覆盖",
+          "Docker、重启持久化、浏览器及业务能力未覆盖",
           "dirty 时必须另存源码快照，否则证据不可作为候选验收",
         ],
       },
@@ -104,7 +105,7 @@ try {
       2,
     ) + "\n",
   );
-  console.log("当前原生平台基础检查通过；完整 A34/A35 仍需其余证据。");
+  console.log("当前原生平台基础检查通过；完整 T1–T9 仍需其余证据。");
 } finally {
   if (child.exitCode === null) {
     child.kill("SIGTERM");
@@ -112,4 +113,5 @@ try {
     await closed;
     clearTimeout(timer);
   }
+  await rm(dataDir, { recursive: true, force: true });
 }

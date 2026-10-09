@@ -4,10 +4,6 @@
 !pnpm-lock.yaml
 !go.mod
 !go.sum
-!contracts/
-!contracts/**
-!db/
-!db/**
 !cmd/
 !cmd/**
 !internal/

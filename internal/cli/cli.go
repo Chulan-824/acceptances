@@ -1,397 +1,398 @@
+// Package cli provides the host-side client for the local report archive.
 package cli
 
 import (
 	"bytes"
-	"context"
-	"encoding/base64"
+	"crypto/rand"
+	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/Chulan-824/acceptances/internal/buildinfo"
-	"github.com/Chulan-824/acceptances/internal/config"
-	"github.com/Chulan-824/acceptances/internal/protocol"
 )
 
-type Client struct {
-	URL, Token string
-	HTTP       *http.Client
+type binding struct {
+	URL          string `json:"url"`
+	ProjectID    string `json:"projectId"`
+	RepositoryID string `json:"repositoryId"`
+	Source       string `json:"source"`
 }
-type response struct {
-	Data  json.RawMessage `json:"data"`
-	Error *protocol.Error `json:"error"`
-}
+type client struct{ base string }
 
 func Run(args []string, out, log io.Writer) int {
-	machine := false
-	for _, arg := range args {
-		if arg == "--json" || arg == "--json=true" {
-			machine = true
-		}
-	}
 	result, err := run(args, log)
 	if err != nil {
-		var p *protocol.Error
-		if !errors.As(err, &p) {
-			p = protocol.Failure("INTERNAL_ERROR", "", "operation failed")
-		}
-		if machine {
-			if result != nil {
-				json.NewEncoder(out).Encode(map[string]any{"data": result, "error": p})
-			} else {
-				json.NewEncoder(out).Encode(map[string]any{"error": p})
-			}
-		} else {
-			fmt.Fprintf(log, "%s: %s\n", p.Code, p.Message)
-			if result != nil {
-				human(out, result)
-			}
-		}
-		return p.ExitCode()
+		json.NewEncoder(log).Encode(map[string]string{"error": err.Error()})
+		return 1
 	}
 	if result != nil {
-		if machine {
-			json.NewEncoder(out).Encode(result)
-		} else {
-			human(out, result)
+		encoder := json.NewEncoder(out)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(result); err != nil {
+			fmt.Fprintln(log, err)
+			return 1
 		}
 	}
 	return 0
 }
-func human(out io.Writer, value any) {
-	if m, ok := value.(map[string]any); ok {
-		if commands, ok := m["commands"].([]string); ok {
-			fmt.Fprintln(out, "Acceptances V1")
-			for _, command := range commands {
-				fmt.Fprintln(out, "  acceptances "+command)
-			}
-			return
-		}
-	}
-	raw, err := json.MarshalIndent(value, "", "  ")
-	if err == nil {
-		fmt.Fprintln(out, "Acceptances result:")
-		fmt.Fprintln(out, string(raw))
-	}
-}
+
 func run(args []string, log io.Writer) (any, error) {
-	if len(args) > 0 && args[0] == "fingerprint" {
-		return fingerprint(args[1:], log)
-	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
-		return map[string]any{"commands": []string{"version [--json]", "fingerprint --repo <path> --repository <id> --base <commit> --scope <json-file> [--json]", "validate <bundle> [--json]", "publish <bundle> [--wait 120s] [--json]", "status --project <id> --run <id> --revision <id> [--json]", "feedback --project <id> --campaign <id> [--cursor <value>] [--json]", "check --project <id> --campaign <id> --mode ready|accepted [--allow-risk] [--json]"}}, nil
+		return map[string]any{"commands": []string{
+			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...]",
+			"context [--repo .]", "campaigns [--title <new-title>] [--description ...] [--repo .]",
+			"publish --bundle <directory> --campaign <title-or-id> [--repo .]", "status --run <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
+		}, "bundle": "report.json and declared evidence files; .submission-id retained for retries; use a new directory for each actual verification"}, nil
 	}
 	if args[0] == "version" {
-		if len(args) > 2 || len(args) == 2 && args[1] != "--json" {
-			return nil, protocol.Failure("INVALID_ARGUMENT", "", "invalid version arguments")
-		}
-		return buildinfo.Current(), nil
+		return map[string]string{"version": "local-archive-v1"}, nil
 	}
-	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	flags.SetOutput(log)
-	project := flags.String("project", "", "project UUID")
-	runID := flags.String("run", "", "Run UUID")
-	revision := flags.String("revision", "", "revision UUID")
-	campaign := flags.String("campaign", "", "Campaign UUID")
-	cursor := flags.String("cursor", "", "feedback cursor")
-	mode := flags.String("mode", "ready", "ready or accepted")
-	allowRisk := flags.Bool("allow-risk", false, "allow explicit human risk acceptance")
-	wait := flags.Duration("wait", 120*time.Second, "publication wait deadline")
-	flags.Bool("json", false, "JSON output")
-	positional := ""
-	remaining := args[1:]
-	if (args[0] == "validate" || args[0] == "publish") && len(remaining) > 0 && !strings.HasPrefix(remaining[0], "-") {
-		positional = remaining[0]
-		remaining = remaining[1:]
+	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	f.SetOutput(log)
+	endpoint := f.String("url", "", "service URL (default saved association or http://127.0.0.1:8765)")
+	repo := f.String("repo", ".", "business directory")
+	project := f.String("project", "", "project name or ID")
+	campaign := f.String("campaign", "", "campaign title or ID")
+	title := f.String("title", "", "create campaign with this title")
+	description := f.String("description", "", "campaign description")
+	bundle := f.String("bundle", "", "directory containing report.json and evidence")
+	runID := f.String("run", "", "Run ID")
+	f.Bool("json", true, "JSON output")
+	if err := f.Parse(args[1:]); err != nil {
+		return nil, err
 	}
-	if err := flags.Parse(remaining); err != nil {
-		return nil, protocol.Failure("INVALID_ARGUMENT", "", "invalid command arguments")
+	if f.NArg() != 0 {
+		return nil, fmt.Errorf("unexpected positional arguments")
 	}
-	if flags.NArg() > 0 {
-		return nil, protocol.Failure("INVALID_ARGUMENT", "", "unexpected positional arguments")
-	}
-	if args[0] == "validate" || args[0] == "publish" {
-		if positional == "" {
-			return nil, protocol.Failure("INVALID_ARGUMENT", "", "bundle path required")
-		}
-		bundle, err := protocol.LoadBundle(positional)
-		if err != nil {
-			return nil, err
-		}
-		if args[0] == "validate" {
-			return map[string]any{"valid": true, "projectId": bundle.Report.ProjectID, "runId": bundle.Manifest.RunID, "revisionId": bundle.Report.ID, "requiresServerChecks": bundle.RequiresServerChecks}, nil
-		}
-		if *wait < 0 {
-			return nil, protocol.Failure("INVALID_ARGUMENT", "", "wait must be nonnegative")
-		}
-		client, err := connect()
-		if err != nil {
-			return nil, err
-		}
-		return client.publish(context.Background(), positional, bundle, *wait, log)
-	}
-	if args[0] != "status" && args[0] != "feedback" && args[0] != "check" {
-		return nil, protocol.Failure("INVALID_ARGUMENT", "", "unknown command")
-	}
-	if !protocol.ValidID(*project) {
-		return nil, protocol.Failure("INVALID_ARGUMENT", "", "project UUID required")
-	}
-	client, err := connect()
+	source, err := repositorySource(*repo)
 	if err != nil {
 		return nil, err
 	}
-	path := "/api/v1/projects/" + *project
-	switch args[0] {
-	case "status":
-		if !protocol.ValidID(*runID) || !protocol.ValidID(*revision) {
-			return nil, protocol.Failure("INVALID_ARGUMENT", "", "Run and revision UUIDs required")
-		}
-		path += "/runs/" + *runID + "/revisions/" + *revision
-	case "feedback", "check":
-		if !protocol.ValidID(*campaign) {
-			return nil, protocol.Failure("INVALID_ARGUMENT", "", "Campaign UUID required")
-		}
-		path += "/campaigns/" + *campaign
-		if args[0] == "feedback" {
-			path += "/reviews"
-			if *cursor != "" {
-				path += "?cursor=" + url.QueryEscape(*cursor)
-			}
-		} else {
-			if *mode != "ready" && *mode != "accepted" || *mode == "ready" && *allowRisk {
-				return nil, protocol.Failure("INVALID_ARGUMENT", "", "invalid gate mode")
-			}
-			path += "/gate?mode=" + *mode + "&allowRisk=" + fmt.Sprint(*allowRisk)
-		}
-	default:
-		return nil, protocol.Failure("INVALID_ARGUMENT", "", "unknown command")
-	}
-	data, _, err := client.request(context.Background(), "GET", path, nil, nil)
+	path, err := bindingPath(source)
 	if err != nil {
 		return nil, err
 	}
-	if args[0] == "check" {
-		var gate struct {
-			Satisfied bool `json:"satisfied"`
+	var saved binding
+	if raw, readErr := os.ReadFile(path); readErr == nil {
+		if err := json.Unmarshal(raw, &saved); err != nil {
+			return nil, fmt.Errorf("read association: %w", err)
 		}
-		if json.Unmarshal(data, &gate) != nil {
-			return nil, protocol.Failure("INTERNAL_ERROR", "", "invalid gate response")
-		}
-		if !gate.Satisfied {
-			return map[string]any{"gate": json.RawMessage(data)}, protocol.Failure("GATE_UNSATISFIED", "", "selected gate not satisfied")
-		}
+	} else if !os.IsNotExist(readErr) {
+		return nil, readErr
 	}
-	return json.RawMessage(data), nil
-}
-func connect() (*Client, error) {
-	base := os.Getenv("ACCEPTANCES_URL")
+	base := *endpoint
+	if base == "" {
+		base = saved.URL
+	}
 	if base == "" {
 		base = "http://127.0.0.1:8765"
 	}
-	u, err := url.Parse(base)
-	if err != nil || u.Scheme != "http" || u.Path != "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Hostname() != "127.0.0.1" && u.Hostname() != "localhost" && u.Hostname() != "::1") {
-		return nil, protocol.Failure("INVALID_ARGUMENT", "", "ACCEPTANCES_URL must be a loopback HTTP origin")
+	parsed, err := url.Parse(base)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return nil, fmt.Errorf("invalid service URL")
 	}
-	token, err := config.Secret("ACCEPTANCES_TOKEN")
-	if err != nil {
-		return nil, protocol.Failure("INVALID_ARGUMENT", "", "token input configuration invalid")
+	c := client{strings.TrimRight(base, "/")}
+	if args[0] == "projects" {
+		return c.request("GET", "/projects", nil, "")
 	}
-	if token == "" {
-		return nil, protocol.Failure("AUTH_REQUIRED", "", "ACCEPTANCES_TOKEN_FILE or ACCEPTANCES_TOKEN required")
+	if args[0] == "context" {
+		return map[string]any{"association": saved, "version": repositoryVersion(*repo, source)}, nil
 	}
-	return &Client{URL: strings.TrimRight(base, "/"), Token: token, HTTP: &http.Client{Timeout: 30 * time.Minute, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}, nil
+	if args[0] == "link" {
+		id, err := c.selectID("/projects", *project, "name")
+		if err != nil {
+			return nil, err
+		}
+		payload, _ := json.Marshal(map[string]string{"name": filepath.Base(filepath.Dir(source)), "source": source})
+		result, err := c.request("POST", "/projects/"+id+"/repositories", bytes.NewReader(payload), "application/json")
+		if err != nil {
+			return nil, err
+		}
+		var linked struct {
+			ID string `json:"id"`
+		}
+		if err = json.Unmarshal(result, &linked); err != nil {
+			return nil, err
+		}
+		saved = binding{URL: c.base, ProjectID: id, RepositoryID: linked.ID, Source: source}
+		if err := saveJSON(path, saved); err != nil {
+			return nil, err
+		}
+		return saved, nil
+	}
+	if saved.ProjectID == "" {
+		return nil, fmt.Errorf("directory is not linked; run projects, then link --project <name>")
+	}
+	if c.base != strings.TrimRight(saved.URL, "/") {
+		return nil, fmt.Errorf("service URL differs from association; link this directory to the new service first")
+	}
+	campaigns := "/projects/" + url.PathEscape(saved.ProjectID) + "/campaigns"
+	switch args[0] {
+	case "campaigns":
+		if *title == "" {
+			return c.request("GET", campaigns, nil, "")
+		}
+		payload, _ := json.Marshal(map[string]string{"title": *title, "description": *description})
+		return c.request("POST", campaigns, bytes.NewReader(payload), "application/json")
+	case "status":
+		if *runID == "" {
+			return nil, fmt.Errorf("--run is required")
+		}
+		return c.request("GET", "/runs/"+url.PathEscape(*runID), nil, "")
+	case "feedback", "publish":
+		id, err := c.selectID(campaigns, *campaign, "title")
+		if err != nil {
+			return nil, err
+		}
+		if args[0] == "feedback" {
+			return c.request("GET", "/campaigns/"+id+"/runs", nil, "")
+		}
+		if *bundle == "" {
+			return nil, fmt.Errorf("--bundle is required")
+		}
+		result, err := c.publish(id, *bundle)
+		if err != nil {
+			return nil, err
+		}
+		var run map[string]any
+		if err := json.Unmarshal(result, &run); err != nil {
+			return nil, err
+		}
+		if runID, ok := run["id"].(string); ok {
+			run["webUrl"] = c.base + "/projects/" + url.PathEscape(saved.ProjectID) + "/campaigns/" + id + "/runs/" + url.PathEscape(runID)
+		}
+		return run, nil
+	default:
+		return nil, fmt.Errorf("unknown command %q; run help", args[0])
+	}
 }
-func (c *Client) request(ctx context.Context, method, path string, body io.Reader, headers map[string]string) (json.RawMessage, http.Header, error) {
-	timeout := 30 * time.Second
-	if method == "PUT" && headers["Content-Type"] == "application/octet-stream" {
-		timeout = 30 * time.Minute
-	}
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, method, c.URL+path, body)
+
+func (c client) request(method, path string, body io.Reader, contentType string) (json.RawMessage, error) {
+	req, err := http.NewRequest(method, c.base+"/api/v1"+path, body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token)
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	resp, err := c.HTTP.Do(req)
+	h := http.Client{Timeout: 5 * time.Minute, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
+	res, err := h.Do(req)
 	if err != nil {
-		return nil, nil, protocol.Failure("STORAGE_UNAVAILABLE", "", "request failed; query persistent status before retry")
+		return nil, fmt.Errorf("service request: %w", err)
 	}
-	defer resp.Body.Close()
-	var envelope response
-	// A raw document embedded in JSON can expand sixfold through escaping.
-	if err = json.NewDecoder(io.LimitReader(resp.Body, protocol.DocumentLimit*6+(1<<20))).Decode(&envelope); err != nil {
-		return nil, resp.Header, protocol.Failure("INTERNAL_ERROR", "", "invalid API response")
+	defer res.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(res.Body, 16<<20))
+	if err != nil {
+		return nil, err
 	}
-	if resp.StatusCode >= 400 {
-		if envelope.Error != nil {
-			return nil, resp.Header, envelope.Error
-		}
-		return nil, resp.Header, protocol.Failure("INTERNAL_ERROR", "", "API rejected request")
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", res.StatusCode, strings.TrimSpace(string(raw)))
 	}
-	return envelope.Data, resp.Header, nil
+	if !json.Valid(raw) {
+		return nil, fmt.Errorf("service returned invalid JSON")
+	}
+	return raw, nil
 }
-func body(value any) io.Reader { raw, _ := json.Marshal(value); return bytes.NewReader(raw) }
-func (c *Client) publish(ctx context.Context, dir string, b *protocol.Bundle, wait time.Duration, log io.Writer) (any, error) {
-	capReq, err := http.NewRequestWithContext(ctx, "GET", c.URL+"/api/v1/capabilities", nil)
+
+func (c client) selectID(path, selector, key string) (string, error) {
+	if selector == "" {
+		return "", fmt.Errorf("%s or ID is required", key)
+	}
+	raw, err := c.request("GET", path, nil, "")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	resp, err := c.HTTP.Do(capReq)
-	if err != nil {
-		return nil, protocol.Failure("STORAGE_UNAVAILABLE", "", "capability query unavailable")
+	var list struct {
+		Items []map[string]any `json:"items"`
 	}
-	var cap struct {
-		SchemaVersions []string `json:"schemaVersions"`
+	if err = json.Unmarshal(raw, &list); err != nil {
+		return "", err
 	}
-	err = json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&cap)
-	resp.Body.Close()
-	if err != nil {
-		return nil, protocol.Failure("INTERNAL_ERROR", "", "capabilities invalid")
-	}
-	supported := false
-	for _, v := range cap.SchemaVersions {
-		if v == protocol.SchemaVersion {
-			supported = true
-		}
-	}
-	if !supported {
-		return nil, protocol.Failure("UNSUPPORTED_VERSION", "", "service does not support V1 publication")
-	}
-	project := b.Report.ProjectID
-	campaign, _ := b.Report.Value["campaignId"].(string)
-	base := "/api/v1/projects/" + project
-	campaignPath := base + "/campaigns/" + campaign
-	if _, _, err = c.request(ctx, "GET", campaignPath, nil, nil); err != nil {
-		return nil, err
-	}
-	for _, kind := range []string{"definitions", "target", "plan"} {
-		for _, ref := range b.Manifest.Documents {
-			if ref.Kind != kind {
-				continue
+	var matches []string
+	for _, item := range list.Items {
+		if id, ok := item["id"].(string); ok {
+			if id == selector {
+				return url.PathEscape(id), nil
 			}
-			doc, ok := b.Documents[ref.ID]
-			if !ok {
-				continue
-			}
-			path := base + "/definitions/" + doc.ID
-			if kind != "definitions" {
-				path = campaignPath + "/" + kind + "s/" + doc.ID
-			}
-			if _, _, err = c.request(ctx, "PUT", path, bytes.NewReader(doc.Raw), nil); err != nil {
-				return nil, err
+			if item[key] == selector {
+				matches = append(matches, id)
 			}
 		}
 	}
-	plan := b.Report.Value["planRef"].(map[string]any)
-	target := b.Report.Value["targetRef"].(map[string]any)
-	runPath := base + "/runs/" + b.Manifest.RunID
-	if _, _, err = c.request(ctx, "POST", base+"/runs", body(map[string]any{"id": b.Manifest.RunID, "campaignId": campaign, "planId": plan["id"], "targetId": target["id"], "producer": b.Report.Value["producer"]}), map[string]string{"Idempotency-Key": b.Manifest.RunID}); err != nil {
-		return nil, err
+	if len(matches) != 1 {
+		return "", fmt.Errorf("%s %q matched %d records; list and select a unique ID", key, selector, len(matches))
 	}
-	input := protocol.RevisionInput{ID: b.Report.ID, ReportBase64: base64.StdEncoding.EncodeToString(b.Report.Raw), ManifestBase64: base64.StdEncoding.EncodeToString(b.ManifestRaw)}
-	data, _, err := c.request(ctx, "POST", runPath+"/revisions", body(input), map[string]string{"Idempotency-Key": b.Report.ID})
+	return url.PathEscape(matches[0]), nil
+}
+
+func repositorySource(repo string) (string, error) {
+	absolute, err := filepath.Abs(repo)
+	if err != nil {
+		return "", err
+	}
+	absolute, err = filepath.EvalSymlinks(absolute)
+	if err != nil {
+		return "", err
+	}
+	if info, err := os.Stat(absolute); err != nil || !info.IsDir() {
+		return "", fmt.Errorf("repository path must be a directory")
+	}
+	result, err := exec.Command("git", "-C", absolute, "rev-parse", "--path-format=absolute", "--git-common-dir").Output()
+	if err == nil {
+		return filepath.EvalSymlinks(strings.TrimSpace(string(result)))
+	}
+	return absolute, nil
+}
+func repositoryVersion(repo, source string) map[string]any {
+	v := map[string]any{"repository": source, "commit": "unknown", "dirty": nil}
+	if raw, err := exec.Command("git", "-C", repo, "rev-parse", "HEAD").Output(); err == nil {
+		v["commit"] = strings.TrimSpace(string(raw))
+	}
+	if raw, err := exec.Command("git", "-C", repo, "status", "--porcelain").Output(); err == nil {
+		v["dirty"] = len(raw) > 0
+	}
+	return v
+}
+func bindingPath(source string) (string, error) {
+	root := os.Getenv("ACCEPTANCES_CONFIG_DIR")
+	if root == "" {
+		var err error
+		root, err = os.UserConfigDir()
+		if err != nil {
+			return "", err
+		}
+		root = filepath.Join(root, "acceptances")
+	}
+	return filepath.Join(root, "links", fmt.Sprintf("%x.json", sha256.Sum256([]byte(source)))), nil
+}
+func saveJSON(path string, value any) error {
+	raw, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err = os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return err
+	}
+	temp, err := os.CreateTemp(filepath.Dir(path), ".association-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temp.Name())
+	if _, err = temp.Write(append(raw, '\n')); err != nil {
+		temp.Close()
+		return err
+	}
+	if err = temp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(temp.Name(), path)
+}
+
+func (c client) publish(campaign, directory string) (json.RawMessage, error) {
+	raw, err := os.ReadFile(filepath.Join(directory, "report.json"))
 	if err != nil {
 		return nil, err
 	}
-	revisionPath := runPath + "/revisions/" + b.Report.ID
-	var status struct {
-		Phase         string   `json:"phase"`
-		Generation    string   `json:"generation"`
-		MissingAssets []string `json:"missingAssets"`
-		SealDigest    string   `json:"sealDigest"`
-		FailureCode   string   `json:"failureCode"`
+	var report struct {
+		Evidence []struct {
+			Path string `json:"path"`
+		} `json:"evidence"`
 	}
-	if err = json.Unmarshal(data, &status); err != nil {
-		return nil, err
+	if err = json.Unmarshal(raw, &report); err != nil {
+		return nil, fmt.Errorf("report.json: %w", err)
 	}
-	if status.Phase == "sealed" {
-		return json.RawMessage(data), nil
-	}
-	if status.Phase == "failed" || status.Phase == "expired" {
-		_, headers, err := c.request(ctx, "GET", revisionPath, nil, nil)
-		if err != nil {
+	idPath := filepath.Join(directory, ".submission-id")
+	id, err := os.ReadFile(idPath)
+	if os.IsNotExist(err) {
+		generated := make([]byte, 16)
+		if _, err = rand.Read(generated); err != nil {
 			return nil, err
 		}
-		data, _, err = c.request(ctx, "POST", revisionPath+"/resume", body(map[string]any{}), map[string]string{"If-Match": headers.Get("ETag"), "Idempotency-Key": b.Report.ID + "-resume"})
-		if err != nil {
-			return nil, err
-		}
-		data, _, err = c.request(ctx, "GET", revisionPath, nil, nil)
-		if err != nil {
-			return nil, err
-		}
-		if err = json.Unmarshal(data, &status); err != nil {
-			return nil, err
-		}
-	}
-	root, err := os.OpenRoot(dir)
-	if err != nil {
-		return nil, err
-	}
-	defer root.Close()
-	missing := map[string]bool{}
-	for _, id := range status.MissingAssets {
-		missing[id] = true
-	}
-	for _, a := range b.Manifest.Assets {
-		if !missing[a.ID] {
-			continue
-		}
-		f, err := root.Open(a.Path)
-		if err != nil {
-			return nil, err
-		}
-		_, _, err = c.request(ctx, "PUT", revisionPath+"/assets/"+a.ID+"/content", f, map[string]string{"Content-Type": "application/octet-stream", "X-Upload-Generation": status.Generation})
-		f.Close()
-		if err != nil {
-			return nil, err
-		}
-		fmt.Fprintf(log, "uploaded asset %s\n", a.ID)
-	}
-	data, _, err = c.request(ctx, "POST", revisionPath+"/finalize", body(map[string]any{"generation": status.Generation}), map[string]string{"Idempotency-Key": b.Report.ID + "-finalize"})
-	if err != nil {
-		return nil, err
-	}
-	deadline := time.Now().Add(wait)
-	for {
-		data, _, err = c.request(ctx, "GET", revisionPath, nil, nil)
-		if err != nil {
-			return nil, err
-		}
-		if err = json.Unmarshal(data, &status); err != nil {
-			return nil, err
-		}
-		if status.Phase == "sealed" {
-			return json.RawMessage(data), nil
-		}
-		if status.Phase == "failed" {
-			code := status.FailureCode
-			if code == "" {
-				code = "INTERNAL_ERROR"
+		generated[6] = (generated[6] & 0x0f) | 0x40
+		generated[8] = (generated[8] & 0x3f) | 0x80
+		id = []byte(fmt.Sprintf("%x-%x-%x-%x-%x", generated[:4], generated[4:6], generated[6:8], generated[8:10], generated[10:]))
+		f, createErr := os.OpenFile(idPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if os.IsExist(createErr) {
+			id, err = os.ReadFile(idPath)
+		} else if createErr != nil {
+			return nil, createErr
+		} else {
+			_, err = f.Write(id)
+			closeErr := f.Close()
+			if err == nil {
+				err = closeErr
 			}
-			return json.RawMessage(data), protocol.Failure(code, "", "publication failed; query status before resume")
-		}
-		if !time.Now().Before(deadline) {
-			return json.RawMessage(data), protocol.Failure("WAIT_TIMEOUT", "", "publication status unknown; retain original Run and revision IDs")
-		}
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(time.Second):
 		}
 	}
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(string(id)) == "" {
+		return nil, fmt.Errorf("empty .submission-id; preserve a valid submission ID for retries")
+	}
+	// Spool the complete request to disk so large videos don't occupy memory.
+	temp, err := os.CreateTemp("", "acceptances-upload-*")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(temp.Name())
+	defer temp.Close()
+	w := multipart.NewWriter(temp)
+	if err = w.WriteField("report", string(raw)); err != nil {
+		return nil, err
+	}
+	if err = w.WriteField("submissionId", strings.TrimSpace(string(id))); err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	for _, e := range report.Evidence {
+		if e.Path == "" || e.Path == "." || e.Path == ".." || strings.ContainsAny(e.Path, "/\\") || seen[e.Path] {
+			return nil, fmt.Errorf("invalid or duplicate evidence filename %q", e.Path)
+		}
+		seen[e.Path] = true
+		evidencePath := filepath.Join(directory, e.Path)
+		info, err := os.Lstat(evidencePath)
+		if err != nil {
+			return nil, err
+		}
+		if !info.Mode().IsRegular() {
+			return nil, fmt.Errorf("evidence %q must be a regular file", e.Path)
+		}
+		file, err := os.Open(evidencePath)
+		if err != nil {
+			return nil, err
+		}
+		part, err := w.CreateFormFile("evidence", e.Path)
+		if err != nil {
+			file.Close()
+			return nil, err
+		}
+		_, err = io.Copy(part, file)
+		file.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err = w.Close(); err != nil {
+		return nil, err
+	}
+	size, err := temp.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil, err
+	}
+	if size > 256<<20 {
+		return nil, fmt.Errorf("complete upload exceeds 256 MiB")
+	}
+	if _, err = temp.Seek(0, io.SeekStart); err != nil {
+		return nil, err
+	}
+	return c.request("POST", "/campaigns/"+campaign+"/runs", temp, w.FormDataContentType())
 }

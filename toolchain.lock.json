@@ -4,72 +4,16 @@
   "runtimes": {
     "go": "1.26.8",
     "node": "26.7.0",
-    "pnpm": "12.4.2",
-    "postgres": "18.6"
+    "pnpm": "12.4.2"
   },
   "images": {
     "go": "golang:1.26.8-bookworm@sha256:dc9ad6c05acc7a88e5b71bde60a5fe3bd4b9f0db209011711b464107438a8107",
     "node": "node:26.7.0-bookworm-slim@sha256:4db36457f406501e6f608802e5da617e5fbd0e80b75901b6a09de1ae5a667d32",
-    "postgres": "postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c",
     "runtime": "debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587"
-  },
-  "reservedGoModules": {
-    "github.com/aws/aws-sdk-go-v2/config": {
-      "version": "v1.33.7",
-      "go": "1.24",
-      "issue": 19
-    },
-    "github.com/aws/aws-sdk-go-v2/service/s3": {
-      "version": "v1.114.1",
-      "go": "1.24",
-      "issue": 19
-    },
-    "github.com/aliyun/alibabacloud-oss-go-sdk-v2": {
-      "version": "v1.6.0",
-      "go": "1.18",
-      "issue": 19
-    }
   },
   "sources": [
     "https://go.dev/doc/devel/release",
     "https://registry.npmjs.org/",
-    "https://proxy.golang.org/",
-    "https://hub.docker.com/_/postgres",
-    "https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/welcome.html",
-    "https://github.com/aliyun/alibabacloud-oss-go-sdk-v2"
-  ],
-  "activeGoModules": {
-    "github.com/jackc/pgx/v5": {
-      "version": "v5.11.0",
-      "go": "1.25.0",
-      "issue": 13
-    },
-    "github.com/sqlc-dev/sqlc": {
-      "version": "v1.31.1",
-      "go": "1.26.0",
-      "issue": 13
-    },
-    "github.com/pressly/goose/v3": {
-      "version": "v3.28.0",
-      "go": "1.26.0",
-      "issue": 13
-    },
-    "github.com/santhosh-tekuri/jsonschema/v6": {
-      "version": "v6.0.3",
-      "go": "1.21",
-      "issue": 12
-    },
-    "golang.org/x/crypto": {
-      "version": "v0.55.0",
-      "issue": 13
-    },
-    "golang.org/x/term": {
-      "version": "v0.45.0",
-      "issue": 13
-    },
-    "golang.org/x/text": {
-      "version": "v0.41.0",
-      "issue": 12
-    }
-  }
+    "https://proxy.golang.org/"
+  ]
 }
