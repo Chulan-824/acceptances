@@ -1,6 +1,0 @@
-interface:
-  display_name: "Acceptances V1"
-  short_description: "在业务项目自动验证指定需求并发布真实证据，交给用户人工验收"
-  default_prompt: "使用 $acceptances-v1 对当前已确认需求完成自动化验证，并给出人工验收入口。"
-policy:
-  allow_implicit_invocation: true

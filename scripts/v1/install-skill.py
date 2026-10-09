@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install only the V1 skill; leave legacy skills and business repositories untouched."""
+"""Install the standalone local archive CLI and self-contained agent skill."""
 import argparse
 import json
 import os
@@ -9,26 +9,40 @@ import subprocess
 import tempfile
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--destination", type=Path)
-parser.add_argument("--node", type=Path)
+parser.add_argument("--destination", type=Path, help="skill directory")
+parser.add_argument("--bin-dir", type=Path, default=Path.home() / ".local" / "bin")
+parser.add_argument("--cli", type=Path, help="prebuilt acceptances executable; otherwise build with Go")
+parser.add_argument("--replace", action="store_true", help="replace an existing Acceptances skill and CLI")
 args = parser.parse_args()
-node = str(args.node) if args.node else shutil.which("node")
-if not node:
-    raise SystemExit("需要 Node >=22，请配置 Node 或指定 --node <绝对路径>")
-version = subprocess.check_output([node, "--version"], text=True).strip()
-if int(version.lstrip("v").split(".")[0]) < 22:
-    raise SystemExit("需要 Node >=22，请配置 Node 或指定 --node <绝对路径>")
-node = str(Path(node).resolve())
 root = Path(__file__).resolve().parents[2]
 source = root / "skills" / "acceptances-v1"
-destination = args.destination or Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "skills" / "acceptances-v1"
-destination = destination.absolute()
-if destination.exists():
-    raise SystemExit("目标 skill 已存在；请核对后显式更新，不覆盖已有内容")
-destination.parent.mkdir(parents=True, exist_ok=True)
-with tempfile.TemporaryDirectory(prefix="acceptances-skill-", dir=destination.parent) as temp:
+destination = (args.destination or Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "skills" / "acceptances-v1").absolute()
+binary = args.bin_dir.absolute() / "acceptances"
+if destination == source or source in destination.parents or destination in source.parents:
+    raise SystemExit("安装目标不能覆盖源码 skill")
+for target in (destination, binary):
+    if target.exists() and not args.replace:
+        raise SystemExit(f"{target} 已存在；使用 --replace 显式替换")
+if destination.exists() and (not destination.is_dir() or destination.is_symlink()):
+    raise SystemExit("skill 目标必须为普通目录")
+if destination.exists() and not (destination / "SKILL.md").is_file():
+    raise SystemExit("目标没有 SKILL.md；拒绝替换非 skill 目录")
+with tempfile.TemporaryDirectory(prefix="acceptances-install-") as temp:
     staged = Path(temp) / "acceptances-v1"
-    shutil.copytree(source, staged, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.test.mjs"))
-    (staged / "installation.json").write_text(json.dumps({"acceptancesRoot": str(root), "nodeExecutable": node}, indent=2) + "\n")
-    staged.rename(destination)
-print(json.dumps({"installed": str(destination), "acceptancesRoot": str(root)}, ensure_ascii=False))
+    shutil.copytree(source, staged)
+    (staged / "bin").mkdir(exist_ok=True)
+    executable = staged / "bin" / "acceptances"
+    if args.cli:
+        shutil.copy2(args.cli, executable)
+    else:
+        subprocess.run(["go", "build", "-o", str(executable), "./cmd/acceptances"], cwd=root, check=True)
+    executable.chmod(0o755)
+    subprocess.run([str(executable), "version"], check=True, stdout=subprocess.DEVNULL)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    binary.parent.mkdir(parents=True, exist_ok=True)
+    # All compilation and validation finish before replacing installed files.
+    if destination.exists():
+        shutil.rmtree(destination)
+    shutil.copytree(staged, destination)
+    shutil.copy2(executable, binary)
+print(json.dumps({"skill": str(destination), "cli": str(binary)}, ensure_ascii=False))

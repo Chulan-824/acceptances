@@ -7,11 +7,9 @@ execFileSync(
   ["build", "-trimpath", "-o", "build/acceptances", "./cmd/acceptances"],
   { stdio: "inherit" },
 );
-execFileSync(
-  process.execPath,
-  ["--test", "skills/acceptances-v1/scripts/acceptances.test.mjs"],
-  { stdio: "inherit" },
-);
+execFileSync("python3", ["scripts/v1/install-skill.test.py"], {
+  stdio: "inherit",
+});
 execFileSync("go", ["test", "./internal/cli", "-count=1"], {
   stdio: "inherit",
 });
