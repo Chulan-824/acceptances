@@ -4,18 +4,18 @@
 
 ## 项目与需求
 
-| 方法与路由 | 输入或返回 |
-| --- | --- |
-| GET /projects | Project 列表 |
-| POST /projects | `{name, description?}`，返回 Project |
-| GET /projects/{id} | Project |
-| GET /projects/{id}/repositories | Repository 列表 |
+| 方法与路由                       | 输入或返回                                                |
+| -------------------------------- | --------------------------------------------------------- |
+| GET /projects                    | Project 列表                                              |
+| POST /projects                   | `{name, description?}`，返回 Project                      |
+| GET /projects/{id}               | Project                                                   |
+| GET /projects/{id}/repositories  | Repository 列表                                           |
 | POST /projects/{id}/repositories | `{name, source}`，相同 Project/source 复用既有 Repository |
-| GET /projects/{id}/campaigns | Campaign 列表 |
-| POST /projects/{id}/campaigns | `{title, description?}`，返回 Campaign |
-| GET /campaigns/{id} | Campaign |
-| GET /campaigns/{id}/runs | Run 列表，包含完整报告与反馈 |
-| GET /runs/{id} | Run |
+| GET /projects/{id}/campaigns     | Campaign 列表                                             |
+| POST /projects/{id}/campaigns    | `{title, description?}`，返回 Campaign                    |
+| GET /campaigns/{id}              | Campaign                                                  |
+| GET /campaigns/{id}/runs         | Run 列表，包含完整报告与反馈                              |
+| GET /runs/{id}                   | Run                                                       |
 
 - Project：`id, name, description, createdAt`。
 - Repository：`id, projectId, name, source`。source 是代码来源标识，不由服务访问或执行。
@@ -40,9 +40,7 @@ Campaign 状态为 `pending | accepted | rejected`；Run 另有 `void`。保存�
   "verifiedAt": "2026-10-09T10:00:00Z",
   "scope": "局部复验：只验证上传失败重试",
   "environment": "unknown",
-  "versions": [
-    { "repository": "web", "commit": "unknown", "dirty": null }
-  ],
+  "versions": [{ "repository": "web", "commit": "unknown", "dirty": null }],
   "checks": [
     {
       "id": "retry",
@@ -65,11 +63,11 @@ Campaign 状态为 `pending | accepted | rejected`；Run 另有 `void`。保存�
 
 ## 人工处理与证据
 
-| 方法与路由 | 行为 |
-| --- | --- |
-| POST /runs/{id}/reviews | `{kind, body}`；kind 为 `comment | accepted | rejected`，返回 201 Review |
-| POST /runs/{id}/void | `{reason}`；原因非空，返回 200 Run |
-| GET /runs/{id}/evidence/{filename} | 查看附件；`?download=1` 强制下载 |
+| 方法与路由                         | 行为                               |
+| ---------------------------------- | ---------------------------------- |
+| POST /runs/{id}/reviews            | `{kind, body}`；kind 为 `comment   | accepted | rejected`，返回 201 Review |
+| POST /runs/{id}/void               | `{reason}`；原因非空，返回 200 Run |
+| GET /runs/{id}/evidence/{filename} | 查看附件；`?download=1` 强制下载   |
 
 comment 正文必填；接受、拒绝可不填写正文。补充说明不会改写报告。历史 Run 的决定不会改变当前 Campaign。新 Run 令 Campaign 待审；作废当前 Run 同样令 Campaign 待审。作废记录可追加说明，不能再接受或拒绝；重复作废返回 409。
 
