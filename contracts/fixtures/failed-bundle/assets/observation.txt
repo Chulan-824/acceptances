@@ -1,2 +1,0 @@
-SYNTHETIC FIXTURE, not an executed product test.
-Observed save response: HTTP 200; expected HTTP 403.

@@ -1,8 +1,5 @@
-# PostgreSQL 与迁移
+# 本地 SQLite 数据
 
-使用 PostgreSQL 18.6、pgx v5.11.0、goose v3.28.0 和 sqlc v1.31.1。
-编号 SQL 迁移嵌入 server 二进制；应用启动不自动迁移。显式执行 `server migrate up`，再 `server init-owner`；Docker 对应 `make docker-migrate` 和 `make docker-init-owner`。
+服务启动时自动创建 `archive.db`，根据 SQLite `user_version` 执行初始化；未知未来版本拒绝启动。当前版本为 1，迁移与服务实现一起维护。
 
-`make generate` 生成 `internal/database/queries`，源为 `db/queries/control.sql` 与编号迁移。迁移使用 PostgreSQL session advisory lock。schema 不兼容、未初始化或维护期间 readiness 不通过。Down 迁移明确拒绝执行，不能把回滚当作重置数据。
-
-关系和状态契约见 `.scratch/open-source-v1/specs/data-state.md`。本次尚待隔离 PostgreSQL 运行验证，详见 `docs/v1-implementation-handoff.md`。
+记录与证据位于同一专用数据目录。报告完整保存后才能查询，删除记录时级联清理反馈与附件；启动清理中断上传及无归属附件。旧 PostgreSQL 数据不迁移。
