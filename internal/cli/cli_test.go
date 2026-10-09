@@ -191,3 +191,37 @@ func TestFeedbackIncludesLargeCampaignHistory(t *testing.T) {
 		t.Fatal("campaign history is incomplete")
 	}
 }
+
+func TestLinkUsesBusinessDirectoryName(t *testing.T) {
+	t.Setenv("ACCEPTANCES_CONFIG_DIR", t.TempDir())
+	parent := t.TempDir()
+	var names []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/projects" {
+			fmt.Fprint(w, `{"items":[{"id":"p1","name":"Demo"}]}`)
+			return
+		}
+		var repository struct {
+			Name string `json:"name"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&repository); err != nil {
+			t.Error(err)
+		}
+		names = append(names, repository.Name)
+		fmt.Fprint(w, `{"id":"repo1"}`)
+	}))
+	defer server.Close()
+	for _, name := range []string{"frontend", "backend"} {
+		repo := filepath.Join(parent, name)
+		if err := os.Mkdir(repo, 0700); err != nil {
+			t.Fatal(err)
+		}
+		var out, log bytes.Buffer
+		if Run([]string{"link", "--repo", repo, "--url", server.URL, "--project", "Demo"}, &out, &log) != 0 {
+			t.Fatal(&log)
+		}
+	}
+	if len(names) != 2 || names[0] != "frontend" || names[1] != "backend" {
+		t.Fatalf("wrong repository names: %v", names)
+	}
+}

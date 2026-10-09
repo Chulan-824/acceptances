@@ -1,6 +1,6 @@
 # Acceptances 领域词汇表
 
-本词汇表记录本地精简版已确认的领域用语。重构边界见 [ADR-0001](docs/adr/0001-local-report-archive.md)，完整方案见[设计记录](.scratch/local-simplification/spec.md)。当前实现尚未按新版调整。
+本词汇表记录本地精简版已确认的领域用语。重构边界见 [ADR-0001](docs/adr/0001-local-report-archive.md)，完整方案见[设计记录](.scratch/local-simplification/spec.md)。当前实现与验证状态见[实现交接](docs/v1-implementation-handoff.md)。
 
 ## Language
 

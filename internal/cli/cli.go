@@ -111,7 +111,11 @@ func run(args []string, log io.Writer) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		payload, _ := json.Marshal(map[string]string{"name": filepath.Base(filepath.Dir(source)), "source": source})
+		name := filepath.Base(source)
+		if name == ".git" {
+			name = filepath.Base(filepath.Dir(source))
+		}
+		payload, _ := json.Marshal(map[string]string{"name": name, "source": source})
 		result, err := c.request("POST", "/projects/"+id+"/repositories", bytes.NewReader(payload), "application/json")
 		if err != nil {
 			return nil, err
