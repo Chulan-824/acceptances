@@ -20,7 +20,7 @@ fmt:
 
 lint: toolchain
 	pnpm exec prettier --check $(FORMAT_PATHS)
-	pnpm exec eslint apps/web packages/api-client scripts/v1 skills/acceptances-v1/scripts eslint.config.js
+	pnpm exec eslint apps/web packages/api-client scripts/v1 eslint.config.js
 	go vet ./cmd/... ./internal/...
 	@test -z "$$(gofmt -l cmd internal)" || (echo '请执行 make fmt'; exit 1)
 
