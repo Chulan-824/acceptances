@@ -11,7 +11,7 @@ import (
 func (s *Server) evidence(w http.ResponseWriter, r *http.Request) {
 	v, e := s.run(r.PathValue("id"))
 	if e != nil {
-		fail(w, 404, "RUN_NOT_FOUND")
+		lookupFailure(w, r, e, "RUN_NOT_FOUND")
 		return
 	}
 	name := r.PathValue("filename")

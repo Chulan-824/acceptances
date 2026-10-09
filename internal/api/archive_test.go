@@ -332,3 +332,41 @@ func TestStorageFailureDoesNotPublishPartialRun(t *testing.T) {
 	}
 	upload(t, app, cid, "retry", report, map[string]string{"log.txt": "log"}, 201)
 }
+
+// An unavailable archive is a server failure, not a missing user resource.
+// Exercise the HTTP contract after the public server lifecycle closes storage.
+func TestStorageFailureIsNotResourceNotFound(t *testing.T) {
+	app, pid, cid := setup(t)
+	run := upload(t, app, cid, "storage-failure", report, map[string]string{"log.txt": "evidence"}, 201)
+	rid := run["id"].(string)
+	endpoints := []struct{ method, path, body string }{
+		{"GET", "/projects/" + pid, ""},
+		{"GET", "/projects/" + pid + "/repositories", ""},
+		{"GET", "/projects/" + pid + "/campaigns", ""},
+		{"GET", "/campaigns/" + cid, ""},
+		{"GET", "/campaigns/" + cid + "/runs", ""},
+		{"GET", "/runs/" + rid, ""},
+		{"GET", "/runs/" + rid + "/evidence/log.txt", ""},
+		{"POST", "/runs/" + rid + "/reviews", `{"kind":"accepted"}`},
+		{"POST", "/runs/" + rid + "/void", `{"reason":"wrong report"}`},
+		{"GET", "/projects/" + pid + "/delete-preview", ""},
+		{"DELETE", "/campaigns/" + cid, ""},
+	}
+	// The same boundaries still distinguish an actually missing resource.
+	for _, endpoint := range endpoints {
+		path := strings.NewReplacer(pid, "missing", cid, "missing", rid, "missing").Replace(endpoint.path)
+		request(t, app, endpoint.method, "/api/v1"+path, endpoint.body, 404)
+	}
+	if err := app.Close(); err != nil {
+		t.Fatal(err)
+	}
+	for _, endpoint := range endpoints {
+		t.Run(endpoint.method+endpoint.path, func(t *testing.T) {
+			response := request(t, app, endpoint.method, "/api/v1"+endpoint.path, endpoint.body, 500)
+			if response["code"] != "READ_FAILED" {
+				t.Fatal(response)
+			}
+		})
+	}
+	upload(t, app, cid, "closed-upload", report, map[string]string{"log.txt": "evidence"}, 500)
+}
