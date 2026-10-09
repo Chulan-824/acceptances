@@ -1,0 +1,14 @@
+{
+  "package": "ca-certificates",
+  "version": "20250419~deb12u1",
+  "buildStageImage": "golang:1.26.8-bookworm@sha256:dc9ad6c05acc7a88e5b71bde60a5fe3bd4b9f0db209011711b464107438a8107",
+  "bundleSha256": "001013901ad4a466d4b1f6ed711939c1bad3fbddcd57b7d6ef31779075989ae3",
+  "copyrightSha256": "e85e1bcad3a915dc7e6f41412bc5bdeba275cadd817896ea0451f2140a93967c",
+  "sourceUrl": "https://security.debian.org/debian-security/pool/updates/main/c/ca-certificates/ca-certificates_20250419~deb12u1.tar.xz",
+  "dscUrl": "https://security.debian.org/debian-security/pool/updates/main/c/ca-certificates/ca-certificates_20250419~deb12u1.dsc",
+  "snapshotUrl": "https://snapshot.debian.org/package/ca-certificates/20250419~deb12u1/",
+  "sourceSha256": "b2a431cbab9a0ece921cffacbe238dc27a3e382ad4a1806dc8968c5eff30471d",
+  "sourceSize": 277244,
+  "verification": "Downloaded exact archive over HTTPS; SHA-256 matches official .dsc; debian/copyright matches build image. PGP signature not independently verified. Source archive retained locally, not published.",
+  "scope": "Certificate data from Mozilla under MPL-2.0; Debian scripts under GPL-2+. Only generated certificate bundle is copied into the application image, not CA update scripts."
+}

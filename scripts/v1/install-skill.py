@@ -30,6 +30,13 @@ if destination.exists() and not (destination / "SKILL.md").is_file():
 with tempfile.TemporaryDirectory(prefix="acceptances-install-") as temp:
     staged = Path(temp) / "acceptances-v1"
     shutil.copytree(source, staged)
+    # Keep the scope, provenance and third-party terms with the installed CLI/skill.
+    licensing = staged / "licensing"
+    licensing.mkdir()
+    for name in ("LICENSE", "LICENSE-SCOPE.md", "NOTICE"):
+        shutil.copy2(root / name, licensing / name)
+    shutil.copytree(root / "LICENSES", licensing / "LICENSES")
+    shutil.copytree(root / "docs/licensing", licensing / "docs/licensing")
     (staged / "bin").mkdir(exist_ok=True)
     executable = staged / "bin" / "acceptances"
     if args.cli:
@@ -45,4 +52,4 @@ with tempfile.TemporaryDirectory(prefix="acceptances-install-") as temp:
         shutil.rmtree(destination)
     shutil.copytree(staged, destination)
     shutil.copy2(executable, binary)
-print(json.dumps({"skill": str(destination), "cli": str(binary)}, ensure_ascii=False))
+print(json.dumps({"skill": str(destination), "cli": str(binary), "licensing": str(destination / "licensing")}, ensure_ascii=False))

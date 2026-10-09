@@ -1,0 +1,242 @@
+{
+  "effectiveOn": "2026-10-09",
+  "license": "MIT",
+  "licenseText": "LICENSES/MIT.txt",
+  "copyright": "Copyright (c) 2026 acceptances",
+  "baselineCommit": "cb9ae74861bf72925957834c515842344d10713a",
+  "scope": "Current reviewed V1 files at the listed hashes, including the uncommitted installer and Docker licensing changes. This grant does not relabel historical revisions or third-party content.",
+  "authorization": "The owner confirmed all new V1 development was their own with no third-party rights restrictions, in response to a question explicitly excluding already identified LobeHub reference implementations.",
+  "exclusions": [
+    "All historical revisions and removed renderer/validator/acceptance-cl content",
+    "LobeHub-derived expressions and unidentified deployed skill bundle",
+    "Dependencies, runtime/toolchain/OS images, CA data, third-party notices and license texts",
+    "Generated artifacts, go.sum, pnpm-lock.yaml, user reports/evidence and .scratch",
+    "Unlisted files and future additions; no blanket directory grant"
+  ],
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "3da2c2c32df18fd8804fdc1196e67644967b51f6b4881436fd8784f7d5fec719"
+    },
+    {
+      "path": ".node-version",
+      "sha256": "068a0a6e1f02416d0c46e50a46a679eff53f1b748c8c3e559a2c64ef950cc781"
+    },
+    {
+      "path": ".prettierignore",
+      "sha256": "24263424d4b68eecb0dad68535b4aae84054fa46fd2c66739a5298393c41a60b"
+    },
+    {
+      "path": "GLOSSARY.md",
+      "sha256": "f28bebb5f7f0d0eb45bacce0cb69279edfee59ca9bfad855f8a477ee620d07d8"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "7df508ea736b753bc17c5a6764d0c49e4c34885b61f5d2739850ea07677cdf41"
+    },
+    {
+      "path": "README.md",
+      "sha256": "b1a35d23d102b2c8c1b464e9f508aaf053029c69eaff5538d508ded4ef1040dd"
+    },
+    {
+      "path": "apps/web/index.html",
+      "sha256": "1215cd9424b50360c51c2b8beea12ed86ee46ef497a3d7589224af6f6adb5a32"
+    },
+    {
+      "path": "apps/web/package.json",
+      "sha256": "3661be0c0d8ff495c755bb5a6b6119603da5d1c0929c84b8efb1deb8409d1716"
+    },
+    {
+      "path": "apps/web/src/campaign.tsx",
+      "sha256": "8c7eb3e78fe02e2dcbc61a3e7673baffcb9c97fa595a631efe871fbb9e73ea96"
+    },
+    {
+      "path": "apps/web/src/client.tsx",
+      "sha256": "953cd32d381a3e5512488c93bc48427c8b602c6b04831f6df6166b378c741754"
+    },
+    {
+      "path": "apps/web/src/evidence.tsx",
+      "sha256": "d55bc55142851b1c808631c81384e5e157e5dfc4b0084aaf865b3de8fb7e1d6d"
+    },
+    {
+      "path": "apps/web/src/main.tsx",
+      "sha256": "85b2f911ca41a06e0ad2762e31f9cd12627115d0243e3dcfbf1acdcb25fd869c"
+    },
+    {
+      "path": "apps/web/src/project.tsx",
+      "sha256": "cd939bf14d22ca1efa8b45dcc7476a63c300023a93a8768799a08199a366672c"
+    },
+    {
+      "path": "apps/web/src/run.tsx",
+      "sha256": "f5bfbd2235bac42f470074354f270df22bab7f8bfadad5b523d49a75154f73e2"
+    },
+    {
+      "path": "apps/web/src/style.css",
+      "sha256": "bfbdc4a97067a413b08414a680b3ea0115f2cbf092f68a28156ec804a19ad4c9"
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "sha256": "11512ff27462dd0f0fb739ef7dc6c9462e2947c994e235f922401661b5f1cbe5"
+    },
+    {
+      "path": "apps/web/vite.config.ts",
+      "sha256": "0fc67c1a76a6abdd54d25c91781949b2335f4e23196317c7bf8ddf04e743c497"
+    },
+    {
+      "path": "cmd/acceptances/main.go",
+      "sha256": "fe7e5edab98cb7eb4f4ebe72a0ae895d43d01519614d1c0e93422edf3df0593d"
+    },
+    {
+      "path": "cmd/server/main.go",
+      "sha256": "12df4664349a6f9a3257b758a6e3e527b1d9ba883f8b8713c3b71135b6028099"
+    },
+    {
+      "path": "contracts/README.md",
+      "sha256": "318d1e55de861cfdeaafa38f9217ef93b1153de5f055d0fc713230ba2ba3bf62"
+    },
+    {
+      "path": "db/README.md",
+      "sha256": "860e5922c70806faec8006608bf3fe146958381444b1d0f5d4c0dba7bf4fca50"
+    },
+    {
+      "path": "deploy/Dockerfile",
+      "sha256": "55df8ec958da9360919016d26c841a800535cde17afb2e9c3ea5bb4f1f80cc7e"
+    },
+    {
+      "path": "deploy/compose.yaml",
+      "sha256": "231db94dc215fbb92d443ba3e3e380b529123b08aff3dabf7ff3395db426fff0"
+    },
+    {
+      "path": "docs/adr/0001-local-report-archive.md",
+      "sha256": "ef16cc5dcaf5a7d3cf347376102625b1ca0f6cbd2f3b4e53731efea8777ae711"
+    },
+    {
+      "path": "docs/agents/v1-integration.md",
+      "sha256": "eef04b4f10b3745b326a4f1e7883f025ca2cf3549a085dc7db16f731261efabf"
+    },
+    {
+      "path": "docs/toolchain.md",
+      "sha256": "435355aa5ce19a4a298898bd44def90630177d309a69e2c75bfb07ecaea88875"
+    },
+    {
+      "path": "docs/v1-implementation-handoff.md",
+      "sha256": "fcdd0aad3c820eca3f5044f69dbbc3cf9075d76cda6971df364bcc3861942da8"
+    },
+    {
+      "path": "eslint.config.js",
+      "sha256": "6839add5618e8957de5ec7cd3eefc3fb2fe0d528c15136451d857d40bd25cd79"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "8eb4c54f89e406a602c8123599694862264a6b77c7b08cfe8dd1d51212fff717"
+    },
+    {
+      "path": "internal/api/archive_test.go",
+      "sha256": "7d30c8197497f603c6f640a80596d4785abb53c42a20dcccc424a7a52156e090"
+    },
+    {
+      "path": "internal/api/campaigns.go",
+      "sha256": "68e6c10c2f07c107ee0a9854a786998bf354d4aa8c1139eff3de740e90e439ca"
+    },
+    {
+      "path": "internal/api/deletion.go",
+      "sha256": "137cf724da976c18e6292de86ea57dc7f5dd6b07c7859ce942feb9438ba87bea"
+    },
+    {
+      "path": "internal/api/evidence.go",
+      "sha256": "48155431e6e8c7956f07a8367916d66810d4821bdb02ca2803aa31bb8b365c21"
+    },
+    {
+      "path": "internal/api/reviews.go",
+      "sha256": "612bdd5cc09d795761b8e1507ce1e8e55ae969704321a7392dd05cb85e8ed997"
+    },
+    {
+      "path": "internal/api/runs.go",
+      "sha256": "c0177c21f3eea58ea01640e73f9e4bb252414530f6a816a9958144e0349ea1fd"
+    },
+    {
+      "path": "internal/api/server.go",
+      "sha256": "df2e50e6dc90142e60c62c8169bb4766835b8fa8e8cbf8bf664c72163ec4648a"
+    },
+    {
+      "path": "internal/buildinfo/version.go",
+      "sha256": "a9089ac879a71bce0c8b2748f9871ec8968ecbc3bd6a8aa08ab7a327fcf8e128"
+    },
+    {
+      "path": "internal/cli/cli.go",
+      "sha256": "a85622bbff734c3c4d61f37413a8885da63981cb880c569e66301d97b01d850b"
+    },
+    {
+      "path": "internal/cli/cli_test.go",
+      "sha256": "6c290ed2902c04b1648958c2e2a43921d45ed8e1f40294ea669c1c0410094e07"
+    },
+    {
+      "path": "internal/httpserver/handler.go",
+      "sha256": "ae58d1c634f80f68eca0f9ef0d66112f6e9e3b8b12bf5de58d6770b40f5c94a8"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f24a5f059bf120b591f527112e0d86963a7a886f1838dd4a03796e4bc492a7f4"
+    },
+    {
+      "path": "packages/api-client/package.json",
+      "sha256": "55d50d496491de213f231baccdfdc24572c3ce2583b02f56c0993ceac00d6f78"
+    },
+    {
+      "path": "packages/api-client/src/index.ts",
+      "sha256": "db269e9b7b654183a57e5dcae272b4851ebcbe07b70449104b7b36bf6eeeb802"
+    },
+    {
+      "path": "packages/api-client/tsconfig.json",
+      "sha256": "0331aa5fd885a3c7ecbc92531bb3381fa31fc52b99c697494e022e2eb5989171"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "4e40150f4ac96858c096a43a016ab3ab055468604effaecf620e6058366c9bf6"
+    },
+    {
+      "path": "scripts/v1/agent-check.mjs",
+      "sha256": "d58646abf025a316babe464d84d0e7a85eeb83997f0371e99557744b859a1737"
+    },
+    {
+      "path": "scripts/v1/dev.mjs",
+      "sha256": "cb93bbf29e318f7104f829e1d652a51179accf4747ac0982cffb4d6d07ad5dc5"
+    },
+    {
+      "path": "scripts/v1/e2e-check.mjs",
+      "sha256": "d5a03ab0935733ef3b820db6ded9aaa167d43bc96c4c503abaa9eb2be903960f"
+    },
+    {
+      "path": "scripts/v1/install-skill.py",
+      "sha256": "8bfdd83cec17ca5ed3fd6e3b77d2426ec52ddca5d403e474fb94978ec7813dac"
+    },
+    {
+      "path": "scripts/v1/install-skill.test.py",
+      "sha256": "6ffd0d5c2144f109a80b2afcb36c1dc020db65f08075e5462399c23c45aba931"
+    },
+    {
+      "path": "scripts/v1/platform-check.mjs",
+      "sha256": "f21cac99c26b87dcc09fc679e0382499fba0255ec886ee6ae12060cd81dbb3b7"
+    },
+    {
+      "path": "scripts/v1/test.mjs",
+      "sha256": "fcc0846b2b679892c48fe2f7580301dcdac6e470521c6bd532fdbe5fed0e794f"
+    },
+    {
+      "path": "scripts/v1/toolchain.mjs",
+      "sha256": "1d0d9792dd1a5ad560c7d466c8d3e52435898cfe5d2bfdc768588a3495131ae7"
+    },
+    {
+      "path": "skills/acceptances-v1/SKILL.md",
+      "sha256": "5feabde9d571fc246561e8016e3281a59555148a4e86849900475af51c36f634"
+    },
+    {
+      "path": "skills/acceptances-v1/references/report.md",
+      "sha256": "705f2d3638598aa3529dc9201cff6fb546adc10cde0c1970d308873b9f2b2434"
+    },
+    {
+      "path": "toolchain.lock.json",
+      "sha256": "aef2e3b03c83c34759e7a1cb1e0ca4a4b316dc45712525ca36de1f58f8b10aa7"
+    }
+  ]
+}

@@ -23,7 +23,11 @@ RUN mkdir -p /app/web /var/lib/acceptances && chown -R 10001:10001 /app /var/lib
 COPY --from=go-build /out/server /usr/local/bin/server
 COPY --from=go-build /out/acceptances /usr/local/bin/acceptances
 COPY --from=go-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=go-build /usr/share/doc/ca-certificates/copyright /app/licensing/ca-certificates/copyright
 COPY --from=web /src/apps/web/dist /app/web
+COPY LICENSE LICENSE-SCOPE.md NOTICE /app/licensing/
+COPY LICENSES /app/licensing/LICENSES
+COPY docs/licensing /app/licensing/docs/licensing
 USER 10001:10001
 WORKDIR /app
 EXPOSE 8765

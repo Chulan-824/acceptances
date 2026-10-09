@@ -1,0 +1,800 @@
+{
+  "checkedOn": "2026-10-09",
+  "initialAuditImage": "sha256:940a4dfbdca098029fb7ee2d8a97b6629ec37b7389bda1168a9d9e6fa7be6039",
+  "platform": "linux/arm64",
+  "packages": [
+    {
+      "package": "adduser",
+      "version": "3.134",
+      "sourcePackage": "adduser",
+      "sourceVersion": "3.134",
+      "copyrightPath": "usr/share/doc/adduser/copyright",
+      "copyrightSha256": "b143053a4862ab354831487b5f8bd31dc9ffdc589d15de9d9c764332a0209796",
+      "sourceLookup": "https://snapshot.debian.org/package/adduser/3.134/"
+    },
+    {
+      "package": "apt",
+      "version": "2.6.1",
+      "sourcePackage": "apt",
+      "sourceVersion": "2.6.1",
+      "copyrightPath": "usr/share/doc/apt/copyright",
+      "copyrightSha256": "b4701305243d8d746f4acaafe15d94f946251b05691bd6917fef41dd15e9ee12",
+      "sourceLookup": "https://snapshot.debian.org/package/apt/2.6.1/"
+    },
+    {
+      "package": "base-files",
+      "version": "12.4+deb12u15",
+      "sourcePackage": "base-files",
+      "sourceVersion": "12.4+deb12u15",
+      "copyrightPath": "usr/share/doc/base-files/copyright",
+      "copyrightSha256": "fd7e4aae7e7b05f217bcf2d02322825c360e66c52c4c2f1b28d784d6297a1c23",
+      "sourceLookup": "https://snapshot.debian.org/package/base-files/12.4+deb12u15/"
+    },
+    {
+      "package": "base-passwd",
+      "version": "3.6.1",
+      "sourcePackage": "base-passwd",
+      "sourceVersion": "3.6.1",
+      "copyrightPath": "usr/share/doc/base-passwd/copyright",
+      "copyrightSha256": "0f1cde79bd80a75f9029ae9a8c252b642223027ef36f6989c63a8230aae576a7",
+      "sourceLookup": "https://snapshot.debian.org/package/base-passwd/3.6.1/"
+    },
+    {
+      "package": "bash",
+      "version": "5.2.15-2+b13",
+      "sourcePackage": "bash",
+      "sourceVersion": "5.2.15-2",
+      "copyrightPath": "usr/share/doc/bash/copyright",
+      "copyrightSha256": "06319d84c3e5ed096036f6a9310a030c7e84e50dff2b8a6792285c83ec0ada73",
+      "sourceLookup": "https://snapshot.debian.org/package/bash/5.2.15-2/"
+    },
+    {
+      "package": "bsdutils",
+      "version": "1:2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/bsdutils/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "coreutils",
+      "version": "9.1-1",
+      "sourcePackage": "coreutils",
+      "sourceVersion": "9.1-1",
+      "copyrightPath": "usr/share/doc/coreutils/copyright",
+      "copyrightSha256": "24e86c5ca53d6bfd8e0c47988160daa62d10a74997fe11f651e1d9533c78bff6",
+      "sourceLookup": "https://snapshot.debian.org/package/coreutils/9.1-1/"
+    },
+    {
+      "package": "dash",
+      "version": "0.5.12-2",
+      "sourcePackage": "dash",
+      "sourceVersion": "0.5.12-2",
+      "copyrightPath": "usr/share/doc/dash/copyright",
+      "copyrightSha256": "d98c53f281321baad38164aa9ae6e368a9253be6ec51bd26a759b5e72b326f4a",
+      "sourceLookup": "https://snapshot.debian.org/package/dash/0.5.12-2/"
+    },
+    {
+      "package": "debconf",
+      "version": "1.5.82",
+      "sourcePackage": "debconf",
+      "sourceVersion": "1.5.82",
+      "copyrightPath": "usr/share/doc/debconf/copyright",
+      "copyrightSha256": "57163c71bd8a5289660892827dd0dfaa7fef47f89deedc9dc6711ced7d0a28d7",
+      "sourceLookup": "https://snapshot.debian.org/package/debconf/1.5.82/"
+    },
+    {
+      "package": "debian-archive-keyring",
+      "version": "2023.3+deb12u2",
+      "sourcePackage": "debian-archive-keyring",
+      "sourceVersion": "2023.3+deb12u2",
+      "copyrightPath": "usr/share/doc/debian-archive-keyring/copyright",
+      "copyrightSha256": "b32aecaae84643700a33bc9ee83fa9b36938d35aa7b61b5042092eca77ddb732",
+      "sourceLookup": "https://snapshot.debian.org/package/debian-archive-keyring/2023.3+deb12u2/"
+    },
+    {
+      "package": "debianutils",
+      "version": "5.7-0.5~deb12u1",
+      "sourcePackage": "debianutils",
+      "sourceVersion": "5.7-0.5~deb12u1",
+      "copyrightPath": "usr/share/doc/debianutils/copyright",
+      "copyrightSha256": "fd2d797e208bcfb713510e47a89867191180943e1167d44c2acd8ff1b88e5c10",
+      "sourceLookup": "https://snapshot.debian.org/package/debianutils/5.7-0.5~deb12u1/"
+    },
+    {
+      "package": "diffutils",
+      "version": "1:3.8-4",
+      "sourcePackage": "diffutils",
+      "sourceVersion": "1:3.8-4",
+      "copyrightPath": "usr/share/doc/diffutils/copyright",
+      "copyrightSha256": "8654d7cc7cdae1f31bb67a3ce5bf35d512c0bdfffd071df757edc54153cc7930",
+      "sourceLookup": "https://snapshot.debian.org/package/diffutils/1%3A3.8-4/"
+    },
+    {
+      "package": "dpkg",
+      "version": "1.21.23",
+      "sourcePackage": "dpkg",
+      "sourceVersion": "1.21.23",
+      "copyrightPath": "usr/share/doc/dpkg/copyright",
+      "copyrightSha256": "7442bdadcd44e818fddd786057db07639cc68225c389c7c240d3bb3984b05173",
+      "sourceLookup": "https://snapshot.debian.org/package/dpkg/1.21.23/"
+    },
+    {
+      "package": "e2fsprogs",
+      "version": "1.47.0-2+b2",
+      "sourcePackage": "e2fsprogs",
+      "sourceVersion": "1.47.0-2",
+      "copyrightPath": "usr/share/doc/e2fsprogs/copyright",
+      "copyrightSha256": "1ca415a294c0e56958c4f795b3f1f69ea3479bca53d7811f5cdd020a258949db",
+      "sourceLookup": "https://snapshot.debian.org/package/e2fsprogs/1.47.0-2/"
+    },
+    {
+      "package": "findutils",
+      "version": "4.9.0-4",
+      "sourcePackage": "findutils",
+      "sourceVersion": "4.9.0-4",
+      "copyrightPath": "usr/share/doc/findutils/copyright",
+      "copyrightSha256": "8fbcc77ed31f480a85654e9b6d1d25cbb95b62e9dc5159ae1565bca684c3e1dc",
+      "sourceLookup": "https://snapshot.debian.org/package/findutils/4.9.0-4/"
+    },
+    {
+      "package": "gcc-12-base:arm64",
+      "version": "12.2.0-14+deb12u1",
+      "sourcePackage": "gcc-12",
+      "sourceVersion": "12.2.0-14+deb12u1",
+      "copyrightPath": "usr/share/doc/gcc-12-base/copyright",
+      "copyrightSha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3",
+      "sourceLookup": "https://snapshot.debian.org/package/gcc-12/12.2.0-14+deb12u1/"
+    },
+    {
+      "package": "gpgv",
+      "version": "2.2.40-1.1+deb12u2",
+      "sourcePackage": "gnupg2",
+      "sourceVersion": "2.2.40-1.1+deb12u2",
+      "copyrightPath": "usr/share/doc/gpgv/copyright",
+      "copyrightSha256": "84dab06b5c1baf3a7a45c3cdc5f98fb121234e98fdd6266c3f773d54fcdc4f54",
+      "sourceLookup": "https://snapshot.debian.org/package/gnupg2/2.2.40-1.1+deb12u2/"
+    },
+    {
+      "package": "grep",
+      "version": "3.8-5",
+      "sourcePackage": "grep",
+      "sourceVersion": "3.8-5",
+      "copyrightPath": "usr/share/doc/grep/copyright",
+      "copyrightSha256": "42d9b4d610396b1e8d1303dcb9487af3f5a2d2709623cf03a04cf76acdf6c5e3",
+      "sourceLookup": "https://snapshot.debian.org/package/grep/3.8-5/"
+    },
+    {
+      "package": "gzip",
+      "version": "1.12-1",
+      "sourcePackage": "gzip",
+      "sourceVersion": "1.12-1",
+      "copyrightPath": "usr/share/doc/gzip/copyright",
+      "copyrightSha256": "1ca5dd5098fe2e1c0f0d05196f5b3da8b414a807702e6ca8b536eb5fd3059130",
+      "sourceLookup": "https://snapshot.debian.org/package/gzip/1.12-1/"
+    },
+    {
+      "package": "hostname",
+      "version": "3.23+nmu1",
+      "sourcePackage": "hostname",
+      "sourceVersion": "3.23+nmu1",
+      "copyrightPath": "usr/share/doc/hostname/copyright",
+      "copyrightSha256": "94189fc5a9a7b7224d96e1a0cfdfe9be0df2018b04bf21d591627ab96b30cad1",
+      "sourceLookup": "https://snapshot.debian.org/package/hostname/3.23+nmu1/"
+    },
+    {
+      "package": "init-system-helpers",
+      "version": "1.65.2+deb12u1",
+      "sourcePackage": "init-system-helpers",
+      "sourceVersion": "1.65.2+deb12u1",
+      "copyrightPath": "usr/share/doc/init-system-helpers/copyright",
+      "copyrightSha256": "7534601cc4fa513804d16490359f5831e7b6a1212da3bbf948bebdd4c8799783",
+      "sourceLookup": "https://snapshot.debian.org/package/init-system-helpers/1.65.2+deb12u1/"
+    },
+    {
+      "package": "libacl1:arm64",
+      "version": "2.3.1-3",
+      "sourcePackage": "acl",
+      "sourceVersion": "2.3.1-3",
+      "copyrightPath": "usr/share/doc/libacl1/copyright",
+      "copyrightSha256": "9a2dfb4a5abc7e84be2cc41f1089be665519c9409549296f6c19de57ab1d37c2",
+      "sourceLookup": "https://snapshot.debian.org/package/acl/2.3.1-3/"
+    },
+    {
+      "package": "libapt-pkg6.0:arm64",
+      "version": "2.6.1",
+      "sourcePackage": "apt",
+      "sourceVersion": "2.6.1",
+      "copyrightPath": "usr/share/doc/libapt-pkg6.0/copyright",
+      "copyrightSha256": "b4701305243d8d746f4acaafe15d94f946251b05691bd6917fef41dd15e9ee12",
+      "sourceLookup": "https://snapshot.debian.org/package/apt/2.6.1/"
+    },
+    {
+      "package": "libattr1:arm64",
+      "version": "1:2.5.1-4",
+      "sourcePackage": "attr",
+      "sourceVersion": "1:2.5.1-4",
+      "copyrightPath": "usr/share/doc/libattr1/copyright",
+      "copyrightSha256": "0cbec745d85ea775450b2d54fac55277197f429e52d611f72852ed420450620e",
+      "sourceLookup": "https://snapshot.debian.org/package/attr/1%3A2.5.1-4/"
+    },
+    {
+      "package": "libaudit-common",
+      "version": "1:3.0.9-1",
+      "sourcePackage": "audit",
+      "sourceVersion": "1:3.0.9-1",
+      "copyrightPath": "usr/share/doc/libaudit-common/copyright",
+      "copyrightSha256": "6c7011e93f643b112c4cc3622131e28a30477afad6c4f5efe466b13aa7f603cc",
+      "sourceLookup": "https://snapshot.debian.org/package/audit/1%3A3.0.9-1/"
+    },
+    {
+      "package": "libaudit1:arm64",
+      "version": "1:3.0.9-1",
+      "sourcePackage": "audit",
+      "sourceVersion": "1:3.0.9-1",
+      "copyrightPath": "usr/share/doc/libaudit1/copyright",
+      "copyrightSha256": "6c7011e93f643b112c4cc3622131e28a30477afad6c4f5efe466b13aa7f603cc",
+      "sourceLookup": "https://snapshot.debian.org/package/audit/1%3A3.0.9-1/"
+    },
+    {
+      "package": "libblkid1:arm64",
+      "version": "2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/libblkid1/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "libbz2-1.0:arm64",
+      "version": "1.0.8-5+b1",
+      "sourcePackage": "bzip2",
+      "sourceVersion": "1.0.8-5",
+      "copyrightPath": "usr/share/doc/libbz2-1.0/copyright",
+      "copyrightSha256": "832ed535ff3c3d025a8d2348eb1b697b89addcf2eaadbc17650262040b9145e2",
+      "sourceLookup": "https://snapshot.debian.org/package/bzip2/1.0.8-5/"
+    },
+    {
+      "package": "libc-bin",
+      "version": "2.36-9+deb12u14",
+      "sourcePackage": "glibc",
+      "sourceVersion": "2.36-9+deb12u14",
+      "copyrightPath": "usr/share/doc/libc-bin/copyright",
+      "copyrightSha256": "40c7e1f2118531f038ca22999bd976901254e1bc5cd1b0f0211bdd064c599987",
+      "sourceLookup": "https://snapshot.debian.org/package/glibc/2.36-9+deb12u14/"
+    },
+    {
+      "package": "libc6:arm64",
+      "version": "2.36-9+deb12u14",
+      "sourcePackage": "glibc",
+      "sourceVersion": "2.36-9+deb12u14",
+      "copyrightPath": "usr/share/doc/libc6/copyright",
+      "copyrightSha256": "40c7e1f2118531f038ca22999bd976901254e1bc5cd1b0f0211bdd064c599987",
+      "sourceLookup": "https://snapshot.debian.org/package/glibc/2.36-9+deb12u14/"
+    },
+    {
+      "package": "libcap-ng0:arm64",
+      "version": "0.8.3-1+b3",
+      "sourcePackage": "libcap-ng",
+      "sourceVersion": "0.8.3-1",
+      "copyrightPath": "usr/share/doc/libcap-ng0/copyright",
+      "copyrightSha256": "49b5db19990a3e3cc1a9ed716aed231f6f3c1c217e58f62ae4dc2818c6d3e9cc",
+      "sourceLookup": "https://snapshot.debian.org/package/libcap-ng/0.8.3-1/"
+    },
+    {
+      "package": "libcap2:arm64",
+      "version": "1:2.66-4+deb12u3+b1",
+      "sourcePackage": "libcap2",
+      "sourceVersion": "1:2.66-4+deb12u3",
+      "copyrightPath": "usr/share/doc/libcap2/copyright",
+      "copyrightSha256": "e60a5642e12e340060e4e519a65b2eb0330be2917854841c644e36268f607d54",
+      "sourceLookup": "https://snapshot.debian.org/package/libcap2/1%3A2.66-4+deb12u3/"
+    },
+    {
+      "package": "libcom-err2:arm64",
+      "version": "1.47.0-2+b2",
+      "sourcePackage": "e2fsprogs",
+      "sourceVersion": "1.47.0-2",
+      "copyrightPath": "usr/share/doc/libcom-err2/copyright",
+      "copyrightSha256": "1ca415a294c0e56958c4f795b3f1f69ea3479bca53d7811f5cdd020a258949db",
+      "sourceLookup": "https://snapshot.debian.org/package/e2fsprogs/1.47.0-2/"
+    },
+    {
+      "package": "libcrypt1:arm64",
+      "version": "1:4.4.33-2",
+      "sourcePackage": "libxcrypt",
+      "sourceVersion": "1:4.4.33-2",
+      "copyrightPath": "usr/share/doc/libcrypt1/copyright",
+      "copyrightSha256": "5a5e7ca0e9f3f9679977e3a3e9ede45ad92885a3297ea78e766979f9866c5a16",
+      "sourceLookup": "https://snapshot.debian.org/package/libxcrypt/1%3A4.4.33-2/"
+    },
+    {
+      "package": "libdb5.3:arm64",
+      "version": "5.3.28+dfsg2-1",
+      "sourcePackage": "db5.3",
+      "sourceVersion": "5.3.28+dfsg2-1",
+      "copyrightPath": "usr/share/doc/libdb5.3/copyright",
+      "copyrightSha256": "8b53da37d73289d9df7317b3a2dbe16491f1fa9fec8b77b86d69704b40ce2c26",
+      "sourceLookup": "https://snapshot.debian.org/package/db5.3/5.3.28+dfsg2-1/"
+    },
+    {
+      "package": "libdebconfclient0:arm64",
+      "version": "0.270",
+      "sourcePackage": "cdebconf",
+      "sourceVersion": "0.270",
+      "copyrightPath": "usr/share/doc/libdebconfclient0/copyright",
+      "copyrightSha256": "cf63099896d1c0f6529c41b8d95738e6fea342ffba609187d339c4f38ce36ecc",
+      "sourceLookup": "https://snapshot.debian.org/package/cdebconf/0.270/"
+    },
+    {
+      "package": "libext2fs2:arm64",
+      "version": "1.47.0-2+b2",
+      "sourcePackage": "e2fsprogs",
+      "sourceVersion": "1.47.0-2",
+      "copyrightPath": "usr/share/doc/libext2fs2/copyright",
+      "copyrightSha256": "1ca415a294c0e56958c4f795b3f1f69ea3479bca53d7811f5cdd020a258949db",
+      "sourceLookup": "https://snapshot.debian.org/package/e2fsprogs/1.47.0-2/"
+    },
+    {
+      "package": "libffi8:arm64",
+      "version": "3.4.4-1",
+      "sourcePackage": "libffi",
+      "sourceVersion": "3.4.4-1",
+      "copyrightPath": "usr/share/doc/libffi8/copyright",
+      "copyrightSha256": "f83d2ecba1ea4d99957e81c50bebbd076a128194288a3ec22cc8ccdb77c43087",
+      "sourceLookup": "https://snapshot.debian.org/package/libffi/3.4.4-1/"
+    },
+    {
+      "package": "libgcc-s1:arm64",
+      "version": "12.2.0-14+deb12u1",
+      "sourcePackage": "gcc-12",
+      "sourceVersion": "12.2.0-14+deb12u1",
+      "copyrightPath": "usr/share/doc/gcc-12-base/copyright",
+      "copyrightSha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3",
+      "sourceLookup": "https://snapshot.debian.org/package/gcc-12/12.2.0-14+deb12u1/"
+    },
+    {
+      "package": "libgcrypt20:arm64",
+      "version": "1.10.1-3+deb12u1",
+      "sourcePackage": "libgcrypt20",
+      "sourceVersion": "1.10.1-3+deb12u1",
+      "copyrightPath": "usr/share/doc/libgcrypt20/copyright",
+      "copyrightSha256": "95db2f9da663f2bfe2aabe9c72fce9d6c9ae767b912f397d7823f50bd55a1a7d",
+      "sourceLookup": "https://snapshot.debian.org/package/libgcrypt20/1.10.1-3+deb12u1/"
+    },
+    {
+      "package": "libgmp10:arm64",
+      "version": "2:6.2.1+dfsg1-1.1",
+      "sourcePackage": "gmp",
+      "sourceVersion": "2:6.2.1+dfsg1-1.1",
+      "copyrightPath": "usr/share/doc/libgmp10/copyright",
+      "copyrightSha256": "7d366aef5ba325150246de1d7820c4c9926cd27ca61a69948492b26cd3b61601",
+      "sourceLookup": "https://snapshot.debian.org/package/gmp/2%3A6.2.1+dfsg1-1.1/"
+    },
+    {
+      "package": "libgnutls30:arm64",
+      "version": "3.7.9-2+deb12u7",
+      "sourcePackage": "gnutls28",
+      "sourceVersion": "3.7.9-2+deb12u7",
+      "copyrightPath": "usr/share/doc/libgnutls30/copyright",
+      "copyrightSha256": "bb7e5c24b3e27bbba5671dd710d159a0066833bda4caa1d55d8027ffed539337",
+      "sourceLookup": "https://snapshot.debian.org/package/gnutls28/3.7.9-2+deb12u7/"
+    },
+    {
+      "package": "libgpg-error0:arm64",
+      "version": "1.46-1",
+      "sourcePackage": "libgpg-error",
+      "sourceVersion": "1.46-1",
+      "copyrightPath": "usr/share/doc/libgpg-error0/copyright",
+      "copyrightSha256": "8760fd36efa1d7186f8769d4e76a3e678045b94d54465bf6f2db5eb871c7c27f",
+      "sourceLookup": "https://snapshot.debian.org/package/libgpg-error/1.46-1/"
+    },
+    {
+      "package": "libhogweed6:arm64",
+      "version": "3.8.1-2",
+      "sourcePackage": "nettle",
+      "sourceVersion": "3.8.1-2",
+      "copyrightPath": "usr/share/doc/libhogweed6/copyright",
+      "copyrightSha256": "ca2ca597320220c00ef6dc0fe5d0d82025548d6d4ba80e85615eb691f9021f93",
+      "sourceLookup": "https://snapshot.debian.org/package/nettle/3.8.1-2/"
+    },
+    {
+      "package": "libidn2-0:arm64",
+      "version": "2.3.3-1+b1",
+      "sourcePackage": "libidn2",
+      "sourceVersion": "2.3.3-1",
+      "copyrightPath": "usr/share/doc/libidn2-0/copyright",
+      "copyrightSha256": "41702469f28e8ff406345e3d1dd0c741f11bdfca319264f67036efd6aaa79e4b",
+      "sourceLookup": "https://snapshot.debian.org/package/libidn2/2.3.3-1/"
+    },
+    {
+      "package": "liblz4-1:arm64",
+      "version": "1.9.4-1",
+      "sourcePackage": "lz4",
+      "sourceVersion": "1.9.4-1",
+      "copyrightPath": "usr/share/doc/liblz4-1/copyright",
+      "copyrightSha256": "d3be0f43fe14da244f97c451bbae789c0acf868612598a69f5f22a289abeca40",
+      "sourceLookup": "https://snapshot.debian.org/package/lz4/1.9.4-1/"
+    },
+    {
+      "package": "liblzma5:arm64",
+      "version": "5.4.1-1+deb12u2",
+      "sourcePackage": "xz-utils",
+      "sourceVersion": "5.4.1-1+deb12u2",
+      "copyrightPath": "usr/share/doc/liblzma5/copyright",
+      "copyrightSha256": "a2dc8fac0f496e1c58aff67018cf0c6b88336316afa5642f9335b71642e28aa8",
+      "sourceLookup": "https://snapshot.debian.org/package/xz-utils/5.4.1-1+deb12u2/"
+    },
+    {
+      "package": "libmd0:arm64",
+      "version": "1.0.4-2",
+      "sourcePackage": "libmd",
+      "sourceVersion": "1.0.4-2",
+      "copyrightPath": "usr/share/doc/libmd0/copyright",
+      "copyrightSha256": "4365ef6255ad553fce69dd4bc0e093472c5d0e41b8ea493a545cc926ce171aa6",
+      "sourceLookup": "https://snapshot.debian.org/package/libmd/1.0.4-2/"
+    },
+    {
+      "package": "libmount1:arm64",
+      "version": "2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/libmount1/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "libnettle8:arm64",
+      "version": "3.8.1-2",
+      "sourcePackage": "nettle",
+      "sourceVersion": "3.8.1-2",
+      "copyrightPath": "usr/share/doc/libnettle8/copyright",
+      "copyrightSha256": "ca2ca597320220c00ef6dc0fe5d0d82025548d6d4ba80e85615eb691f9021f93",
+      "sourceLookup": "https://snapshot.debian.org/package/nettle/3.8.1-2/"
+    },
+    {
+      "package": "libp11-kit0:arm64",
+      "version": "0.24.1-2",
+      "sourcePackage": "p11-kit",
+      "sourceVersion": "0.24.1-2",
+      "copyrightPath": "usr/share/doc/libp11-kit0/copyright",
+      "copyrightSha256": "ed139379f7c874f0ee75f3ddcc2e01091dd828d84ee1a0bdff6a1c5673ee6e58",
+      "sourceLookup": "https://snapshot.debian.org/package/p11-kit/0.24.1-2/"
+    },
+    {
+      "package": "libpam-modules:arm64",
+      "version": "1.5.2-6+deb12u2",
+      "sourcePackage": "pam",
+      "sourceVersion": "1.5.2-6+deb12u2",
+      "copyrightPath": "usr/share/doc/libpam-modules/copyright",
+      "copyrightSha256": "9596b9028339d66c285422237728d6170e1e29d0b0d9adf0e9f1bda82e2391ce",
+      "sourceLookup": "https://snapshot.debian.org/package/pam/1.5.2-6+deb12u2/"
+    },
+    {
+      "package": "libpam-modules-bin",
+      "version": "1.5.2-6+deb12u2",
+      "sourcePackage": "pam",
+      "sourceVersion": "1.5.2-6+deb12u2",
+      "copyrightPath": "usr/share/doc/libpam-modules-bin/copyright",
+      "copyrightSha256": "9596b9028339d66c285422237728d6170e1e29d0b0d9adf0e9f1bda82e2391ce",
+      "sourceLookup": "https://snapshot.debian.org/package/pam/1.5.2-6+deb12u2/"
+    },
+    {
+      "package": "libpam-runtime",
+      "version": "1.5.2-6+deb12u2",
+      "sourcePackage": "pam",
+      "sourceVersion": "1.5.2-6+deb12u2",
+      "copyrightPath": "usr/share/doc/libpam-runtime/copyright",
+      "copyrightSha256": "9596b9028339d66c285422237728d6170e1e29d0b0d9adf0e9f1bda82e2391ce",
+      "sourceLookup": "https://snapshot.debian.org/package/pam/1.5.2-6+deb12u2/"
+    },
+    {
+      "package": "libpam0g:arm64",
+      "version": "1.5.2-6+deb12u2",
+      "sourcePackage": "pam",
+      "sourceVersion": "1.5.2-6+deb12u2",
+      "copyrightPath": "usr/share/doc/libpam0g/copyright",
+      "copyrightSha256": "9596b9028339d66c285422237728d6170e1e29d0b0d9adf0e9f1bda82e2391ce",
+      "sourceLookup": "https://snapshot.debian.org/package/pam/1.5.2-6+deb12u2/"
+    },
+    {
+      "package": "libpcre2-8-0:arm64",
+      "version": "10.42-1+deb12u2",
+      "sourcePackage": "pcre2",
+      "sourceVersion": "10.42-1+deb12u2",
+      "copyrightPath": "usr/share/doc/libpcre2-8-0/copyright",
+      "copyrightSha256": "030511beb4d9d620ad09914c369c36ec0528dcf301d1923cc643c948ee7c6a38",
+      "sourceLookup": "https://snapshot.debian.org/package/pcre2/10.42-1+deb12u2/"
+    },
+    {
+      "package": "libseccomp2:arm64",
+      "version": "2.5.4-1+deb12u1",
+      "sourcePackage": "libseccomp",
+      "sourceVersion": "2.5.4-1+deb12u1",
+      "copyrightPath": "usr/share/doc/libseccomp2/copyright",
+      "copyrightSha256": "6da0653a365b80ab31478dbfe9e7c358e80d58b6d2b52b4e16b4dbb42d7d9f5c",
+      "sourceLookup": "https://snapshot.debian.org/package/libseccomp/2.5.4-1+deb12u1/"
+    },
+    {
+      "package": "libselinux1:arm64",
+      "version": "3.4-1+b6",
+      "sourcePackage": "libselinux",
+      "sourceVersion": "3.4-1",
+      "copyrightPath": "usr/share/doc/libselinux1/copyright",
+      "copyrightSha256": "641806738b0c6a3d03168c2649e6b94205198bb66cd557e6bae3a20b71c9bb0b",
+      "sourceLookup": "https://snapshot.debian.org/package/libselinux/3.4-1/"
+    },
+    {
+      "package": "libsemanage-common",
+      "version": "3.4-1",
+      "sourcePackage": "libsemanage",
+      "sourceVersion": "3.4-1",
+      "copyrightPath": "usr/share/doc/libsemanage-common/copyright",
+      "copyrightSha256": "e00e6a86c598f9e24ced0180a70a5f2f2e45e133d93adf2b17ce8a06ce4b1b51",
+      "sourceLookup": "https://snapshot.debian.org/package/libsemanage/3.4-1/"
+    },
+    {
+      "package": "libsemanage2:arm64",
+      "version": "3.4-1+b5",
+      "sourcePackage": "libsemanage",
+      "sourceVersion": "3.4-1",
+      "copyrightPath": "usr/share/doc/libsemanage2/copyright",
+      "copyrightSha256": "e00e6a86c598f9e24ced0180a70a5f2f2e45e133d93adf2b17ce8a06ce4b1b51",
+      "sourceLookup": "https://snapshot.debian.org/package/libsemanage/3.4-1/"
+    },
+    {
+      "package": "libsepol2:arm64",
+      "version": "3.4-2.1",
+      "sourcePackage": "libsepol",
+      "sourceVersion": "3.4-2.1",
+      "copyrightPath": "usr/share/doc/libsepol2/copyright",
+      "copyrightSha256": "78d2a34606a0302057ec499a3b3c07bcbc43ca334064ce4c80891a0f69c8f6c6",
+      "sourceLookup": "https://snapshot.debian.org/package/libsepol/3.4-2.1/"
+    },
+    {
+      "package": "libsmartcols1:arm64",
+      "version": "2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/libsmartcols1/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "libss2:arm64",
+      "version": "1.47.0-2+b2",
+      "sourcePackage": "e2fsprogs",
+      "sourceVersion": "1.47.0-2",
+      "copyrightPath": "usr/share/doc/libss2/copyright",
+      "copyrightSha256": "1ca415a294c0e56958c4f795b3f1f69ea3479bca53d7811f5cdd020a258949db",
+      "sourceLookup": "https://snapshot.debian.org/package/e2fsprogs/1.47.0-2/"
+    },
+    {
+      "package": "libstdc++6:arm64",
+      "version": "12.2.0-14+deb12u1",
+      "sourcePackage": "gcc-12",
+      "sourceVersion": "12.2.0-14+deb12u1",
+      "copyrightPath": "usr/share/doc/gcc-12-base/copyright",
+      "copyrightSha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3",
+      "sourceLookup": "https://snapshot.debian.org/package/gcc-12/12.2.0-14+deb12u1/"
+    },
+    {
+      "package": "libsystemd0:arm64",
+      "version": "252.39-1~deb12u2",
+      "sourcePackage": "systemd",
+      "sourceVersion": "252.39-1~deb12u2",
+      "copyrightPath": "usr/share/doc/libsystemd0/copyright",
+      "copyrightSha256": "a7d06854714a1ca99f6dbd1a1641dde5bcf28635be149f6554449618f8f427f3",
+      "sourceLookup": "https://snapshot.debian.org/package/systemd/252.39-1~deb12u2/"
+    },
+    {
+      "package": "libtasn1-6:arm64",
+      "version": "4.19.0-2+deb12u1",
+      "sourcePackage": "libtasn1-6",
+      "sourceVersion": "4.19.0-2+deb12u1",
+      "copyrightPath": "usr/share/doc/libtasn1-6/copyright",
+      "copyrightSha256": "572ad60ad184d8f52c6dc66d83a61a68f137db560b3452ce00588c9ecf128a65",
+      "sourceLookup": "https://snapshot.debian.org/package/libtasn1-6/4.19.0-2+deb12u1/"
+    },
+    {
+      "package": "libtinfo6:arm64",
+      "version": "6.4-4",
+      "sourcePackage": "ncurses",
+      "sourceVersion": "6.4-4",
+      "copyrightPath": "usr/share/doc/libtinfo6/copyright",
+      "copyrightSha256": "f0974fb41778e23c94111ff90da0546de8971f8270c58877283d372e6bd7f17e",
+      "sourceLookup": "https://snapshot.debian.org/package/ncurses/6.4-4/"
+    },
+    {
+      "package": "libudev1:arm64",
+      "version": "252.39-1~deb12u2",
+      "sourcePackage": "systemd",
+      "sourceVersion": "252.39-1~deb12u2",
+      "copyrightPath": "usr/share/doc/libudev1/copyright",
+      "copyrightSha256": "a7d06854714a1ca99f6dbd1a1641dde5bcf28635be149f6554449618f8f427f3",
+      "sourceLookup": "https://snapshot.debian.org/package/systemd/252.39-1~deb12u2/"
+    },
+    {
+      "package": "libunistring2:arm64",
+      "version": "1.0-2",
+      "sourcePackage": "libunistring",
+      "sourceVersion": "1.0-2",
+      "copyrightPath": "usr/share/doc/libunistring2/copyright",
+      "copyrightSha256": "0035f89e5317f3cec389383e8727788521b0fde3e75cea881fa0e92e1d48cb57",
+      "sourceLookup": "https://snapshot.debian.org/package/libunistring/1.0-2/"
+    },
+    {
+      "package": "libuuid1:arm64",
+      "version": "2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/libuuid1/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "libxxhash0:arm64",
+      "version": "0.8.1-1",
+      "sourcePackage": "xxhash",
+      "sourceVersion": "0.8.1-1",
+      "copyrightPath": "usr/share/doc/libxxhash0/copyright",
+      "copyrightSha256": "a123c93b07e781919ae996276ac02bb1c8b19dfde88176cd1240ab277c14a4ce",
+      "sourceLookup": "https://snapshot.debian.org/package/xxhash/0.8.1-1/"
+    },
+    {
+      "package": "libzstd1:arm64",
+      "version": "1.5.4+dfsg2-5",
+      "sourcePackage": "libzstd",
+      "sourceVersion": "1.5.4+dfsg2-5",
+      "copyrightPath": "usr/share/doc/libzstd1/copyright",
+      "copyrightSha256": "35e85e8e9bbb71492c5f5dddf39ed65b68775a02ad8d710c25d097b497f06c49",
+      "sourceLookup": "https://snapshot.debian.org/package/libzstd/1.5.4+dfsg2-5/"
+    },
+    {
+      "package": "login",
+      "version": "1:4.13+dfsg1-1+deb12u2",
+      "sourcePackage": "shadow",
+      "sourceVersion": "1:4.13+dfsg1-1+deb12u2",
+      "copyrightPath": "usr/share/doc/login/copyright",
+      "copyrightSha256": "a4c3e5b19700dd3cc5961663d204bd7150f65f913314682aede5931548c436d5",
+      "sourceLookup": "https://snapshot.debian.org/package/shadow/1%3A4.13+dfsg1-1+deb12u2/"
+    },
+    {
+      "package": "logsave",
+      "version": "1.47.0-2+b2",
+      "sourcePackage": "e2fsprogs",
+      "sourceVersion": "1.47.0-2",
+      "copyrightPath": "usr/share/doc/logsave/copyright",
+      "copyrightSha256": "1ca415a294c0e56958c4f795b3f1f69ea3479bca53d7811f5cdd020a258949db",
+      "sourceLookup": "https://snapshot.debian.org/package/e2fsprogs/1.47.0-2/"
+    },
+    {
+      "package": "mawk",
+      "version": "1.3.4.20200120-3.1",
+      "sourcePackage": "mawk",
+      "sourceVersion": "1.3.4.20200120-3.1",
+      "copyrightPath": "usr/share/doc/mawk/copyright",
+      "copyrightSha256": "167d04422f2fdf76ab565878c23be8ba0c2ebb2c57a5dac0a5a59ccd27e747a5",
+      "sourceLookup": "https://snapshot.debian.org/package/mawk/1.3.4.20200120-3.1/"
+    },
+    {
+      "package": "mount",
+      "version": "2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/mount/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "ncurses-base",
+      "version": "6.4-4",
+      "sourcePackage": "ncurses",
+      "sourceVersion": "6.4-4",
+      "copyrightPath": "usr/share/doc/ncurses-base/copyright",
+      "copyrightSha256": "f0974fb41778e23c94111ff90da0546de8971f8270c58877283d372e6bd7f17e",
+      "sourceLookup": "https://snapshot.debian.org/package/ncurses/6.4-4/"
+    },
+    {
+      "package": "ncurses-bin",
+      "version": "6.4-4",
+      "sourcePackage": "ncurses",
+      "sourceVersion": "6.4-4",
+      "copyrightPath": "usr/share/doc/ncurses-bin/copyright",
+      "copyrightSha256": "f0974fb41778e23c94111ff90da0546de8971f8270c58877283d372e6bd7f17e",
+      "sourceLookup": "https://snapshot.debian.org/package/ncurses/6.4-4/"
+    },
+    {
+      "package": "passwd",
+      "version": "1:4.13+dfsg1-1+deb12u2",
+      "sourcePackage": "shadow",
+      "sourceVersion": "1:4.13+dfsg1-1+deb12u2",
+      "copyrightPath": "usr/share/doc/passwd/copyright",
+      "copyrightSha256": "a4c3e5b19700dd3cc5961663d204bd7150f65f913314682aede5931548c436d5",
+      "sourceLookup": "https://snapshot.debian.org/package/shadow/1%3A4.13+dfsg1-1+deb12u2/"
+    },
+    {
+      "package": "perl-base",
+      "version": "5.36.0-7+deb12u3",
+      "sourcePackage": "perl",
+      "sourceVersion": "5.36.0-7+deb12u3",
+      "copyrightPath": "usr/share/doc/perl-base/copyright",
+      "copyrightSha256": "b52f3ca17b45473cb0da6ec46748949101fcf0dda1fd5d8b306e6c97fd41af4d",
+      "sourceLookup": "https://snapshot.debian.org/package/perl/5.36.0-7+deb12u3/"
+    },
+    {
+      "package": "sed",
+      "version": "4.9-1+deb12u1",
+      "sourcePackage": "sed",
+      "sourceVersion": "4.9-1+deb12u1",
+      "copyrightPath": "usr/share/doc/sed/copyright",
+      "copyrightSha256": "719320e425e8e6da53a55e0fcfa2f2ed9b1332cea16abd65321bd651b2a88568",
+      "sourceLookup": "https://snapshot.debian.org/package/sed/4.9-1+deb12u1/"
+    },
+    {
+      "package": "sysvinit-utils",
+      "version": "3.06-4",
+      "sourcePackage": "sysvinit",
+      "sourceVersion": "3.06-4",
+      "copyrightPath": "usr/share/doc/sysvinit-utils/copyright",
+      "copyrightSha256": "ad7cb339e58a88918a883d553ca236795191f027e158788a8b33f747ff502fb2",
+      "sourceLookup": "https://snapshot.debian.org/package/sysvinit/3.06-4/"
+    },
+    {
+      "package": "tar",
+      "version": "1.34+dfsg-1.2+deb12u1",
+      "sourcePackage": "tar",
+      "sourceVersion": "1.34+dfsg-1.2+deb12u1",
+      "copyrightPath": "usr/share/doc/tar/copyright",
+      "copyrightSha256": "bea61e0c172868e07845cf50423f97f093a9a46de167dbbe333a38be610c8e00",
+      "sourceLookup": "https://snapshot.debian.org/package/tar/1.34+dfsg-1.2+deb12u1/"
+    },
+    {
+      "package": "tzdata",
+      "version": "2026c-0+deb12u1",
+      "sourcePackage": "tzdata",
+      "sourceVersion": "2026c-0+deb12u1",
+      "copyrightPath": "usr/share/doc/tzdata/copyright",
+      "copyrightSha256": "cb61132bc0fc7b26ef5a82ee18b2fb644a1362f4f286ed980ff22e408471f59a",
+      "sourceLookup": "https://snapshot.debian.org/package/tzdata/2026c-0+deb12u1/"
+    },
+    {
+      "package": "usr-is-merged",
+      "version": "37~deb12u1",
+      "sourcePackage": "usrmerge",
+      "sourceVersion": "37~deb12u1",
+      "copyrightPath": "usr/share/doc/usr-is-merged/copyright",
+      "copyrightSha256": "9836bfe2ef94505bbf29701e8c90799ab1a5fd966d26d60d019a822cdbf3d61a",
+      "sourceLookup": "https://snapshot.debian.org/package/usrmerge/37~deb12u1/"
+    },
+    {
+      "package": "util-linux",
+      "version": "2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/util-linux/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "util-linux-extra",
+      "version": "2.38.1-5+deb12u3",
+      "sourcePackage": "util-linux",
+      "sourceVersion": "2.38.1-5+deb12u3",
+      "copyrightPath": "usr/share/doc/util-linux-extra/copyright",
+      "copyrightSha256": "30539a2df6a89d844f43c727505a3193a60515f8ec6cdede8cc515ed22941d1c",
+      "sourceLookup": "https://snapshot.debian.org/package/util-linux/2.38.1-5+deb12u3/"
+    },
+    {
+      "package": "zlib1g:arm64",
+      "version": "1:1.2.13.dfsg-1",
+      "sourcePackage": "zlib",
+      "sourceVersion": "1:1.2.13.dfsg-1",
+      "copyrightPath": "usr/share/doc/zlib1g/copyright",
+      "copyrightSha256": "9e5b96d63773a5d177ba264254390f792be07e41748ebd94730981c6cac31cc6",
+      "sourceLookup": "https://snapshot.debian.org/package/zlib/1%3A1.2.13.dfsg-1/"
+    }
+  ],
+  "sourceLookupStatus": "Version-specific lookup links; complete source packages have not been acquired or verified. Links are not a source offer."
+}

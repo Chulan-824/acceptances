@@ -1,0 +1,242 @@
+{
+  "checkedOn": "2026-10-09",
+  "baseline": "cb9ae74861bf72925957834c515842344d10713a",
+  "scope": "Exact local Go module archives and installed React runtime licenses; not a complete image SBOM or release clearance",
+  "goArchiveChecks": [
+    {
+      "module": "modernc.org/sqlite",
+      "version": "v1.34.5",
+      "goSum": "h1:Bb6SR13/fjp15jt70CL4f18JIN7p7dnMExd+UFnF15g=",
+      "archiveHash": "h1:Bb6SR13/fjp15jt70CL4f18JIN7p7dnMExd+UFnF15g=",
+      "matches": true
+    },
+    {
+      "module": "github.com/dustin/go-humanize",
+      "version": "v1.0.1",
+      "goSum": "h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=",
+      "archiveHash": "h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=",
+      "matches": true
+    },
+    {
+      "module": "github.com/google/uuid",
+      "version": "v1.6.0",
+      "goSum": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "archiveHash": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "matches": true
+    },
+    {
+      "module": "github.com/mattn/go-isatty",
+      "version": "v0.0.20",
+      "goSum": "h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=",
+      "archiveHash": "h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=",
+      "matches": true
+    },
+    {
+      "module": "github.com/ncruces/go-strftime",
+      "version": "v0.1.9",
+      "goSum": "h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdhx/f4=",
+      "archiveHash": "h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdhx/f4=",
+      "matches": true
+    },
+    {
+      "module": "github.com/remyoudompheng/bigfft",
+      "version": "v0.0.0-20230129092748-24d4a6f8daec",
+      "goSum": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
+      "archiveHash": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
+      "matches": true
+    },
+    {
+      "module": "golang.org/x/sys",
+      "version": "v0.22.0",
+      "goSum": "h1:RI27ohtqKCnwULzJLqkv897zojh5/DwS/ENaMzUOaWI=",
+      "archiveHash": "h1:RI27ohtqKCnwULzJLqkv897zojh5/DwS/ENaMzUOaWI=",
+      "matches": true
+    },
+    {
+      "module": "modernc.org/libc",
+      "version": "v1.55.3",
+      "goSum": "h1:AzcW1mhlPNrRtjS5sS+eW2ISCgSOLLNyFzRh/V3Qj/U=",
+      "archiveHash": "h1:AzcW1mhlPNrRtjS5sS+eW2ISCgSOLLNyFzRh/V3Qj/U=",
+      "matches": true
+    },
+    {
+      "module": "modernc.org/mathutil",
+      "version": "v1.6.0",
+      "goSum": "h1:fRe9+AmYlaej+64JsEEhoWuAYBkOtQiMEU7n/XgfYi4=",
+      "archiveHash": "h1:fRe9+AmYlaej+64JsEEhoWuAYBkOtQiMEU7n/XgfYi4=",
+      "matches": true
+    },
+    {
+      "module": "modernc.org/memory",
+      "version": "v1.8.0",
+      "goSum": "h1:IqGTL6eFMaDZZhEWwcREgeMXYwmW83LYW8cROZYkg+E=",
+      "archiveHash": "h1:IqGTL6eFMaDZZhEWwcREgeMXYwmW83LYW8cROZYkg+E=",
+      "matches": true
+    }
+  ],
+  "materials": [
+    {
+      "component": "modernc.org/sqlite",
+      "version": "v1.34.5",
+      "path": "LICENSES/runtime/modernc.org_sqlite@v1.34.5/LICENSE",
+      "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822",
+      "sourcePath": ".cache/go-mod/modernc.org/sqlite@v1.34.5/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/sqlite/@v/v1.34.5.zip"
+    },
+    {
+      "component": "github.com/dustin/go-humanize",
+      "version": "v1.0.1",
+      "path": "LICENSES/runtime/github.com_dustin_go-humanize@v1.0.1/LICENSE",
+      "sha256": "a973b4498c13eb74baa2a8e5c351426a6826f2fcdd909916dbe53ee2e755fd71",
+      "sourcePath": ".cache/go-mod/github.com/dustin/go-humanize@v1.0.1/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/github.com/dustin/go-humanize/@v/v1.0.1.zip"
+    },
+    {
+      "component": "github.com/google/uuid",
+      "version": "v1.6.0",
+      "path": "LICENSES/runtime/github.com_google_uuid@v1.6.0/LICENSE",
+      "sha256": "0a8d61ed3cbfd5312326e8126c31ce9c627a283adc99131b56896d29ada04b2d",
+      "sourcePath": ".cache/go-mod/github.com/google/uuid@v1.6.0/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/github.com/google/uuid/@v/v1.6.0.zip"
+    },
+    {
+      "component": "github.com/mattn/go-isatty",
+      "version": "v0.0.20",
+      "path": "LICENSES/runtime/github.com_mattn_go-isatty@v0.0.20/LICENSE",
+      "sha256": "08eab1118c80885fa1fa6a6dd7303f65a379fcb3733e063d20d1bbc2c76e6fa1",
+      "sourcePath": ".cache/go-mod/github.com/mattn/go-isatty@v0.0.20/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/github.com/mattn/go-isatty/@v/v0.0.20.zip"
+    },
+    {
+      "component": "github.com/ncruces/go-strftime",
+      "version": "v0.1.9",
+      "path": "LICENSES/runtime/github.com_ncruces_go-strftime@v0.1.9/LICENSE",
+      "sha256": "38ae43959daf953a393a585b2988672cb65a5a541aca0d0be5e72595a0a16883",
+      "sourcePath": ".cache/go-mod/github.com/ncruces/go-strftime@v0.1.9/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/github.com/ncruces/go-strftime/@v/v0.1.9.zip"
+    },
+    {
+      "component": "github.com/remyoudompheng/bigfft",
+      "version": "v0.0.0-20230129092748-24d4a6f8daec",
+      "path": "LICENSES/runtime/github.com_remyoudompheng_bigfft@v0.0.0-20230129092748-24d4a6f8daec/LICENSE",
+      "sha256": "dd26a7abddd02e2d0aba97805b31f248ef7835d9e10da289b22e3b8ab78b324d",
+      "sourcePath": ".cache/go-mod/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/github.com/remyoudompheng/bigfft/@v/v0.0.0-20230129092748-24d4a6f8daec.zip"
+    },
+    {
+      "component": "golang.org/x/sys",
+      "version": "v0.22.0",
+      "path": "LICENSES/runtime/golang.org_x_sys@v0.22.0/LICENSE",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "sourcePath": ".cache/go-mod/golang.org/x/sys@v0.22.0/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/golang.org/x/sys/@v/v0.22.0.zip"
+    },
+    {
+      "component": "modernc.org/libc",
+      "version": "v1.55.3",
+      "path": "LICENSES/runtime/modernc.org_libc@v1.55.3/COPYRIGHT-MUSL",
+      "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+      "sourcePath": ".cache/go-mod/modernc.org/libc@v1.55.3/COPYRIGHT-MUSL",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/libc/@v/v1.55.3.zip"
+    },
+    {
+      "component": "modernc.org/libc",
+      "version": "v1.55.3",
+      "path": "LICENSES/runtime/modernc.org_libc@v1.55.3/LICENSE",
+      "sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600",
+      "sourcePath": ".cache/go-mod/modernc.org/libc@v1.55.3/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/libc/@v/v1.55.3.zip"
+    },
+    {
+      "component": "modernc.org/libc",
+      "version": "v1.55.3",
+      "path": "LICENSES/runtime/modernc.org_libc@v1.55.3/LICENSE-GO",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "sourcePath": ".cache/go-mod/modernc.org/libc@v1.55.3/LICENSE-GO",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/libc/@v/v1.55.3.zip"
+    },
+    {
+      "component": "modernc.org/libc",
+      "version": "v1.55.3",
+      "path": "LICENSES/runtime/modernc.org_libc@v1.55.3/honnef.co/go/netdb/LICENSE",
+      "sha256": "657707d00e00d3077e4ccfac2d6a123ad908c3f503370798eb2cb52e68e135a6",
+      "sourcePath": ".cache/go-mod/modernc.org/libc@v1.55.3/honnef.co/go/netdb/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/libc/@v/v1.55.3.zip"
+    },
+    {
+      "component": "modernc.org/mathutil",
+      "version": "v1.6.0",
+      "path": "LICENSES/runtime/modernc.org_mathutil@v1.6.0/LICENSE",
+      "sha256": "bfa9bf72a72ca009fd62a8f84fca3dca67e51d93af96352723646599898b6cf5",
+      "sourcePath": ".cache/go-mod/modernc.org/mathutil@v1.6.0/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/mathutil/@v/v1.6.0.zip"
+    },
+    {
+      "component": "modernc.org/mathutil",
+      "version": "v1.6.0",
+      "path": "LICENSES/runtime/modernc.org_mathutil@v1.6.0/mersenne/LICENSE",
+      "sha256": "c05630f9ca899ea094620d37daea6ba66f99adbf9268ea5fea9db607e1102bd9",
+      "sourcePath": ".cache/go-mod/modernc.org/mathutil@v1.6.0/mersenne/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/mathutil/@v/v1.6.0.zip"
+    },
+    {
+      "component": "modernc.org/memory",
+      "version": "v1.8.0",
+      "path": "LICENSES/runtime/modernc.org_memory@v1.8.0/LICENSE",
+      "sha256": "59895e669f48f168b6b858358f6005779cdf40a265f7828813061b56af67b496",
+      "sourcePath": ".cache/go-mod/modernc.org/memory@v1.8.0/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/memory/@v/v1.8.0.zip"
+    },
+    {
+      "component": "modernc.org/memory",
+      "version": "v1.8.0",
+      "path": "LICENSES/runtime/modernc.org_memory@v1.8.0/LICENSE-GO",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "sourcePath": ".cache/go-mod/modernc.org/memory@v1.8.0/LICENSE-GO",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/memory/@v/v1.8.0.zip"
+    },
+    {
+      "component": "modernc.org/memory",
+      "version": "v1.8.0",
+      "path": "LICENSES/runtime/modernc.org_memory@v1.8.0/LICENSE-MMAP-GO",
+      "sha256": "c2eba69f20d05414538c3a5df7694dde392e065ff70882e1625e90f5d6659fff",
+      "sourcePath": ".cache/go-mod/modernc.org/memory@v1.8.0/LICENSE-MMAP-GO",
+      "sourceArchive": "https://proxy.golang.org/modernc.org/memory/@v/v1.8.0.zip"
+    },
+    {
+      "component": "react",
+      "version": "19.2.8",
+      "path": "LICENSES/runtime/react@19.2.8/LICENSE",
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourcePath": "node_modules/.pnpm/react@19.2.8/node_modules/react/LICENSE"
+    },
+    {
+      "component": "react-dom",
+      "version": "19.2.8",
+      "path": "LICENSES/runtime/react-dom@19.2.8/LICENSE",
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourcePath": "node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/LICENSE"
+    },
+    {
+      "component": "scheduler",
+      "version": "0.27.0",
+      "path": "LICENSES/runtime/scheduler@0.27.0/LICENSE",
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourcePath": "node_modules/.pnpm/scheduler@0.27.0/node_modules/scheduler/LICENSE"
+    },
+    {
+      "component": "Go standard library/runtime",
+      "version": "go1.26.8",
+      "path": "LICENSES/runtime/go1.26.8/LICENSE",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "sourcePath": "Go toolchain go1.26.8/LICENSE"
+    },
+    {
+      "component": "vite modulepreload helper / bundled notices",
+      "version": "8.2.2",
+      "path": "LICENSES/runtime/vite@8.2.2/LICENSE",
+      "sourcePath": "node_modules/.pnpm/vite@8.2.2_@types+node@26.6.4/node_modules/vite/LICENSE.md",
+      "sha256": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c"
+    }
+  ]
+}

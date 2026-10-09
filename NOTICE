@@ -20,4 +20,8 @@ Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved.
 
 补查中原归属包括 Yusuke Suzuki、Luke Childs、Jared Wray、Lauri Rooden；uri-js-replace 的精确包 author 为 https://github.com/andreinwald，@humanfs/types 的 author 为 Nicholas C. Zakas。author 字段不是完整版权持有人证明，不为缺少的上游版权行补造姓名或年份。证据限制保留在上述公开摘要中。
 
-候选 MIT 版权署名已由用户确认为 `Copyright (c) 2026 acceptances`。此处只记录拟用于经确认原创范围的署名；原创授权范围仍 pending，当前无项目原创 MIT 生效范围，也不替换任何上游版权行。
+当前新 V1 的明确原创范围采用 MIT，Copyright (c) 2026 acceptances。精确文件见 docs/licensing/mit-scope.json，条款见 LICENSES/MIT.txt。权利人确认明确排除已标注 LobeHub 参考内容，不替换任何上游版权行或重许可历史版本。
+
+## 2026-10-09 本地精简版
+
+当前代码与历史范围见 [复核记录](docs/licensing/current-v1-review.md)。新版 skill、报告存储与 Web 的当前原创文件已按 MIT 清单授权。新增 SQLite 驱动链、Go 标准库、React/React DOM/scheduler 与 Vite 的原许可保存在 LICENSES/runtime，逐项版本与摘要见 docs/licensing/runtime-materials.json。其原始版权人保持不变，本通知不将这些材料重新授权为项目 MIT。
