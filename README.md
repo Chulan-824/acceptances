@@ -31,7 +31,9 @@ make build
 make install-skill
 ```
 
-安装器交付新版 CLI 和 `acceptances-v1` skill，具体安装位置与覆盖行为见安装器提示。切换到业务目录，在加载新版 skill 的聊天中说：
+安装器交付新版 CLI 和 `acceptances-v1` skill，已有安装时默认拒绝覆盖。替换旧版 CLI 和 skill，在本仓库执行 `make replace-skill`（等价于 `python3 scripts/v1/install-skill.py --replace`）。安装路径以命令输出为准。
+
+切换到业务目录，在加载新版 skill 的聊天中说：
 
 > 使用 $acceptances-v1，将当前仓库关联到已有项目，并验证这次需求。需求依据是……，验证环境是……。
 
@@ -52,7 +54,7 @@ make test SUITE=agent
 make test SUITE=platform
 ```
 
-开发 Web 为 <http://127.0.0.1:5173>，API 为 <http://127.0.0.1:8765>，开发数据默认在 `.cache/dev-data`。开发时 CLI 使用 `ACCEPTANCES_URL=http://127.0.0.1:5173`，与 Web 共用 Vite 代理入口。生产构建输出 `build/server`、`build/acceptances` 和 `apps/web/dist`。
+开发 Web 为 <http://127.0.0.1:5173>，API 为 <http://127.0.0.1:8765>，开发数据默认在 `.cache/dev-data`。开发时在业务目录首次关联使用 `acceptances link --url http://127.0.0.1:5173 --project <项目名称>`，与 Web 共用 Vite 代理入口；后续命令复用关联中保存的 URL。生产构建输出 `build/server`、`build/acceptances` 和 `apps/web/dist`。
 
 `make test` 执行隔离 Go 测试，不能代替真实 Docker 和浏览器验收。命令边界见 [工具链](docs/toolchain.md)，T1–T9 验证步骤见 [实现交接](docs/v1-implementation-handoff.md)。
 

@@ -24,7 +24,7 @@ type Campaign struct {
 func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("id")
 	if _, e := s.project(key); e != nil {
-		fail(w, 404, "PROJECT_NOT_FOUND")
+		lookupFailure(w, r, e, "PROJECT_NOT_FOUND")
 		return
 	}
 	if r.Method == "POST" {
@@ -79,7 +79,7 @@ func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
 func (s *Server) campaigns(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("id")
 	if _, e := s.project(key); e != nil {
-		fail(w, 404, "PROJECT_NOT_FOUND")
+		lookupFailure(w, r, e, "PROJECT_NOT_FOUND")
 		return
 	}
 	if r.Method == "POST" {
@@ -131,7 +131,7 @@ func (s *Server) campaign(key string) (Campaign, error) {
 func (s *Server) getCampaign(w http.ResponseWriter, r *http.Request) {
 	v, e := s.campaign(r.PathValue("id"))
 	if e != nil {
-		fail(w, 404, "CAMPAIGN_NOT_FOUND")
+		lookupFailure(w, r, e, "CAMPAIGN_NOT_FOUND")
 		return
 	}
 	respond(w, 200, v)

@@ -6,7 +6,7 @@ SUITE ?= all
 DOCKER_COMPOSE := docker compose -p acceptances -f deploy/compose.yaml
 FORMAT_PATHS := package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md skills/acceptances-v1
 
-.PHONY: dev fmt lint typecheck test build toolchain docker-build docker-up docker-rebuild install-skill
+.PHONY: dev fmt lint typecheck test build toolchain docker-build docker-up docker-rebuild install-skill replace-skill
 
 toolchain:
 	node scripts/v1/toolchain.mjs
@@ -46,3 +46,6 @@ test:
 
 install-skill:
 	python3 scripts/v1/install-skill.py
+
+replace-skill:
+	python3 scripts/v1/install-skill.py --replace

@@ -244,7 +244,7 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, e = s.campaign(r.PathValue("id")); e != nil {
-		fail(w, 404, "CAMPAIGN_NOT_FOUND")
+		lookupFailure(w, r, e, "CAMPAIGN_NOT_FOUND")
 		return
 	}
 	var oldID, oldHash string
@@ -326,14 +326,14 @@ func (s *Server) run(key string) (Run, error) {
 func (s *Server) getRun(w http.ResponseWriter, r *http.Request) {
 	v, e := s.run(r.PathValue("id"))
 	if e != nil {
-		fail(w, 404, "RUN_NOT_FOUND")
+		lookupFailure(w, r, e, "RUN_NOT_FOUND")
 		return
 	}
 	respond(w, 200, v)
 }
 func (s *Server) listRuns(w http.ResponseWriter, r *http.Request) {
 	if _, e := s.campaign(r.PathValue("id")); e != nil {
-		fail(w, 404, "CAMPAIGN_NOT_FOUND")
+		lookupFailure(w, r, e, "CAMPAIGN_NOT_FOUND")
 		return
 	}
 	rows, e := s.db.QueryContext(r.Context(), "SELECT id FROM runs WHERE campaign_id=? ORDER BY created_at DESC,id", r.PathValue("id"))

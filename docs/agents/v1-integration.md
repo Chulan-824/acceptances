@@ -2,7 +2,7 @@
 
 先按 README 启动服务，在 Web 创建 Project。安装新版 CLI 和 `acceptances-v1` skill 后，从业务目录调用 skill，选择已有 Project。关联保存在宿主机，后续调用复用；同仓库 worktree 共用关联，多仓库可归属同一 Project。
 
-不需要账号、token 或旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/acceptances-v1/references/workflow.md) 为准。
+不需要账号、token 或旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/acceptances-v1/SKILL.md)和[报告格式](../../skills/acceptances-v1/references/report.md) 为准。
 
 ## 交付一次验证
 

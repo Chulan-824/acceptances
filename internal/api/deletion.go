@@ -24,7 +24,7 @@ func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string
 	preview := deletionPreview{}
 	var exists string
 	if e := s.db.QueryRow("SELECT id FROM "+kind+" WHERE id=?", key).Scan(&exists); e != nil {
-		fail(w, 404, "NOT_FOUND")
+		lookupFailure(w, r, e, "NOT_FOUND")
 		return
 	}
 	switch kind {

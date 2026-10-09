@@ -25,7 +25,7 @@ func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 	defer s.mu.Unlock()
 	v, e := s.run(r.PathValue("id"))
 	if e != nil {
-		fail(w, 404, "RUN_NOT_FOUND")
+		lookupFailure(w, r, e, "RUN_NOT_FOUND")
 		return
 	}
 	if v.Status == "void" && in.Kind != "comment" {
@@ -70,7 +70,7 @@ func (s *Server) voidRun(w http.ResponseWriter, r *http.Request) {
 	defer s.mu.Unlock()
 	v, e := s.run(r.PathValue("id"))
 	if e != nil {
-		fail(w, 404, "RUN_NOT_FOUND")
+		lookupFailure(w, r, e, "RUN_NOT_FOUND")
 		return
 	}
 	if v.Status == "void" {

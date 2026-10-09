@@ -189,7 +189,7 @@ func (c client) request(method, path string, body io.Reader, contentType string)
 		return nil, fmt.Errorf("service request: %w", err)
 	}
 	defer res.Body.Close()
-	raw, err := io.ReadAll(io.LimitReader(res.Body, 16<<20))
+	raw, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}

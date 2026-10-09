@@ -6,8 +6,10 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -96,6 +98,16 @@ func respond(w http.ResponseWriter, status int, v any) {
 func fail(w http.ResponseWriter, status int, code string) {
 	respond(w, status, map[string]string{"code": code, "message": strings.ReplaceAll(strings.ToLower(code), "_", " ")})
 }
+
+// lookupFailure distinguishes a missing record from an unreadable archive.
+func lookupFailure(w http.ResponseWriter, r *http.Request, err error, missing string) {
+	if errors.Is(err, sql.ErrNoRows) {
+		fail(w, http.StatusNotFound, missing)
+		return
+	}
+	slog.ErrorContext(r.Context(), "archive lookup failed", "method", r.Method, "path", r.URL.Path, "error", err)
+	fail(w, http.StatusInternalServerError, "READ_FAILED")
+}
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	d := json.NewDecoder(r.Body)
@@ -175,7 +187,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 	p, e := s.project(r.PathValue("id"))
 	if e != nil {
-		fail(w, 404, "PROJECT_NOT_FOUND")
+		lookupFailure(w, r, e, "PROJECT_NOT_FOUND")
 		return
 	}
 	respond(w, 200, p)

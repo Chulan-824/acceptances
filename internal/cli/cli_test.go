@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -156,5 +157,37 @@ func TestPublishReportsConflictAndRetainsSubmission(t *testing.T) {
 	}
 	if len(ids) != 2 || ids[0] == "" || ids[0] != ids[1] {
 		t.Fatalf("retry regenerated ID: %v", ids)
+	}
+}
+
+func TestFeedbackIncludesLargeCampaignHistory(t *testing.T) {
+	t.Setenv("ACCEPTANCES_CONFIG_DIR", t.TempDir())
+	repo := t.TempDir()
+	history := `{"items":[{"id":"r1","report":{"description":"` + strings.Repeat("x", 17<<20) + `"}},{"id":"last-run","status":"accepted"}]}`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v1/projects":
+			fmt.Fprint(w, `{"items":[{"id":"p1","name":"Demo"}]}`)
+		case "/api/v1/projects/p1/repositories":
+			fmt.Fprint(w, `{"id":"repo1"}`)
+		case "/api/v1/projects/p1/campaigns":
+			fmt.Fprint(w, `{"items":[{"id":"c1","title":"Delivery"}]}`)
+		case "/api/v1/campaigns/c1/runs":
+			fmt.Fprint(w, history)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	var out, log bytes.Buffer
+	if Run([]string{"link", "--repo", repo, "--url", server.URL, "--project", "Demo"}, &out, &log) != 0 {
+		t.Fatal(&log)
+	}
+	out.Reset()
+	if Run([]string{"feedback", "--repo", repo, "--campaign", "Delivery"}, &out, &log) != 0 {
+		t.Fatal(&log)
+	}
+	if !json.Valid(out.Bytes()) || !bytes.Contains(out.Bytes(), []byte("last-run")) {
+		t.Fatal("campaign history is incomplete")
 	}
 }
