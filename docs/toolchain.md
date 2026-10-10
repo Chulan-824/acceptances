@@ -23,3 +23,11 @@
 构建前执行 `pnpm install --frozen-lockfile --ignore-scripts`。Make 使用精确 `GOTOOLCHAIN`，Go 缓存位于 `.cache`。首次构建可能下载工具链和依赖。
 
 运行验证按静态检查、进程内 HTTP 集成、原生进程、Docker、真实浏览器分别报告。归档源码 commit、dirty 状态、构建产物摘要、命令和实际结果；仅在本机执行不代表其他架构已验证。真实产品验收按 [T1–T9 交接](v1-implementation-handoff.md) 逐项记录。
+
+## Web 样式
+
+`apps/web` 使用 Tailwind CSS 4，通过 `@tailwindcss/vite` 接入 Vite，精确版本以该应用的 `package.json` 和根锁文件为准。入口为 `apps/web/src/style.css`，加载 Tailwind 默认主题与工具类，Vite 构建时扫描源码中的类名并生成 CSS；无需 CDN、PostCSS 配置或旧版 `tailwind.config.js`。
+
+现有样式位于 `components` 层，Tailwind 的 `utilities` 层可覆盖它们。为保留当前标题、表单和其他元素的浏览器默认样式，暂不加载 Preflight；页面迁移时再统一评估全局重置。新增样式可直接使用静态工具类，例如 `className="flex gap-4"`，不要拼接 `bg-${color}-500` 一类无法完整扫描的类名。
+
+后续项目主题变量集中在同一 CSS 入口的顶层 `@theme` 中定义。本次初始化使用默认主题，项目设计 token 与 OpenDesign 视觉迁移另行落实。
