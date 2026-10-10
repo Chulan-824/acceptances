@@ -1,0 +1,484 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-10T09:08:42Z",
+  "title": "Design System: Acceptances",
+  "extensions": {
+    "colorMeta": {
+      "canvas": {
+        "role": "neutral",
+        "displayName": "浅石板画布",
+        "tonalRamp": [
+          "oklch(15% 0.00341 247.86)",
+          "oklch(26% 0.00341 247.86)",
+          "oklch(38% 0.00341 247.86)",
+          "oklch(49% 0.00341 247.86)",
+          "oklch(61% 0.00341 247.86)",
+          "oklch(72% 0.00341 247.86)",
+          "oklch(84% 0.00341 247.86)",
+          "oklch(95% 0.00341 247.86)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "冷白表面",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26% 0.00000 0.00)",
+          "oklch(38% 0.00000 0.00)",
+          "oklch(49% 0.00000 0.00)",
+          "oklch(61% 0.00000 0.00)",
+          "oklch(72% 0.00000 0.00)",
+          "oklch(84% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "surface-subtle": {
+        "role": "neutral",
+        "displayName": "次级浅石板表面",
+        "tonalRamp": [
+          "oklch(15% 0.00685 247.90)",
+          "oklch(26% 0.00685 247.90)",
+          "oklch(38% 0.00685 247.90)",
+          "oklch(49% 0.00685 247.90)",
+          "oklch(61% 0.00685 247.90)",
+          "oklch(72% 0.00685 247.90)",
+          "oklch(84% 0.00685 247.90)",
+          "oklch(95% 0.00685 247.90)"
+        ]
+      },
+      "surface-hover": {
+        "role": "neutral",
+        "displayName": "悬停浅石板表面",
+        "tonalRamp": [
+          "oklch(15% 0.00341 247.86)",
+          "oklch(26% 0.00341 247.86)",
+          "oklch(38% 0.00341 247.86)",
+          "oklch(49% 0.00341 247.86)",
+          "oklch(61% 0.00341 247.86)",
+          "oklch(72% 0.00341 247.86)",
+          "oklch(84% 0.00341 247.86)",
+          "oklch(95% 0.00341 247.86)"
+        ]
+      },
+      "fg": {
+        "role": "neutral",
+        "displayName": "深石板主文字",
+        "tonalRamp": [
+          "oklch(15% 0.03982 265.75)",
+          "oklch(26% 0.03982 265.75)",
+          "oklch(38% 0.03982 265.75)",
+          "oklch(49% 0.03982 265.75)",
+          "oklch(61% 0.03982 265.75)",
+          "oklch(72% 0.03982 265.75)",
+          "oklch(84% 0.03982 265.75)",
+          "oklch(95% 0.03982 265.75)"
+        ]
+      },
+      "fg-secondary": {
+        "role": "neutral",
+        "displayName": "次级石板文字",
+        "tonalRamp": [
+          "oklch(15% 0.03916 257.29)",
+          "oklch(26% 0.03916 257.29)",
+          "oklch(38% 0.03916 257.29)",
+          "oklch(49% 0.03916 257.29)",
+          "oklch(61% 0.03916 257.29)",
+          "oklch(72% 0.03916 257.29)",
+          "oklch(84% 0.03916 257.29)",
+          "oklch(95% 0.03916 257.29)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "辅助石板灰",
+        "tonalRamp": [
+          "oklch(15% 0.04072 257.42)",
+          "oklch(26% 0.04072 257.42)",
+          "oklch(38% 0.04072 257.42)",
+          "oklch(49% 0.04072 257.42)",
+          "oklch(61% 0.04072 257.42)",
+          "oklch(72% 0.04072 257.42)",
+          "oklch(84% 0.04072 257.42)",
+          "oklch(95% 0.04072 257.42)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "浅石板分隔线",
+        "tonalRamp": [
+          "oklch(15% 0.01262 255.51)",
+          "oklch(26% 0.01262 255.51)",
+          "oklch(38% 0.01262 255.51)",
+          "oklch(49% 0.01262 255.51)",
+          "oklch(61% 0.01262 255.51)",
+          "oklch(72% 0.01262 255.51)",
+          "oklch(84% 0.01262 255.51)",
+          "oklch(95% 0.01262 255.51)"
+        ]
+      },
+      "border-dark": {
+        "role": "neutral",
+        "displayName": "控件石板轮廓",
+        "tonalRamp": [
+          "oklch(15% 0.01985 252.89)",
+          "oklch(26% 0.01985 252.89)",
+          "oklch(38% 0.01985 252.89)",
+          "oklch(49% 0.01985 252.89)",
+          "oklch(61% 0.01985 252.89)",
+          "oklch(72% 0.01985 252.89)",
+          "oklch(84% 0.01985 252.89)",
+          "oklch(95% 0.01985 252.89)"
+        ]
+      },
+      "brand": {
+        "role": "primary",
+        "displayName": "深石板灰",
+        "tonalRamp": [
+          "oklch(15% 0.03982 265.75)",
+          "oklch(26% 0.03982 265.75)",
+          "oklch(38% 0.03982 265.75)",
+          "oklch(49% 0.03982 265.75)",
+          "oklch(61% 0.03982 265.75)",
+          "oklch(72% 0.03982 265.75)",
+          "oklch(84% 0.03982 265.75)",
+          "oklch(95% 0.03982 265.75)"
+        ]
+      },
+      "brand-hover": {
+        "role": "primary",
+        "displayName": "悬停深石板灰",
+        "tonalRamp": [
+          "oklch(15% 0.03685 260.03)",
+          "oklch(26% 0.03685 260.03)",
+          "oklch(38% 0.03685 260.03)",
+          "oklch(49% 0.03685 260.03)",
+          "oklch(61% 0.03685 260.03)",
+          "oklch(72% 0.03685 260.03)",
+          "oklch(84% 0.03685 260.03)",
+          "oklch(95% 0.03685 260.03)"
+        ]
+      },
+      "brand-fg": {
+        "role": "primary",
+        "displayName": "品牌白字",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26% 0.00000 0.00)",
+          "oklch(38% 0.00000 0.00)",
+          "oklch(49% 0.00000 0.00)",
+          "oklch(61% 0.00000 0.00)",
+          "oklch(72% 0.00000 0.00)",
+          "oklch(84% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "accent-soft": {
+        "role": "semantic",
+        "displayName": "浅通过绿",
+        "tonalRamp": [
+          "oklch(15% 0.02068 166.11)",
+          "oklch(26% 0.02068 166.11)",
+          "oklch(38% 0.02068 166.11)",
+          "oklch(49% 0.02068 166.11)",
+          "oklch(61% 0.02068 166.11)",
+          "oklch(72% 0.02068 166.11)",
+          "oklch(84% 0.02068 166.11)",
+          "oklch(95% 0.02068 166.11)"
+        ]
+      },
+      "accent-dark": {
+        "role": "semantic",
+        "displayName": "深通过绿",
+        "tonalRamp": [
+          "oklch(15% 0.10494 165.61)",
+          "oklch(26% 0.10494 165.61)",
+          "oklch(38% 0.10494 165.61)",
+          "oklch(49% 0.10494 165.61)",
+          "oklch(61% 0.10494 165.61)",
+          "oklch(72% 0.10494 165.61)",
+          "oklch(84% 0.10494 165.61)",
+          "oklch(95% 0.10494 165.61)"
+        ]
+      },
+      "warning-soft": {
+        "role": "semantic",
+        "displayName": "浅警示琥珀",
+        "tonalRamp": [
+          "oklch(15% 0.02140 95.28)",
+          "oklch(26% 0.02140 95.28)",
+          "oklch(38% 0.02140 95.28)",
+          "oklch(49% 0.02140 95.28)",
+          "oklch(61% 0.02140 95.28)",
+          "oklch(72% 0.02140 95.28)",
+          "oklch(84% 0.02140 95.28)",
+          "oklch(95% 0.02140 95.28)"
+        ]
+      },
+      "warning-dark": {
+        "role": "semantic",
+        "displayName": "深警示琥珀",
+        "tonalRamp": [
+          "oklch(15% 0.14551 49.00)",
+          "oklch(26% 0.14551 49.00)",
+          "oklch(38% 0.14551 49.00)",
+          "oklch(49% 0.14551 49.00)",
+          "oklch(61% 0.14551 49.00)",
+          "oklch(72% 0.14551 49.00)",
+          "oklch(84% 0.14551 49.00)",
+          "oklch(95% 0.14551 49.00)"
+        ]
+      },
+      "danger-soft": {
+        "role": "semantic",
+        "displayName": "浅错误玫红",
+        "tonalRamp": [
+          "oklch(15% 0.01517 12.42)",
+          "oklch(26% 0.01517 12.42)",
+          "oklch(38% 0.01517 12.42)",
+          "oklch(49% 0.01517 12.42)",
+          "oklch(61% 0.01517 12.42)",
+          "oklch(72% 0.01517 12.42)",
+          "oklch(84% 0.01517 12.42)",
+          "oklch(95% 0.01517 12.42)"
+        ]
+      },
+      "danger-border": {
+        "role": "semantic",
+        "displayName": "错误玫红轮廓",
+        "tonalRamp": [
+          "oklch(15% 0.05591 10.00)",
+          "oklch(26% 0.05591 10.00)",
+          "oklch(38% 0.05591 10.00)",
+          "oklch(49% 0.05591 10.00)",
+          "oklch(61% 0.05591 10.00)",
+          "oklch(72% 0.05591 10.00)",
+          "oklch(84% 0.05591 10.00)",
+          "oklch(95% 0.05591 10.00)"
+        ]
+      },
+      "danger-dark": {
+        "role": "semantic",
+        "displayName": "深错误玫红",
+        "tonalRamp": [
+          "oklch(15% 0.19781 16.93)",
+          "oklch(26% 0.19781 16.93)",
+          "oklch(38% 0.19781 16.93)",
+          "oklch(49% 0.19781 16.93)",
+          "oklch(61% 0.19781 16.93)",
+          "oklch(72% 0.19781 16.93)",
+          "oklch(84% 0.19781 16.93)",
+          "oklch(95% 0.19781 16.93)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "headline",
+        "purpose": "应用入口和首页章节标题"
+      },
+      "title": {
+        "displayName": "title",
+        "purpose": "工作台章节标题"
+      },
+      "sidebar-title": {
+        "displayName": "sidebar-title",
+        "purpose": "侧栏标题"
+      },
+      "subtitle": {
+        "displayName": "subtitle",
+        "purpose": "工作台三级标题"
+      },
+      "check-title": {
+        "displayName": "check-title",
+        "purpose": "检查项标题"
+      },
+      "body": {
+        "displayName": "body",
+        "purpose": "正文与普通控件"
+      },
+      "prose": {
+        "displayName": "prose",
+        "purpose": "报告正文"
+      },
+      "muted": {
+        "displayName": "muted",
+        "purpose": "辅助说明"
+      },
+      "label": {
+        "displayName": "label",
+        "purpose": "导航和搜索标签"
+      },
+      "caption": {
+        "displayName": "caption",
+        "purpose": "筛选与次级说明"
+      },
+      "eyebrow": {
+        "displayName": "eyebrow",
+        "purpose": "顶部英文产品标识"
+      },
+      "mono": {
+        "displayName": "mono",
+        "purpose": "文本证据"
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06)",
+        "purpose": "首页章节容器"
+      },
+      {
+        "name": "elevated",
+        "value": "0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04)",
+        "purpose": "固定评审操作栏"
+      },
+      {
+        "name": "window",
+        "value": "0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.06)",
+        "purpose": "原生弹窗"
+      }
+    ],
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "home-mobile-max",
+        "value": "640px"
+      },
+      {
+        "name": "workbench-mobile-max",
+        "value": "760px"
+      },
+      {
+        "name": "review-sidebar-desktop-min",
+        "value": "761px"
+      },
+      {
+        "name": "workbench-two-column-max",
+        "value": "1100px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "普通按钮",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "沿用当前默认、悬停、焦点与禁用样式。",
+      "html": "<button class=\"ds-button-default\">刷新报告</button>",
+      "css": ".ds-button-default{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:16px;}.ds-button-default:hover{background:var(--color-surface-hover);}.ds-button-default:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-button-default:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "主评审按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "沿用当前默认、悬停、焦点与禁用样式。",
+      "html": "<button class=\"ds-button-primary\">评审此 Run</button>",
+      "css": ".ds-button-primary{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:13px;background:var(--color-brand);border-color:var(--color-brand);color:var(--color-brand-fg);}.ds-button-primary:hover{background:var(--color-brand-hover);}.ds-button-primary:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-button-primary:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "危险操作按钮",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "沿用当前默认、悬停、焦点与禁用样式。",
+      "html": "<button class=\"ds-button-danger\">删除验证记录</button>",
+      "css": ".ds-button-danger{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:16px;color:var(--color-danger-dark);border-color:var(--color-danger-border);background:var(--color-danger-soft);}.ds-button-danger:hover{background:var(--color-surface-hover);}.ds-button-danger:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-button-danger:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "搜索字段",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "标签与输入框沿用工作台搜索样式。",
+      "html": "<label class=\"ds-search\">搜索需求<input class=\"ds-search-input\" type=\"search\" placeholder=\"标题或需求说明\"></label>",
+      "css": ".ds-search{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;font-size:13px;font-family:var(--font-sans);}.ds-search-input{font:inherit;padding:10px;border:1px solid var(--color-border-dark);border-radius:var(--radius-default);background:var(--color-surface);width:100%;min-width:0;max-width:100%;}.ds-search-input::placeholder{color:var(--color-muted);opacity:1;}.ds-search-input:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}"
+    },
+    {
+      "name": "状态筛选",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "深底白字表示选中，计数使用等宽数字。",
+      "html": "<div class=\"ds-filter\" role=\"group\" aria-label=\"需求状态筛选\"><button class=\"ds-filter-chip\" aria-pressed=\"true\">全部 <span>4</span></button><button class=\"ds-filter-chip\" aria-pressed=\"false\">待审 <span>2</span></button></div>",
+      "css": ".ds-filter{display:flex;flex-wrap:wrap;gap:6px;}.ds-filter-chip{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);padding:6px 8px;font-size:12px;background:transparent;border-color:var(--color-border);}.ds-filter-chip:hover{background:var(--color-surface-hover);}.ds-filter-chip[aria-pressed=\"true\"]{background:var(--color-brand);border-color:var(--color-brand);color:var(--color-brand-fg);}.ds-filter-chip[aria-pressed=\"true\"]:hover{background:var(--color-brand-hover);}.ds-filter-chip:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-filter-chip span{font-variant-numeric:tabular-nums;}"
+    },
+    {
+      "name": "结果徽章",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "静态状态配合文字，不添加交互状态。",
+      "html": "<div class=\"ds-badges\"><span class=\"ds-badge ds-badge-passed\">通过</span> <span class=\"ds-badge ds-badge-failed\">失败</span> <span class=\"ds-badge ds-badge-blocked\">阻塞</span> <span class=\"ds-badge\">未执行</span></div>",
+      "css": ".ds-badge{display:inline-block;padding:4px 9px;border-radius:var(--radius-sm);background:var(--color-surface-subtle);font-size:13px;white-space:nowrap;font-family:var(--font-sans);}.ds-badge-passed{background:var(--color-accent-soft);color:var(--color-accent-dark);}.ds-badge-failed{background:var(--color-danger-soft);color:var(--color-danger-dark);}.ds-badge-blocked{background:var(--color-warning-soft);color:var(--color-warning-dark);}"
+    },
+    {
+      "name": "项目卡片",
+      "kind": "card",
+      "refersTo": "project-card",
+      "description": "项目名称和说明组成可点击的入口。",
+      "html": "<button class=\"ds-project-card\"><strong>项目名称</strong><span>项目说明</span></button>",
+      "css": ".ds-project-card{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:16px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;padding:20px;}.ds-project-card:hover{background:var(--color-surface-hover);}.ds-project-card:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-project-card:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "需求导航项",
+      "kind": "nav",
+      "refersTo": "navigation-item",
+      "description": "当前项保留白底和较深轮廓，长文字可换行。",
+      "html": "<button class=\"ds-navigation-item\" aria-current=\"page\"><strong>需求标题</strong><span class=\"ds-badge ds-badge-blocked\">待审</span><span class=\"ds-navigation-description\">需求说明</span></button>",
+      "css": ".ds-navigation-item{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%;min-width:0;text-align:left;overflow-wrap:anywhere;border:1px solid transparent;background:transparent;padding:12px;font-size:13px;}.ds-navigation-item[aria-current=\"page\"]{background:var(--color-surface);border-color:var(--color-border-dark);color:var(--color-fg);}.ds-navigation-item:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-navigation-description{font-size:12px;color:var(--color-muted);line-height:1.7;}.ds-badge{display:inline-block;padding:4px 9px;border-radius:var(--radius-sm);background:var(--color-surface-subtle);font-size:13px;white-space:nowrap;font-family:var(--font-sans);}.ds-badge-passed{background:var(--color-accent-soft);color:var(--color-accent-dark);}.ds-badge-failed{background:var(--color-danger-soft);color:var(--color-danger-dark);}.ds-badge-blocked{background:var(--color-warning-soft);color:var(--color-warning-dark);}.ds-navigation-item:hover{background:var(--color-surface-subtle);}"
+    },
+    {
+      "name": "报告指标摘要",
+      "kind": "card",
+      "refersTo": "report-metrics",
+      "description": "仅用于展示本次结果、附件数及最近人工决定；样本内容是演示文字。",
+      "html": "<div class=\"ds-report-metrics\"><div><span class=\"ds-report-label\">检查结果 · 仅本次</span><span class=\"ds-badge ds-badge-passed\">通过</span></div><div><span class=\"ds-report-label\">证据附件</span><strong>附件数量</strong></div><div class=\"ds-report-decision\"><span class=\"ds-report-label\">最近人工决定 · 此 Run</span><span>尚无接受或拒绝决定</span></div></div>",
+      "css": ".ds-report-metrics{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;padding:16px;background:var(--color-surface-subtle);border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-fg);font-size:16px;font-family:var(--font-sans);}.ds-report-metrics>div{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;}.ds-report-decision{grid-column:1/-1;}.ds-report-label{color:var(--color-muted);font-size:14px;line-height:1.7;}.ds-badge{display:inline-block;padding:4px 9px;border-radius:var(--radius-sm);background:var(--color-surface-subtle);font-size:13px;white-space:nowrap;font-family:var(--font-sans);}.ds-badge-passed{background:var(--color-accent-soft);color:var(--color-accent-dark);}.ds-badge-failed{background:var(--color-danger-soft);color:var(--color-danger-dark);}.ds-badge-blocked{background:var(--color-warning-soft);color:var(--color-warning-dark);}"
+    },
+    {
+      "name": "评审操作栏",
+      "kind": "custom",
+      "refersTo": "review-bar",
+      "description": "预览仅展示栏体，不固定到设计面板宿主页面底部。",
+      "html": "<div class=\"ds-review-bar\" role=\"region\" aria-label=\"评审操作栏样本\"><div class=\"ds-review-context\"><span>当前报告</span><span class=\"ds-badge ds-badge-blocked\">待审</span><span class=\"ds-review-title\">报告标题</span></div><div class=\"ds-review-actions\"><a href=\"#ds-preview-feedback\">查看反馈</a><button class=\"ds-review-button\">评审此 Run</button></div></div>",
+      "css": ".ds-review-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 24px calc(12px + env(safe-area-inset-bottom));background:var(--color-surface);border-top:1px solid var(--color-border-dark);box-shadow:var(--shadow-elevated);color:var(--color-fg);font-family:var(--font-sans);}.ds-review-context{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;}.ds-review-context>span:not(.ds-review-title){flex-shrink:0;}.ds-review-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ds-review-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;flex-shrink:0;font-size:13px;}.ds-review-actions a{color:var(--color-fg-secondary);}.ds-review-actions a:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-review-button{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:13px;background:var(--color-brand);border-color:var(--color-brand);color:var(--color-brand-fg);}.ds-review-button:hover{background:var(--color-brand-hover);}.ds-review-button:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-review-button:disabled{opacity:.5;cursor:not-allowed;}@media(max-width:760px){.ds-review-bar{padding-inline:16px;flex-wrap:wrap;gap:8px;}.ds-review-context{width:100%;}.ds-review-actions{width:100%;justify-content:space-between;}}.ds-badge{display:inline-block;padding:4px 9px;border-radius:var(--radius-sm);background:var(--color-surface-subtle);font-size:13px;white-space:nowrap;font-family:var(--font-sans);}.ds-badge-passed{background:var(--color-accent-soft);color:var(--color-accent-dark);}.ds-badge-failed{background:var(--color-danger-soft);color:var(--color-danger-dark);}.ds-badge-blocked{background:var(--color-warning-soft);color:var(--color-warning-dark);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "验收工作台",
+    "overview": "Acceptances 的现有视觉系统是克制、清晰、偏紧凑的验收工作台。需求导航、报告内容和运行历史通过空间分区与文字层级组织，颜色帮助用户辨认状态，装饰较少。\n\n品牌与主要文字使用深石板灰，冷白与浅石板灰构成画布和内容表面。组件保持克制、明确、轻圆角。主体依靠底色和分隔线建立层次，首页容器、固定评审栏与弹窗使用阴影表达容器和覆盖关系。",
+    "keyCharacteristics": [
+      "用中性色组织内容，用带文字的状态色标记结果。",
+      "工作台主体保持平面分区，阴影用于容器和覆盖层级。",
+      "系统字体适配中文阅读，等宽字体用于版本标识与日志。",
+      "窄屏重排信息，保留需求、报告、历史与评审入口。"
+    ],
+    "rules": [
+      {
+        "name": "The Status Meaning Rule",
+        "body": "状态色与文字标签配合使用。通过和接受使用通过绿，待审和阻塞使用警示琥珀，失败、拒绝和作废使用错误玫红；未执行和补充说明保持中性。",
+        "section": "colors"
+      },
+      {
+        "name": "The Contextual Type Rule",
+        "body": "字号按实际上下文记录。应用标题与首页章节标题不同于工作台章节标题，不将通用 h1 的旧默认值套到当前入口。",
+        "section": "typography"
+      },
+      {
+        "name": "The Surface Depth Rule",
+        "body": "工作台报告区保持无阴影的分隔线结构。首页容器、固定评审栏和弹窗分别沿用 card、elevated 与 window 层次。",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do 复用当前语义颜色、轻圆角和系统字体，组件状态沿用同一主题。",
+      "Do 保留文字状态、当前与历史报告提示、计数和选中语义，让颜色之外仍有识别依据。",
+      "Do 保留键盘焦点轮廓、原生 dialog 与 details 的操作方式。",
+      "Do 让长标题、版本标识和日志换行或滚动，固定评审栏为正文与历史列表预留底部空间。",
+      "Do 区分首页容器与工作台平面分区，按实际上下文选择字号、内边距和阴影。"
+    ],
+    "donts": [
+      "Don't 将成功、警示和危险色当作普通装饰色，或只用颜色表达状态。",
+      "Don't 给每段工作台报告添加卡片阴影或圆角，改变现有分隔线结构。",
+      "Don't 用统一行高覆盖未显式设置行高的原生控件；报告正文与辅助文字有各自的行高规则。",
+      "Don't 移除可见焦点、关闭与 Esc 操作，或让固定评审栏遮挡最后的内容。",
+      "Don't 把主题中尚未使用的令牌、预览合成色阶或原型文案写成已经接入的应用能力。"
+    ]
+  }
+}
