@@ -43,8 +43,8 @@ function App() {
     }
   }
   return (
-    <main>
-      <header>
+    <div className={project ? "app-shell" : "app-shell home-shell"}>
+      <header className="app-header">
         <a
           href="/"
           onClick={(e) => {
@@ -57,7 +57,7 @@ function App() {
         </a>
         <p>保存验证事实，查看证据，作出人工判断。</p>
       </header>
-      <nav aria-label="项目导航">
+      <nav className="project-nav" aria-label="项目导航">
         <button onClick={() => navigate("/")}>所有项目</button>
         {data && (
           <select
@@ -135,7 +135,7 @@ function App() {
           </section>
         </>
       )}
-    </main>
+    </div>
   );
 }
 createRoot(document.getElementById("root")!).render(

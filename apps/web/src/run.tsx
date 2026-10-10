@@ -9,6 +9,7 @@ import {
   DeleteButton,
 } from "./client";
 import { Evidence } from "./evidence";
+import { Checklist } from "./checklist";
 export function Run({
   id,
   isLatest,
@@ -99,31 +100,7 @@ export function Run({
           <p>代码版本与未提交改动：未知</p>
         )}
       </section>
-      <section>
-        <h2>检查项（仅本次）</h2>
-        {report.checks.map((c) => (
-          <article className="check" key={c.id}>
-            <h3>
-              {c.title} <Status value={c.status} />
-            </h3>
-            <dl>
-              <dt>预期</dt>
-              <dd className="prose">{c.expected}</dd>
-              <dt>实际</dt>
-              <dd className="prose">{c.actual}</dd>
-            </dl>
-            {c.evidence?.map((path) => (
-              <a
-                className="evidence-link"
-                key={path}
-                href={`#evidence-${path}`}
-              >
-                {path}
-              </a>
-            ))}
-          </article>
-        ))}
-      </section>
+      <Checklist run={id} report={report} />
       <section>
         <h2>证据附件</h2>
         {report.evidence?.length ? (

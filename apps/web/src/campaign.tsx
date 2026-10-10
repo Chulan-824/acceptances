@@ -11,12 +11,14 @@ export function Campaign({
   base,
   navigate,
   onDeleted,
+  onChanged,
 }: {
   id: string;
   runId?: string;
   base: string;
   navigate: (path: string) => void;
   onDeleted: () => void;
+  onChanged: () => void;
 }) {
   const [revision, setRevision] = useState(0);
   const campaign = useResource<CampaignData>(`/campaigns/${id}`, revision);
@@ -24,69 +26,94 @@ export function Campaign({
     `/campaigns/${id}/runs`,
     revision,
   );
-  if (!campaign.data) return <Load error={campaign.error} />;
+  const selectedRun =
+    runId || campaign.data?.latestRunId || runs.data?.items[0]?.id;
+  function refresh() {
+    setRevision((value) => value + 1);
+    onChanged();
+  }
   return (
     <>
-      <section>
+      <main className="workspace-main" aria-label="需求与验证报告">
+        {!campaign.data ? (
+          <Load error={campaign.error} />
+        ) : (
+          <>
+            <section className="campaign-heading">
+              <div className="section-heading">
+                <h2>{campaign.data.title}</h2>
+                <Status value={campaign.data.status} />
+              </div>
+              <p className="prose">
+                {campaign.data.description || "暂无需求说明。"}
+              </p>
+              <p className="muted">
+                每次验证独立保存。局部复验不会自动合并历史结果；新报告需要重新人审。
+              </p>
+              <div className="actions">
+                <button onClick={refresh}>刷新报告</button>
+                <DeleteButton
+                  path={`/campaigns/${id}`}
+                  label="需求"
+                  onDeleted={onDeleted}
+                />
+              </div>
+            </section>
+            {selectedRun ? (
+              <Run
+                key={selectedRun}
+                id={selectedRun}
+                isLatest={campaign.data.latestRunId === selectedRun}
+                onChanged={refresh}
+                onDeleted={() => {
+                  refresh();
+                  navigate(base);
+                }}
+              />
+            ) : (
+              <section>
+                <h2>验证报告</h2>
+                <p>暂无验证。请在业务目录执行验证，由 CLI 提交报告与附件。</p>
+              </section>
+            )}
+          </>
+        )}
+      </main>
+      <aside className="workspace-history" aria-label="运行记录">
         <div className="section-heading">
-          <h2>{campaign.data.title}</h2>
-          <DeleteButton
-            path={`/campaigns/${id}`}
-            label="需求"
-            onDeleted={onDeleted}
-          />
+          <h2>运行记录</h2>
+          <span className="muted">{runs.data?.items.length ?? "—"} 次</span>
         </div>
-        <Status value={campaign.data.status} />
-        <p>{campaign.data.description}</p>
-        <p className="muted">
-          每次验证独立保存。局部复验不会自动合并历史结果；新报告需要重新人审。
-        </p>
-        <button onClick={() => setRevision((r) => r + 1)}>刷新报告</button>
-      </section>
-      {runId ? (
-        <>
-          <button onClick={() => navigate(base)}>← 全部验证记录</button>
-          <Run
-            key={runId}
-            id={runId}
-            isLatest={campaign.data.latestRunId === runId}
-            onChanged={() => setRevision((r) => r + 1)}
-            onDeleted={() => {
-              setRevision((r) => r + 1);
-              navigate(base);
-            }}
-          />
-        </>
-      ) : (
-        <section>
-          <h2>验证记录</h2>
-          {!runs.data ? (
-            <Load error={runs.error} />
-          ) : runs.data.items.length ? (
-            <div className="cards">
-              {runs.data.items.map((r) => (
-                <button
-                  className="card"
-                  key={r.id}
-                  onClick={() => navigate(`${base}/runs/${r.id}`)}
-                >
-                  <strong>{r.report.title}</strong>
-                  <span>
-                    {new Date(r.report.verifiedAt).toLocaleString()}{" "}
-                    {r.id === campaign.data?.latestRunId
-                      ? "· 当前报告"
-                      : "· 历史报告"}
-                  </span>
-                  <Status value={r.status} />
-                  <span>本次范围：{r.report.scope}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p>暂无验证。请在业务目录执行验证，由 CLI 提交报告与附件。</p>
-          )}
-        </section>
-      )}
+        <p className="muted">选择一次验证，查看当次证据和人工反馈。</p>
+        {!runs.data ? (
+          <Load error={runs.error} />
+        ) : runs.data.items.length ? (
+          <div className="navigation-list">
+            {runs.data.items.map((run) => (
+              <button
+                key={run.id}
+                className="navigation-item"
+                aria-current={selectedRun === run.id ? "page" : undefined}
+                onClick={() => navigate(`${base}/runs/${run.id}`)}
+              >
+                <span className="section-heading">
+                  <strong>
+                    {run.id === campaign.data?.latestRunId
+                      ? "最新验证"
+                      : "历史验证"}
+                  </strong>
+                  <Status value={run.status} />
+                </span>
+                <span>{run.report.title}</span>
+                <time>{new Date(run.report.verifiedAt).toLocaleString()}</time>
+                <span className="muted">{run.report.scope}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">提交报告后，这里会显示运行历史。</p>
+        )}
+      </aside>
     </>
   );
 }
