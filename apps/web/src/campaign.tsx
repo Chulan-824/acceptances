@@ -5,6 +5,7 @@ import type {
 } from "@acceptances/api-client";
 import { useResource, Status, Load, DeleteButton } from "./client";
 import { Run } from "./run";
+import { CheckCounts } from "./check-counts";
 export function Campaign({
   id,
   runId,
@@ -34,7 +35,10 @@ export function Campaign({
   }
   return (
     <>
-      <main className="workspace-main" aria-label="需求与验证报告">
+      <main
+        className="workspace-main has-review-bar"
+        aria-label="需求与验证报告"
+      >
         {!campaign.data ? (
           <Load error={campaign.error} />
         ) : (
@@ -107,6 +111,7 @@ export function Campaign({
                 <span>{run.report.title}</span>
                 <time>{new Date(run.report.verifiedAt).toLocaleString()}</time>
                 <span className="muted">{run.report.scope}</span>
+                <CheckCounts checks={run.report.checks} />
               </button>
             ))}
           </div>

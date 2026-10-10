@@ -665,3 +665,113 @@
     }
   }
 }
+
+@layer components {
+  html {
+    scroll-padding-bottom: 160px;
+  }
+  .has-review-bar {
+    padding-bottom: 160px;
+  }
+  .check-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .check-counts .badge {
+    font-size: 12px;
+  }
+  .report-metrics {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 20px;
+    padding: 16px;
+    background: var(--color-surface-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+  .report-metrics > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+  }
+  .latest-decision {
+    grid-column: 1 / -1;
+  }
+  .latest-decision time,
+  .latest-decision p {
+    margin: 0;
+  }
+  .review-bar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border-dark);
+    box-shadow: var(--shadow-elevated);
+  }
+  .review-bar-context {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 13px;
+  }
+  .review-bar-context > span:not(.review-bar-title) {
+    flex-shrink: 0;
+  }
+  .review-bar-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .review-bar .actions {
+    flex-shrink: 0;
+    font-size: 13px;
+  }
+  .review-dialog {
+    width: min(640px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+  }
+  .review-dialog h2 {
+    margin: 0;
+  }
+  #run-feedback {
+    scroll-margin-bottom: 160px;
+  }
+  @media (min-width: 761px) {
+    .workspace:has(.review-bar) .workspace-deliveries,
+    .workspace:has(.review-bar) .workspace-history {
+      max-height: calc(100dvh - 90px);
+    }
+  }
+  @media (max-width: 760px) {
+    .review-bar {
+      padding-inline: 16px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .review-bar-context {
+      width: 100%;
+    }
+    .review-bar .actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .review-dialog {
+      padding: 16px;
+    }
+    .workspace-history {
+      padding-bottom: 160px;
+    }
+  }
+}
