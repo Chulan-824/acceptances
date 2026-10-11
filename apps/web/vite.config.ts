@@ -14,5 +14,13 @@ export default defineConfig({
       "/health": { target: "http://127.0.0.1:8765", changeOrigin: false },
     },
   },
-  build: { outDir: "dist" },
+  build: {
+    outDir: "dist",
+    rolldownOptions: {
+      input: {
+        app: new URL("./index.html", import.meta.url).pathname,
+        landing: new URL("./landing.html", import.meta.url).pathname,
+      },
+    },
+  },
 });

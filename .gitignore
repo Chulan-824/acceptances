@@ -11,3 +11,5 @@ secrets/
 
 # Local planning and verification records stay outside Git.
 /.scratch/
+/.impeccable/review/
+/.playwright-mcp/

@@ -53,3 +53,18 @@
 报告顶部将本次检查结果、附件数量与此 Run 最近一次接受或拒绝决定集中展示。补充说明不覆盖最近决定；作废状态及原因独立保留。检查数量来自各自 Run 的完整 checks，不受搜索筛选影响，也不合并其他 Run。运行历史使用同一计数组件展示通过、失败、阻塞和未执行数量。
 
 页面底部固定显示当前或历史报告状态及评审入口，通过原生 dialog 录入补充说明、接受或拒绝。原反馈列表、作废及删除入口保留。历史报告决定仍不改变需求当前状态，作废 Run 仅允许补充说明。保存失败时弹窗保留输入并显示错误；关闭或 Esc 不取消已发送的请求。页面与窄屏历史列表预留底部空间，避免固定栏遮挡最后的内容。
+
+## 独立落地页
+
+2026-10-11 通过 OpenDesign MCP 的 `get_artifact` 读取同一项目的 `landing.html`，同时取得 `assets/tailwind-theme.js`、`assets/theme-modal.js`、`assets/landing.js`；通过 `get_file` 补充读取弹窗使用的 `assets/theme.json`。MCP 不返回图片二进制，三张展示图从 MCP 确认的本地项目目录复制，未重绘或压缩。
+
+- 页面入口：`apps/web/landing.html`，开发和生产 URL 均为 `/landing.html`。现有项目首页增加“产品介绍”入口。
+- 页面交互：`apps/web/src/landing/main.js` 和 `theme-modal.js`，包括三张截图切换、图片放大、命令复制、主题弹窗五个页签及 JSON 下载；`modal-focus.js` 补充键盘焦点圈定、Esc 关闭与焦点恢复。
+- 本地资源：`apps/web/public/landing/`，保留原始截图及主题 JSON。
+- 样式：`apps/web/src/landing/landing-design.css` 是设计页面运行后的 CSSOM 样式快照，包括弹窗各页签和复制提示所需规则。Vite 单独打包此入口，不加载工作台样式，不使用运行时 CDN，不增加 Tailwind 3 依赖。
+
+单独保留样式快照是为了准确复现原稿。原稿使用 Tailwind 3 默认圆角，例如 `rounded-md` 为 6px、`rounded-lg` 为 8px；工作台的 Tailwind 4 主题将这两个名称设为 8px 和 12px。直接共享工作台样式还会引入全局 section、header、button 规则，因此此页独立加载设计样式，工作台主题与行为沿用既有实现。
+
+导航、首屏、产品全景、核心特性、交付流程、目录规范、对比表、底部行动区与页脚均保留稿内布局及文案。按本次用户要求，中枢和查看器链接保留稿内固定地址，并通过 `data-pending-link` 阻止跳转；页内锚点照常工作，目标路由待用户逐一确认。原稿中的 PID、文件读取与签署机制、命令和示例数据属于设计内容，不代表当前产品新增了相应能力，产品事实继续以 PRODUCT.md 与 ADR-0001 为准。
+
+更新设计时应重新获取完整落地页资产，在浏览器打开原稿并触发所有展示页签、主题页签和复制提示，然后重新导出 CSSOM、格式化并对比截图。禁止将工作台令牌直接替换到此页后仅凭构建成功认定对齐。验证截图及测量报告保存于本地 `artifacts/landing/` 和 `.impeccable/review/landing/`，不进入 Git。

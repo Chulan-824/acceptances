@@ -55,7 +55,10 @@ function App() {
           <span className="eyebrow">ACCEPTANCES · LOCAL</span>
           <h1>交付验证</h1>
         </a>
-        <p>保存验证事实，查看证据，作出人工判断。</p>
+        <div>
+          <p>保存验证事实，查看证据，作出人工判断。</p>
+          <a href="/landing.html">产品介绍 →</a>
+        </div>
       </header>
       <nav className="project-nav" aria-label="项目导航">
         <button onClick={() => navigate("/")}>所有项目</button>
