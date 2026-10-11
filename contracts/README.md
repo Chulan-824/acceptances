@@ -20,8 +20,9 @@
 - Project：`id, name, description, createdAt`。
 - Repository：`id, projectId, name, source`。source 是代码来源标识，不由服务访问或执行。
 - Campaign：`id, projectId, title, description, status, latestRunId, createdAt`。
-- Run：`id, campaignId, submissionId, report, status, voidReason, createdAt, reviews`。
-- Review：`id, runId, kind, body, createdAt`。
+- Run：`id, campaignId, submissionId, report, status, voidReason, createdAt, reviews, checkReviews, reviewCounts, feedbackResponses, sourceRunAvailable?`。
+- Review：`id, runId, checkId?, kind, body, createdAt, legacy`。
+- `checkReviews`：每项当前人工判断，含 `checkId, status, lastReviewId`；`reviewCounts` 为 `pending, accepted, rejected` 数量。
 
 Campaign 状态为 `pending | accepted | rejected`；Run 另有 `void`。保存完成与人工接受分别表达。创建返回 201，读取返回 200。
 
@@ -63,13 +64,18 @@ Campaign 状态为 `pending | accepted | rejected`；Run 另有 `void`。保存�
 
 ## 人工处理与证据
 
-| 方法与路由                         | 行为                               |
-| ---------------------------------- | ---------------------------------- |
-| POST /runs/{id}/reviews            | `{kind, body}`；kind 为 `comment   | accepted | rejected`，返回 201 Review |
-| POST /runs/{id}/void               | `{reason}`；原因非空，返回 200 Run |
-| GET /runs/{id}/evidence/{filename} | 查看附件；`?download=1` 强制下载   |
+| 方法与路由                         | 行为                                                |
+| ---------------------------------- | --------------------------------------------------- |
+| POST /runs/{id}/reviews            | `{checkId?, kind, body?}`，返回 201 Review          |
+| POST /runs/{id}/accept-all         | `{}`，批量人工通过当前 Run 全部检查项，返回 200 Run |
+| POST /runs/{id}/void               | `{reason}`；原因非空，返回 200 Run                  |
+| GET /runs/{id}/evidence/{filename} | 查看附件；`?download=1` 强制下载                    |
 
-comment 正文必填；接受、拒绝可不填写正文。补充说明不会改写报告。历史 Run 的决定不会改变当前 Campaign。新 Run 令 Campaign 待审；作废当前 Run 同样令 Campaign 待审。作废记录可追加说明，不能再接受或拒绝；重复作废返回 409。
+逐项接口 `kind` 为 `comment | accepted | rejected | pending`；非评论操作必须指定 `checkId`，未知检查项返回 400。评论与人工不通过正文必填；原始验证非 `passed` 项的逐项人工通过正文必填；普通通过与撤回理由可选。整轮仅能评论。评论不改变当前判断，历史以保存顺序取最新明确判断。
+
+`accept-all` 是用户主动确认的一键交付，忽略页面筛选，原子地为每个尚未人工通过的检查项追加 `accepted` Review，可覆盖现有人审拒绝。批量通过无需输入理由，包括原始 `failed`、`blocked`、`skipped` 项；新判断统一说明为“一键交付：人工确认本轮全部检查项通过。”。已通过项跳过，重复请求仍返回 200 当前 Run，不重复写入；保存失败返回 500 `SAVE_FAILED` 并整批回滚。作废返回 409 `RUN_VOID`，不存在返回 404 `RUN_NOT_FOUND`。
+
+Run 作废优先，其余以不通过、待审、全部通过的顺序计算；全部人工通过即本轮已交付，改判或撤回重新计算。Campaign 只由最新 Run 决定，最新完整范围 Run 全部通过才整体通过；局部和未知范围通过后仍待审。历史 Run 的决定不会改变当前 Campaign，新 Run 不继承判断并令 Campaign 待审。作废当前 Run 同样令 Campaign 待审；作废记录可追加评论，不能通过、不通过、撤回或一键交付，重复作废返回 409。补充说明及人工判断不会改写原报告或附件。
 
 报告与附件没有编辑接口。附件通过受限根目录读取，PNG/JPEG/GIF/WebP、MP4/WebM 与纯文本日志可预览，其余类型强制下载。所有附件设置 `nosniff` 与 CSP sandbox，HTML/SVG 不会作为同源可执行页面展示。
 

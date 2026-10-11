@@ -162,6 +162,7 @@ func (s *Server) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/runs/{id}", s.getRun)
 	m.HandleFunc("GET /api/v1/runs/{id}/evidence/{filename}", s.evidence)
 	m.HandleFunc("POST /api/v1/runs/{id}/reviews", s.review)
+	m.HandleFunc("POST /api/v1/runs/{id}/accept-all", s.acceptAll)
 	m.HandleFunc("POST /api/v1/runs/{id}/void", s.voidRun)
 	for _, kind := range []string{"projects", "campaigns", "runs"} {
 		m.HandleFunc("GET /api/v1/"+kind+"/{id}/delete-preview", func(w http.ResponseWriter, r *http.Request) { s.deleteScope(w, r, kind, false) })

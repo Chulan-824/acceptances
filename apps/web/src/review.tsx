@@ -85,17 +85,21 @@ export function ReviewCounts({ counts }: { counts: ReviewCountsData }) {
 export function ReviewForm({
   check,
   isVoid,
+  disabled = false,
   onSubmit,
 }: {
   check?: Report["checks"][number];
   isVoid: boolean;
+  disabled?: boolean;
   onSubmit: (input: ReviewInput) => Promise<void>;
 }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const hasReason = Boolean(body.trim());
+  const locked = busy || disabled;
   async function save(kind: Review["kind"]) {
+    if (locked) return;
     setBusy(true);
     setError("");
     try {
@@ -133,7 +137,7 @@ export function ReviewForm({
         {check ? `评审理由或评论 · ${check.title}` : "整轮评论内容"}
         <textarea
           value={body}
-          disabled={busy}
+          disabled={locked}
           onChange={(event) => setBody(event.target.value)}
           placeholder={
             check ? "填写判断依据或检查项问题" : "填写整体情况或新问题"
@@ -147,7 +151,7 @@ export function ReviewForm({
               type="button"
               className="primary-button"
               disabled={
-                busy || isVoid || (check.status !== "passed" && !hasReason)
+                locked || isVoid || (check.status !== "passed" && !hasReason)
               }
               onClick={() => void save("accepted")}
             >
@@ -156,14 +160,14 @@ export function ReviewForm({
             <button
               type="button"
               className="danger"
-              disabled={busy || isVoid || !hasReason}
+              disabled={locked || isVoid || !hasReason}
               onClick={() => void save("rejected")}
             >
               人工不通过
             </button>
             <button
               type="button"
-              disabled={busy || isVoid}
+              disabled={locked || isVoid}
               onClick={() => void save("pending")}
             >
               撤回到待审
@@ -172,7 +176,7 @@ export function ReviewForm({
         )}
         <button
           type="button"
-          disabled={busy || !hasReason}
+          disabled={locked || !hasReason}
           onClick={() => void save("comment")}
         >
           {check ? "添加检查项评论" : "添加整轮评论"}

@@ -1,6 +1,6 @@
 # Acceptances 领域词汇表
 
-本词汇表记录本地精简版已确认的领域用语。重构边界见 [ADR-0001](docs/adr/0001-local-report-archive.md)，完整方案见[设计记录](.scratch/local-simplification/spec.md)。逐项人工评审的规则见 [ADR-0002](docs/adr/0002-per-check-human-review.md)。当前实现与验证状态见[实现交接](docs/v1-implementation-handoff.md)。
+本词汇表记录本地精简版已确认的领域用语。重构边界见 [ADR-0001](docs/adr/0001-local-report-archive.md)，完整方案见[设计记录](.scratch/local-simplification/spec.md)。逐项人工评审的规则见 [ADR-0002](docs/adr/0002-per-check-human-review.md)，一键交付见 [ADR-0003](docs/adr/0003-bulk-human-acceptance.md)。当前实现与验证状态见[实现交接](docs/v1-implementation-handoff.md)。
 
 ## Language
 
@@ -21,7 +21,9 @@ _Avoid_：Round，不将需求交付与一次验证混称。
 
 **Check Review**：人针对某个 Run 中单个 Check Item 给出的通过、不通过判断、撤回判断或评论；当前人工判断以最新明确判断为准，历史评审保留，评论本身不改变人工判断。
 
-**Run Acceptance**：一次 Run 中每个 Check Item 均获得人工通过后形成的整轮人工通过结论，仅代表本轮验证范围。
+**Run Acceptance**：一次 Run 中每个 Check Item 的当前人工判断均为通过时形成的结论，也称本轮交付，仅代表本轮验证范围。后续改判或撤回会改变该结论。
+
+**一键交付**：人一次确认当前 Run 的全部 Check Item 人工通过，表达对本轮所有检查项的同意。可覆盖此前的不通过判断，原判断历史仍保留。
 
 **Verification Scope**：一次 Run 对需求交付的覆盖范围，区分完整验证、局部验证和范围未知；局部验证的人工通过不代表需求整体通过。
 

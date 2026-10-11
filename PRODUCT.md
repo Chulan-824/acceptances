@@ -2,7 +2,7 @@
 
 <!-- impeccable:product-schema 1 -->
 
-本文记录整个 Acceptances 产品的共享背景，适用于 Web、API、CLI 和 Agent 接入。产品定位与使用边界于 2026-10-10 经用户确认，逐项人工评审规则于 2026-10-11 确认；领域定义以 [GLOSSARY.md](GLOSSARY.md) 为准，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md) 与 [ADR-0002](docs/adr/0002-per-check-human-review.md)。
+本文记录整个 Acceptances 产品的共享背景，适用于 Web、API、CLI 和 Agent 接入。产品定位与使用边界于 2026-10-10 经用户确认，逐项人工评审及一键交付规则于 2026-10-11 确认；领域定义以 [GLOSSARY.md](GLOSSARY.md) 为准，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md)、[ADR-0002](docs/adr/0002-per-check-human-review.md) 与 [ADR-0003](docs/adr/0003-bulk-human-acceptance.md)。
 
 ## Platform
 
@@ -32,7 +32,7 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 2. 用户在业务目录调用 `acceptances-v1` skill，选择已有 Project 并建立宿主机关联。同仓库 worktree 共用关联，多个仓库可以归属同一个 Project。
 3. Agent 为一次需求交付创建或选择 Campaign，在业务环境执行本次验证。
 4. CLI 整包保存结构化报告和截图、录像、日志等证据。上传失败后使用原提交 ID 与原内容重试。
-5. 用户在 Web 逐项通过、不通过、撤回或评论，系统按当前判断计算本轮状态。用户也可评论整轮或作废 Run。
+5. 用户在 Web 逐项通过、不通过、撤回或评论，也可一键交付，在汇总弹窗中确认本轮全部检查项人工通过。系统按当前判断计算本轮状态；用户也可评论整轮或作废 Run。
 6. 用户在业务聊天中要求 Agent 读取反馈并修复或复验；Agent 通过 CLI 取得当前判断与历史评论，按授权处理。
 7. 重新实际验证新增 Run，继续归属对应 Campaign，关联原反馈及逐条处理说明。新 Run 的各项重新等待人工评审。
 
@@ -46,8 +46,9 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 - 报告记录需求标题与说明、验证时间、本次范围、环境、代码版本及未提交改动标记，以及 Check Item 的预期、实际结果、状态与 Evidence。检查状态为 `passed`、`failed`、`blocked`、`skipped`，与人工状态分别展示。
 - 失败结果与局部验证均可归档。版本、环境或未提交改动情况未知时明确显示未知，不补造信息。
 - `scopeType` 区分完整、局部和未知，原 `scope` 文本说明具体覆盖。范围缺失视为未知，平台不根据文本猜测完整性；局部复验不合并历史通过结果。
-- 每项人工状态初始为待审，可通过、不通过或撤回。每次操作追加历史，评论不改变状态，最新明确判断决定当前状态。人工不通过必须写理由；接受原始 `failed`、`blocked`、`skipped` 结果也必须写理由。普通通过与撤回理由可选，评论须非空。
-- Run 作废优先；任一项人工不通过则整轮不通过；无不通过但仍有待审则整轮待审；全部人工通过才整轮通过。整轮状态自动计算，API 和 Web 均不能直接整轮通过或拒绝。
+- 每项人工状态初始为待审，可通过、不通过或撤回。每次操作追加历史，评论不改变状态，最新明确判断决定当前状态。逐项人工不通过必须写理由；逐项接受原始 `failed`、`blocked`、`skipped` 结果也必须写理由。普通通过与撤回理由可选，评论须非空。
+- 一键交付作用于当前 Run 的全部检查项，不受搜索或筛选影响。用户确认汇总后，所有尚未通过项追加人工通过判断，包括此前不通过项；批量通过无需理由，原历史与验证结果保留。已通过项跳过，保存失败整批回滚，重复请求不重复记录。作废 Run 不能交付。
+- Run 作废优先；任一项人工不通过则整轮不通过；无不通过但仍有待审则整轮待审；全部人工通过才整轮通过，也称本轮已交付。整轮状态由逐项判断自动计算，交付后仍可改判或撤回，一键交付不产生独立锁定状态。
 - Campaign 仅由最新 Run 决定。最新完整 Run 全部人工通过才需求整体通过；局部或未知范围 Run 人工通过后 Campaign 仍待审。新 Run 从待审开始，历史 Run 改判不影响当前需求。
 - 人工判断可以接受原始验证未通过的项，原始结果保持不变。反馈复验用 `followUp` 关联同 Campaign 来源 Run、来源反馈、非空处理说明和本次检查项；未处理或受阻可无关联检查项，但须说明原因。响应不自动关闭反馈或继承人工判断。
 - 已保存报告、附件、范围和反馈响应不能原地修改。文字纠错通过补充说明，整体错误通过 Void 保留作废原因。作废 Run 可补充评论，不能通过、不通过或撤回。
@@ -67,7 +68,7 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 
 ## Evidence on Hand
 
-- [领域词汇表](GLOSSARY.md)、[ADR-0001](docs/adr/0001-local-report-archive.md)、[ADR-0002](docs/adr/0002-per-check-human-review.md)、[Agent 接入](docs/agents/v1-integration.md) 和 [实现交接](docs/v1-implementation-handoff.md) 记录产品契约与验证方法。
+- [领域词汇表](GLOSSARY.md)、[ADR-0001](docs/adr/0001-local-report-archive.md)、[ADR-0002](docs/adr/0002-per-check-human-review.md)、[ADR-0003](docs/adr/0003-bulk-human-acceptance.md)、[Agent 接入](docs/agents/v1-integration.md) 和 [实现交接](docs/v1-implementation-handoff.md) 记录产品契约与验证方法。
 - `apps/web/src/` 包含实际网页实现；`packages/api-client/` 包含其 HTTP 客户端与类型；`skills/acceptances-v1/` 包含宿主机验证接入流程与报告格式。
 - 本地 `.scratch/local-simplification/verification/REPORT.md` 记录 2026-10-09 的平台实施验收，相关回执和截图位于 `artifacts/local-simplification/`。这些目录不进入 Git，其他 checkout 不保证存在；该记录不代表此后每次代码变更或业务需求已验收。
 - 本地 `artifacts/workbench/` 与 `artifacts/reviewbar/` 存有桌面和窄屏界面截图。使用前核对截图与当前实现是否一致。

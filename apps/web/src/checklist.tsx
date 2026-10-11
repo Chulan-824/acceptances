@@ -21,6 +21,7 @@ const statuses = [
 
 export function Checklist({
   run,
+  disabled,
   onReview,
   runPath,
   navigate,
@@ -31,6 +32,7 @@ export function Checklist({
   onStatusChange,
 }: RunNavigation & {
   run: RunData;
+  disabled: boolean;
   onReview: (input: ReviewInput) => Promise<void>;
   query: string;
   status: string;
@@ -98,6 +100,7 @@ export function Checklist({
           reviews={reviews.get(check.id) || []}
           responses={run.feedbackResponses}
           isVoid={run.status === "void"}
+          disabled={disabled}
           onReview={onReview}
           runPath={runPath}
           navigate={navigate}
@@ -123,6 +126,7 @@ function CheckItem({
   reviews,
   responses,
   isVoid,
+  disabled,
   onReview,
   runPath,
   navigate,
@@ -135,6 +139,7 @@ function CheckItem({
   reviews: Review[];
   responses: RunData["feedbackResponses"];
   isVoid: boolean;
+  disabled: boolean;
   onReview: (input: ReviewInput) => Promise<void>;
 }) {
   const [expanded, setExpanded] = useState(
@@ -186,7 +191,12 @@ function CheckItem({
           ) : (
             <p className="muted">此检查项未关联附件。</p>
           ))}
-        <ReviewForm check={check} isVoid={isVoid} onSubmit={onReview} />
+        <ReviewForm
+          check={check}
+          isVoid={isVoid}
+          disabled={disabled}
+          onSubmit={onReview}
+        />
         <details>
           <summary>评审历史 · {reviews.length} 条</summary>
           <ReviewHistory

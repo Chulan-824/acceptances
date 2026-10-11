@@ -42,17 +42,19 @@ export function Run({
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [reason, setReason] = useState("");
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const [dialogKind, setDialogKind] = useState<"comment" | "delivery">();
+  const [deliveryError, setDeliveryError] = useState("");
   const [checkQuery, setCheckQuery] = useState("");
   const [checkStatus, setCheckStatus] = useState("all");
   const [target, setTarget] = useState<{ id: string }>();
   const dialog = useRef<HTMLDialogElement>(null);
+  const mutationInFlight = useRef(false);
   const reviewBar = useRef<HTMLDivElement>(null);
   const reviewTitle = useId();
   useEffect(() => {
-    if (reviewOpen) dialog.current?.showModal();
+    if (dialogKind) dialog.current?.showModal();
     else dialog.current?.close();
-  }, [reviewOpen, run]);
+  }, [dialogKind, run]);
   useEffect(() => {
     const bar = reviewBar.current;
     const workspace = bar?.closest<HTMLElement>(".workspace");
@@ -86,28 +88,54 @@ export function Run({
       // Ignore an invalid URL fragment without interrupting report loading.
     }
   }, [run]);
-  async function saveReview(input: ReviewInput) {
-    await request(`/runs/${id}/reviews`, "POST", input);
-    setReviewOpen(false);
-    setRevision((value) => value + 1);
-    onChanged();
-  }
-  async function mutate(path: string, payload: unknown) {
+  async function saveAction(path: string, payload: unknown) {
+    if (mutationInFlight.current) throw new Error("正在保存，请稍后再试。");
+    mutationInFlight.current = true;
     setBusy(true);
-    setActionError("");
     try {
       await request(`/runs/${id}/${path}`, "POST", payload);
       setRevision((r) => r + 1);
       onChanged();
+    } finally {
+      mutationInFlight.current = false;
+      setBusy(false);
+    }
+  }
+  async function saveReview(input: ReviewInput) {
+    await saveAction("reviews", input);
+    setDialogKind(undefined);
+  }
+  async function mutate(path: string, payload: unknown) {
+    setActionError("");
+    try {
+      await saveAction(path, payload);
       setReason("");
     } catch (error) {
       setActionError(message(error));
-    } finally {
-      setBusy(false);
+    }
+  }
+  async function acceptAll() {
+    setDeliveryError("");
+    try {
+      await saveAction("accept-all", {});
+      setDialogKind(undefined);
+    } catch (error) {
+      setDeliveryError(message(error));
     }
   }
   if (!run) return <Load error={error} />;
   const report = run.report;
+  const rejectedIDs = new Set(
+    run.checkReviews
+      .filter((item) => item.status === "rejected")
+      .map((item) => item.checkId),
+  );
+  const rejectedChecks = report.checks.filter((check) =>
+    rejectedIDs.has(check.id),
+  );
+  const exceptionalChecks = report.checks.filter(
+    (check) => check.status !== "passed",
+  );
   return (
     <>
       <section className="report-summary" aria-label="报告摘要">
@@ -141,7 +169,7 @@ export function Run({
           <div className="latest-decision">
             <span className="muted">人工评审进度 · 仅本次</span>
             <ReviewCounts counts={run.reviewCounts} />
-            <span className="muted">全部检查项人工通过后，本轮自动通过。</span>
+            <span className="muted">全部检查项人工通过即为本轮交付。</span>
           </div>
         </div>
         <p className="prose">{report.description}</p>
@@ -163,7 +191,7 @@ export function Run({
           <p className="notice">
             {report.scopeType === "partial"
               ? "局部验证通过仅代表本轮范围。需求整体仍需最新完整验证的全部检查项人工通过。"
-              : "本轮范围未知，人工通过后需求整体仍待审。"}
+              : "本轮范围未知，人工通过仅代表本轮，不能代表需求整体通过。"}
           </p>
         )}
         <h3>代码版本</h3>
@@ -261,6 +289,7 @@ export function Run({
       )}
       <Checklist
         run={run}
+        disabled={busy}
         onReview={saveReview}
         runPath={runPath}
         navigate={navigate}
@@ -294,7 +323,9 @@ export function Run({
           navigate={navigate}
           onTarget={showTarget}
         />
-        <button onClick={() => setReviewOpen(true)}>添加整轮评论</button>
+        <button disabled={busy} onClick={() => setDialogKind("comment")}>
+          添加整轮评论
+        </button>
         {run.status !== "void" && (
           <details>
             <summary>报告整体有误：作废</summary>
@@ -302,6 +333,7 @@ export function Run({
               作废原因
               <textarea
                 value={reason}
+                disabled={busy}
                 onChange={(e) => setReason(e.target.value)}
               />
             </label>
@@ -331,11 +363,26 @@ export function Run({
           <a href="#checks-title">逐项评审</a>
           <a href="#run-feedback">整轮反馈</a>
           <button
-            className="primary-button"
+            aria-label="添加整轮评论"
             disabled={busy}
-            onClick={() => setReviewOpen(true)}
+            onClick={() => setDialogKind("comment")}
           >
             添加整轮评论
+          </button>
+          <button
+            className="primary-button"
+            disabled={
+              busy ||
+              run.status === "void" ||
+              run.status === "accepted" ||
+              !report.checks.length
+            }
+            onClick={() => {
+              setDeliveryError("");
+              setDialogKind("delivery");
+            }}
+          >
+            {run.status === "accepted" ? "本轮已交付" : "一键交付"}
           </button>
         </div>
       </div>
@@ -343,15 +390,24 @@ export function Run({
         ref={dialog}
         className="review-dialog"
         aria-labelledby={reviewTitle}
-        onCancel={() => setReviewOpen(false)}
-        onClose={() => setReviewOpen(false)}
+        onCancel={(event) => {
+          if (busy) event.preventDefault();
+          else setDialogKind(undefined);
+        }}
+        onClose={() => setDialogKind(undefined)}
       >
-        {reviewOpen && (
+        {dialogKind && (
           <>
             <div className="section-heading">
-              <h2 id={reviewTitle}>添加整轮评论</h2>
-              <button autoFocus onClick={() => setReviewOpen(false)}>
-                关闭评论
+              <h2 id={reviewTitle}>
+                {dialogKind === "delivery" ? "确认本轮交付" : "添加整轮评论"}
+              </h2>
+              <button
+                autoFocus
+                disabled={busy}
+                onClick={() => setDialogKind(undefined)}
+              >
+                {dialogKind === "delivery" ? "取消" : "关闭评论"}
               </button>
             </div>
             <p className="prose">{report.title}</p>
@@ -368,7 +424,75 @@ export function Run({
                 此 Run 已作废，仅可添加补充说明。作废原因：{run.voidReason}
               </p>
             )}
-            <ReviewForm isVoid={run.status === "void"} onSubmit={saveReview} />
+            {dialogKind === "comment" ? (
+              <ReviewForm
+                disabled={busy}
+                isVoid={run.status === "void"}
+                onSubmit={saveReview}
+              />
+            ) : (
+              <>
+                <p>
+                  本轮共 {report.checks.length}{" "}
+                  项，确认后全部人工通过，不受当前搜索或筛选影响。
+                </p>
+                <ReviewCounts counts={run.reviewCounts} />
+                {rejectedChecks.length > 0 && (
+                  <div className="notice">
+                    <p>
+                      以下 {rejectedChecks.length}{" "}
+                      项已有人工不通过判断，将改为通过，原判断保留在历史中。
+                    </p>
+                    <ul>
+                      {rejectedChecks.map((check) => (
+                        <li key={check.id}>
+                          {check.id} · {check.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {exceptionalChecks.length > 0 && (
+                  <div className="notice">
+                    <p>
+                      以下项目原始验证未通过。确认交付表示你仍同意这些项目，无需填写理由；原始结果保持不变。
+                    </p>
+                    <ul>
+                      {exceptionalChecks.map((check) => (
+                        <li key={check.id}>
+                          {check.id} · {check.title}{" "}
+                          <Status value={check.status} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {report.scopeType !== "full" && (
+                  <p className="notice">
+                    {report.scopeType === "partial"
+                      ? "本轮为局部验证"
+                      : "本轮范围未知"}
+                    ，交付仅代表本轮范围，不能代表需求整体通过。
+                  </p>
+                )}
+                <p className="muted">
+                  已通过项保留当前判断。本轮交付后仍可逐项改判或撤回。
+                </p>
+                {deliveryError && <p role="alert">{deliveryError}</p>}
+                {busy && <p role="status">正在交付…</p>}
+                <div className="actions">
+                  <button
+                    className="primary-button"
+                    disabled={
+                      busy || run.status === "void" || run.status === "accepted"
+                    }
+                    onClick={() => void acceptAll()}
+                  >
+                    确认交付
+                  </button>
+                </div>
+              </>
+            )}
           </>
         )}
       </dialog>
