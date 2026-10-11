@@ -84,7 +84,7 @@ export function Campaign({
         )}
       </main>
       <aside className="workspace-history" aria-label="运行记录">
-        <div className="section-heading">
+        <div className="section-heading workspace-sidebar-heading">
           <h2>运行记录</h2>
           <span className="muted">{runs.data?.items.length ?? "—"} 次</span>
         </div>

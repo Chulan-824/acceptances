@@ -22,12 +22,16 @@ const statuses = [
 ];
 export function Project({
   id,
+  projects,
+  projectsError,
   campaignId,
   runId,
   navigate,
   onDeleted,
 }: {
   id: string;
+  projects?: ProjectData[];
+  projectsError?: string;
   campaignId?: string;
   runId?: string;
   navigate: (path: string) => void;
@@ -81,21 +85,55 @@ export function Project({
   return (
     <div className="workspace">
       <aside className="workspace-deliveries" aria-label="需求交付导航">
-        <div className="section-heading">
+        <nav className="workspace-home" aria-label="项目导航">
+          <a
+            href="/"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate("/");
+            }}
+          >
+            <span className="workspace-brand" aria-hidden="true">
+              A
+            </span>
+            <span>Acceptances</span>
+          </a>
+          <button className="compact-button" onClick={() => navigate("/")}>
+            所有项目
+          </button>
+        </nav>
+        <label className="workspace-project-select">
+          当前项目
+          <select
+            value={id}
+            disabled={!projects}
+            onChange={(event) => navigate(`/projects/${event.target.value}`)}
+          >
+            {!projects?.some((item) => item.id === id) && (
+              <option value={id}>
+                {project.data?.name || "正在加载项目…"}
+              </option>
+            )}
+            {projects?.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {projectsError && <p role="alert">{projectsError}</p>}
+        <div className="section-heading workspace-sidebar-heading">
           <h2>需求交付</h2>
           <button className="compact-button" onClick={refresh}>
             刷新列表
           </button>
         </div>
-        <p className="workspace-project-name">
-          {project.data?.name || "正在加载项目…"}
-        </p>
         <button
           className="project-overview"
           aria-current={!campaignId ? "page" : undefined}
           onClick={() => navigate(base)}
         >
-          项目管理 / 创建需求
+          项目设置 / 创建需求
         </button>
         <label className="search-field">
           搜索需求
@@ -146,7 +184,7 @@ export function Project({
               <p className="muted">
                 {items.length
                   ? "没有匹配的需求，请调整搜索或状态筛选。"
-                  : "暂无需求。进入项目管理，创建第一项需求交付。"}
+                  : "暂无需求。进入项目设置，创建第一项需求交付。"}
               </p>
             )}
           </>

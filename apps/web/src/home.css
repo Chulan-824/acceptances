@@ -1,0 +1,225 @@
+@reference "./style.css";
+
+@layer components {
+  .home-page {
+    @apply min-h-[100svh] text-[15px] leading-[1.7] antialiased;
+  }
+  .home-container {
+    @apply w-full max-w-280 mx-auto px-8;
+  }
+  .home-header {
+    @apply block m-0 bg-surface border-b border-border;
+  }
+  .home-header-inner {
+    @apply flex items-center justify-between min-h-18 py-3 gap-3;
+  }
+  .home-brand,
+  .home-intro {
+    @apply inline-flex items-center gap-[10px] no-underline;
+  }
+  .home-brand {
+    @apply font-semibold text-fg whitespace-nowrap;
+  }
+  .home-brand-mark,
+  .home-project-icon {
+    @apply grid [place-items:center] shrink-0 bg-surface-subtle border border-border;
+  }
+  .home-brand-mark {
+    @apply w-7 h-7 border-border-dark rounded-default;
+  }
+  .home-brand-mark svg {
+    @apply w-[17px] h-[17px];
+  }
+  .home-brand-context {
+    @apply ml-1 [padding-left:12px] border-l border-border text-[12px] font-normal text-fg-secondary;
+  }
+  .home-intro {
+    @apply min-h-11 pt-2 pr-[10px] pb-2 pl-[10px] rounded-default text-[13px] text-fg-secondary whitespace-nowrap;
+  }
+  .home-intro:hover {
+    @apply bg-surface-subtle;
+  }
+  .home-intro svg {
+    @apply w-4 h-4;
+  }
+  .home-content {
+    @apply py-[36px_32px];
+  }
+  .home-title {
+    @apply mb-[30px];
+  }
+  .home-title h1 {
+    @apply mt-0 mr-0 mb-[7px] ml-0 text-[28px] font-semibold leading-[1.4];
+  }
+  .home-title p {
+    @apply m-0 text-[14px] text-fg-secondary leading-[1.8];
+  }
+  .home-layout {
+    @apply grid grid-cols-[minmax(0,_1fr)_320px] gap-8 items-start;
+  }
+  .home-layout > section {
+    @apply min-w-0 m-0 p-0 border-0 rounded-none bg-transparent shadow-none;
+  }
+  .home-section-title {
+    @apply mb-[18px];
+  }
+  .home-section-title h2 {
+    @apply mt-0 mr-0 mb-1 ml-0 text-[20px] font-semibold leading-[1.4];
+  }
+  .home-section-title p {
+    @apply m-0 text-[13px] text-muted;
+  }
+  .home-project-list {
+    @apply grid grid-cols-[repeat(auto-fit,_minmax(min(100%,_280px),_1fr))] gap-3 list-none m-0 p-0;
+  }
+  .home-project-list > li {
+    @apply min-w-0;
+  }
+  .home-project-card {
+    @apply grid grid-cols-[44px_minmax(0,_1fr)_24px] items-start gap-4 min-h-[142px] p-6 bg-surface border border-border rounded-lg shadow-subtle no-underline;
+  }
+  .home-project-card:hover {
+    @apply bg-surface-subtle border-border-dark;
+  }
+  .home-project-card:active {
+    @apply bg-border;
+  }
+  .home-project-icon {
+    @apply w-11 h-11 rounded-md text-fg-secondary;
+  }
+  .home-project-icon svg {
+    @apply w-[22px] h-[22px];
+  }
+  .home-project-copy {
+    @apply min-w-0 wrap-anywhere;
+  }
+  .home-project-name {
+    @apply block text-[18px] font-semibold text-fg leading-[1.5];
+  }
+  .home-project-description {
+    @apply block mt-1 mr-0 mb-[14px] ml-0 text-[13px] text-muted;
+  }
+  .home-project-action {
+    @apply text-[13px] text-fg-secondary;
+  }
+  .home-project-card > svg {
+    @apply w-5 h-5 mt-[11px];
+  }
+  .home-project-card:is(:hover, :active) .home-project-description {
+    @apply text-fg-secondary;
+  }
+  .home-state {
+    @apply flex flex-col items-start justify-center gap-3 min-h-57 p-7 bg-surface border border-border rounded-lg wrap-anywhere;
+  }
+  .home-state h3 {
+    @apply m-0 text-[16px] font-semibold;
+  }
+  .home-state p {
+    @apply m-0 max-w-[40ch] text-[13px];
+  }
+  .home-state button {
+    @apply flex items-center gap-2 min-h-11 text-[13px] bg-surface;
+  }
+  .home-state button:hover {
+    @apply bg-surface-subtle;
+  }
+  .home-state button svg {
+    @apply w-5 h-5;
+  }
+  .home-create-panel {
+    @apply m-0 bg-surface border border-border rounded-lg;
+  }
+  .home-create-panel summary {
+    @apply flex items-center justify-between gap-4 min-h-[78px] m-0 p-5 rounded-lg list-none;
+  }
+  .home-create-panel summary::-webkit-details-marker {
+    @apply hidden;
+  }
+  .home-create-panel summary:hover {
+    @apply bg-surface-subtle;
+  }
+  .home-create-panel summary[aria-disabled="true"] {
+    @apply cursor-wait;
+  }
+  .home-create-panel summary svg {
+    @apply w-5 h-5 shrink-0;
+  }
+  .home-create-panel[open] .home-toggle-vertical {
+    @apply hidden;
+  }
+  .home-create-title {
+    @apply block text-[16px] font-semibold;
+  }
+  .home-create-description {
+    @apply block mt-[2px] text-[12px] text-muted;
+  }
+  .home-create-body {
+    @apply pt-0 pr-5 pb-5 pl-5;
+  }
+  .home-create-body form {
+    @apply max-w-none border-t border-border pt-5;
+  }
+  .home-create-body fieldset {
+    @apply min-w-0 border-0 p-0 m-0;
+  }
+  .home-create-body label {
+    @apply flex-row gap-1 mt-0 mr-0 mb-[6px] ml-0 text-[13px] text-fg-secondary;
+  }
+  .home-create-body label span {
+    @apply text-[12px] text-muted;
+  }
+  .home-create-body input,
+  .home-create-body textarea {
+    @apply block w-full min-h-11 pt-[10px] pr-3 pb-[10px] pl-3 text-[14px] leading-[1.7] text-fg caret-brand;
+  }
+  .home-create-body textarea {
+    @apply min-h-23;
+  }
+  .home-create-body input[aria-invalid="true"] {
+    @apply border-2 border-danger-dark pt-[9px] pr-[11px] pb-[9px] pl-[11px];
+  }
+  .home-field-meta {
+    @apply flex justify-between flex-wrap gap-[4px_12px] mt-[6px] mb-5 text-[12px] text-muted;
+  }
+  .home-field-meta span:last-child {
+    @apply font-mono tabular-nums;
+  }
+  .home-field-error {
+    @apply mt-[-14px] mr-0 mb-5 ml-0 text-[12px];
+  }
+  .home-create-submit {
+    @apply flex items-center justify-center gap-2 w-full min-h-11 mt-[18px] text-[13px];
+  }
+  .home-create-body fieldset:disabled :is(input, textarea, button) {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .home-create-error {
+    @apply mt-[14px] mr-0 mb-0 ml-0 p-3 border border-danger-border rounded-default bg-danger-soft text-[13px] wrap-anywhere;
+  }
+  .home-loading {
+    @apply flex items-center gap-[10px];
+  }
+  .home-spinner {
+    @apply w-4 h-4 border-2 border-border-dark border-t-current rounded-full animate-[home-spin_0.8s_linear_infinite] shrink-0;
+  }
+  .home-footer {
+    @apply flex justify-between flex-wrap gap-[8px_20px] mt-8 pt-[18px] border-t border-border text-[12px] text-muted;
+  }
+  .home-skip {
+    @apply absolute top-[-100px] left-4 pt-[10px] pr-4 pb-[10px] pl-4 min-h-11 bg-surface border border-brand z-[20];
+  }
+  .home-skip:focus {
+    @apply top-3;
+  }
+  @keyframes home-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-spinner {
+      @apply animate-none;
+    }
+  }
+}

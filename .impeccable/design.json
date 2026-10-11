@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-10T09:08:42Z",
+  "generatedAt": "2026-10-11T11:14:07Z",
   "title": "Design System: Acceptances",
   "extensions": {
     "colorMeta": {
@@ -274,7 +274,7 @@
     "typographyMeta": {
       "headline": {
         "displayName": "headline",
-        "purpose": "应用入口和首页章节标题"
+        "purpose": "通用应用标题；首页使用局部字号"
       },
       "title": {
         "displayName": "title",
@@ -323,9 +323,14 @@
     },
     "shadows": [
       {
+        "name": "subtle",
+        "value": "0 1px 2px 0 rgba(15, 23, 42, 0.04)",
+        "purpose": "首页项目卡片"
+      },
+      {
         "name": "card",
         "value": "0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06)",
-        "purpose": "首页章节容器"
+        "purpose": "通用 section；首页分区不使用"
       },
       {
         "name": "elevated",
@@ -338,25 +343,14 @@
         "purpose": "原生弹窗"
       }
     ],
-    "motion": [],
-    "breakpoints": [
+    "motion": [
       {
-        "name": "home-mobile-max",
-        "value": "640px"
-      },
-      {
-        "name": "workbench-mobile-max",
-        "value": "760px"
-      },
-      {
-        "name": "review-sidebar-desktop-min",
-        "value": "761px"
-      },
-      {
-        "name": "workbench-two-column-max",
-        "value": "1100px"
+        "name": "home-spin",
+        "value": "0.8s linear infinite",
+        "purpose": "首页加载与创建中的旋转指示器；减少动态效果时停止"
       }
-    ]
+    ],
+    "breakpoints": []
   },
   "components": [
     {
@@ -411,9 +405,9 @@
       "name": "项目卡片",
       "kind": "card",
       "refersTo": "project-card",
-      "description": "项目名称和说明组成可点击的入口。",
-      "html": "<button class=\"ds-project-card\"><strong>项目名称</strong><span>项目说明</span></button>",
-      "css": ".ds-project-card{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:16px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;padding:20px;}.ds-project-card:hover{background:var(--color-surface-hover);}.ds-project-card:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-project-card:disabled{opacity:.5;cursor:not-allowed;}"
+      "description": "首页白色项目入口；样本仅展示外观，不请求业务接口。",
+      "html": "<a class=\"ds-project-card\" href=\"#ds-preview-project\"><span class=\"ds-project-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z\" /></svg></span><span class=\"ds-project-copy\"><strong>项目名称</strong><span class=\"ds-project-description\">项目说明</span><span class=\"ds-project-action\">进入项目</span></span><svg class=\"ds-project-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14m-5-5 5 5-5 5\" /></svg></a>",
+      "css": ".ds-project-card{display:grid;grid-template-columns:44px minmax(0,1fr) 24px;align-items:start;gap:16px;min-height:142px;padding:24px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-subtle);text-decoration:none;color:var(--color-fg-secondary);font-family:var(--font-sans);line-height:1.7;}.ds-project-card:hover{background:var(--color-surface-subtle);border-color:var(--color-border-dark);}.ds-project-card:active{background:var(--color-border);}.ds-project-card:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-project-icon{display:grid;place-items:center;width:44px;height:44px;background:var(--color-surface-subtle);border:1px solid var(--color-border);border-radius:var(--radius-md);}.ds-project-icon svg{width:22px;height:22px;}.ds-project-copy{min-width:0;overflow-wrap:anywhere;}.ds-project-copy strong{display:block;font-size:18px;font-weight:600;color:var(--color-fg);line-height:1.5;}.ds-project-description{display:block;margin:4px 0 14px;font-size:13px;color:var(--color-muted);}.ds-project-action{font-size:13px;}.ds-project-arrow{width:20px;height:20px;margin-top:11px;}.ds-project-card:is(:hover,:active) .ds-project-description{color:var(--color-fg-secondary);}"
     },
     {
       "name": "需求导航项",
@@ -437,17 +431,17 @@
       "refersTo": "review-bar",
       "description": "预览仅展示栏体，不固定到设计面板宿主页面底部。",
       "html": "<div class=\"ds-review-bar\" role=\"region\" aria-label=\"评审操作栏样本\"><div class=\"ds-review-context\"><span>当前报告</span><span class=\"ds-badge ds-badge-blocked\">待审</span><span class=\"ds-review-title\">报告标题</span></div><div class=\"ds-review-actions\"><a href=\"#ds-preview-feedback\">查看反馈</a><button class=\"ds-review-button\">评审此 Run</button></div></div>",
-      "css": ".ds-review-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 24px calc(12px + env(safe-area-inset-bottom));background:var(--color-surface);border-top:1px solid var(--color-border-dark);box-shadow:var(--shadow-elevated);color:var(--color-fg);font-family:var(--font-sans);}.ds-review-context{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;}.ds-review-context>span:not(.ds-review-title){flex-shrink:0;}.ds-review-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ds-review-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;flex-shrink:0;font-size:13px;}.ds-review-actions a{color:var(--color-fg-secondary);}.ds-review-actions a:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-review-button{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:13px;background:var(--color-brand);border-color:var(--color-brand);color:var(--color-brand-fg);}.ds-review-button:hover{background:var(--color-brand-hover);}.ds-review-button:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-review-button:disabled{opacity:.5;cursor:not-allowed;}@media(max-width:760px){.ds-review-bar{padding-inline:16px;flex-wrap:wrap;gap:8px;}.ds-review-context{width:100%;}.ds-review-actions{width:100%;justify-content:space-between;}}.ds-badge{display:inline-block;padding:4px 9px;border-radius:var(--radius-sm);background:var(--color-surface-subtle);font-size:13px;white-space:nowrap;font-family:var(--font-sans);}.ds-badge-passed{background:var(--color-accent-soft);color:var(--color-accent-dark);}.ds-badge-failed{background:var(--color-danger-soft);color:var(--color-danger-dark);}.ds-badge-blocked{background:var(--color-warning-soft);color:var(--color-warning-dark);}"
+      "css": ".ds-review-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 24px calc(12px + env(safe-area-inset-bottom));background:var(--color-surface);border-top:1px solid var(--color-border-dark);box-shadow:var(--shadow-elevated);color:var(--color-fg);font-family:var(--font-sans);}.ds-review-context{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;}.ds-review-context>span:not(.ds-review-title){flex-shrink:0;}.ds-review-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ds-review-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;flex-shrink:0;font-size:13px;}.ds-review-actions a{color:var(--color-fg-secondary);}.ds-review-actions a:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-review-button{border:1px solid var(--color-border-dark);background:var(--color-surface-subtle);color:var(--color-fg-secondary);border-radius:var(--radius-default);padding:10px 16px;cursor:pointer;font-family:var(--font-sans);font-size:13px;background:var(--color-brand);border-color:var(--color-brand);color:var(--color-brand-fg);}.ds-review-button:hover{background:var(--color-brand-hover);}.ds-review-button:focus-visible{outline:3px solid var(--color-brand);outline-offset:3px;}.ds-review-button:disabled{opacity:.5;cursor:not-allowed;}.ds-badge{display:inline-block;padding:4px 9px;border-radius:var(--radius-sm);background:var(--color-surface-subtle);font-size:13px;white-space:nowrap;font-family:var(--font-sans);}.ds-badge-passed{background:var(--color-accent-soft);color:var(--color-accent-dark);}.ds-badge-failed{background:var(--color-danger-soft);color:var(--color-danger-dark);}.ds-badge-blocked{background:var(--color-warning-soft);color:var(--color-warning-dark);}"
     }
   ],
   "narrative": {
     "northStar": "验收工作台",
-    "overview": "Acceptances 的现有视觉系统是克制、清晰、偏紧凑的验收工作台。需求导航、报告内容和运行历史通过空间分区与文字层级组织，颜色帮助用户辨认状态，装饰较少。\n\n品牌与主要文字使用深石板灰，冷白与浅石板灰构成画布和内容表面。组件保持克制、明确、轻圆角。主体依靠底色和分隔线建立层次，首页容器、固定评审栏与弹窗使用阴影表达容器和覆盖关系。",
+    "overview": "Acceptances 的现有视觉系统是克制、清晰、偏紧凑的验收工作台。需求导航、报告内容和运行历史通过空间分区与文字层级组织，颜色帮助用户辨认状态，装饰较少。\n\n品牌与主要文字使用深石板灰，冷白与浅石板灰构成画布和内容表面。组件保持克制、明确、轻圆角。主体依靠底色和分隔线建立层次。首页项目卡片使用轻阴影，创建表单使用细边框；固定评审栏与弹窗使用阴影表达覆盖关系。",
     "keyCharacteristics": [
       "用中性色组织内容，用带文字的状态色标记结果。",
       "工作台主体保持平面分区，阴影用于容器和覆盖层级。",
       "系统字体适配中文阅读，等宽字体用于版本标识与日志。",
-      "窄屏重排信息，保留需求、报告、历史与评审入口。"
+      "桌面保持三栏布局，最小页面宽度 1120px。"
     ],
     "rules": [
       {
@@ -462,7 +456,7 @@
       },
       {
         "name": "The Surface Depth Rule",
-        "body": "工作台报告区保持无阴影的分隔线结构。首页容器、固定评审栏和弹窗分别沿用 card、elevated 与 window 层次。",
+        "body": "工作台报告区保持无阴影的分隔线结构。首页项目卡片使用 subtle，创建表单只使用边框；固定评审栏和弹窗分别沿用 elevated 与 window 层次。",
         "section": "elevation"
       }
     ],
