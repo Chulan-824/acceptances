@@ -17,8 +17,8 @@ import { FilterBar } from "./filter-bar";
 const statuses = [
   { value: "all", label: "全部" },
   { value: "pending", label: "待审" },
-  { value: "accepted", label: "已接受" },
-  { value: "rejected", label: "已拒绝" },
+  { value: "accepted", label: "通过" },
+  { value: "rejected", label: "不通过" },
 ];
 export function Project({
   id,

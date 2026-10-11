@@ -2,7 +2,7 @@
 
 <!-- impeccable:product-schema 1 -->
 
-本文记录整个 Acceptances 产品的共享背景，适用于 Web、API、CLI 和 Agent 接入。产品定位与使用边界于 2026-10-10 经用户确认；领域定义以 [GLOSSARY.md](GLOSSARY.md) 为准，架构决策以 [ADR-0001](docs/adr/0001-local-report-archive.md) 为准。
+本文记录整个 Acceptances 产品的共享背景，适用于 Web、API、CLI 和 Agent 接入。产品定位与使用边界于 2026-10-10 经用户确认，逐项人工评审规则于 2026-10-11 确认；领域定义以 [GLOSSARY.md](GLOSSARY.md) 为准，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md) 与 [ADR-0002](docs/adr/0002-per-check-human-review.md)。
 
 ## Platform
 
@@ -22,7 +22,7 @@ Agent 是外部验证执行者，在业务目录和实际验证环境开展检�
 
 ## Positioning
 
-Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实际验证形成独立 Run，报告与附件保存后不覆盖；用户针对该 Run 反馈、接受或拒绝。
+Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实际验证形成独立 Run，报告与附件保存后不覆盖；用户逐项人工评审，也可给整轮评论。
 
 个人本机使用的范围让创建项目、关联业务目录和归档验证直接连起来，无需账号、token 或外部数据库。Acceptances 保存外部执行产生的结果，测试与 Agent 执行留在业务环境中。
 
@@ -32,8 +32,9 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 2. 用户在业务目录调用 `acceptances-v1` skill，选择已有 Project 并建立宿主机关联。同仓库 worktree 共用关联，多个仓库可以归属同一个 Project。
 3. Agent 为一次需求交付创建或选择 Campaign，在业务环境执行本次验证。
 4. CLI 整包保存结构化报告和截图、录像、日志等证据。上传失败后使用原提交 ID 与原内容重试。
-5. 用户在 Web 查看检查项、证据与历史 Run，补充说明、接受、拒绝或作废。Agent 可通过 CLI 读取结果及反馈。
-6. 重新实际验证新增 Run，继续归属对应 Campaign，并重新等待人工评审。
+5. 用户在 Web 逐项通过、不通过、撤回或评论，系统按当前判断计算本轮状态。用户也可评论整轮或作废 Run。
+6. 用户在业务聊天中要求 Agent 读取反馈并修复或复验；Agent 通过 CLI 取得当前判断与历史评论，按授权处理。
+7. 重新实际验证新增 Run，继续归属对应 Campaign，关联原反馈及逐条处理说明。新 Run 的各项重新等待人工评审。
 
 部署为单个 Go 应用容器，同时提供 API 和构建后的 React Web。SQLite 与本地证据文件放在一个持久数据卷中，默认仅通过 `127.0.0.1:8765` 访问，启动自动初始化与迁移。
 
@@ -42,16 +43,20 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 ## Capabilities and Constraints
 
 - Project 表示被验收的产品或系统；Campaign 围绕一次需求交付；Run 记录一次实际验证。Repository 表示代码来源，具体定义复用领域词汇表。
-- 报告记录需求标题与说明、验证时间、本次范围、环境、代码版本及未提交改动标记，以及 Check Item 的预期、实际结果、状态与 Evidence。检查状态为 `passed`、`failed`、`blocked`、`skipped`。
+- 报告记录需求标题与说明、验证时间、本次范围、环境、代码版本及未提交改动标记，以及 Check Item 的预期、实际结果、状态与 Evidence。检查状态为 `passed`、`failed`、`blocked`、`skipped`，与人工状态分别展示。
 - 失败结果与局部验证均可归档。版本、环境或未提交改动情况未知时明确显示未知，不补造信息。
-- 局部复验只表达本次范围，不自动合并历史通过结果，也不计算拼接后的整体通过。
-- Review 与接受、拒绝决定绑定具体 Run。新增 Run 后 Campaign 待审，旧决定保留在旧 Run；历史 Run 的决定不改变需求当前状态。
-- 已保存报告及附件不能原地修改。文字纠错通过补充说明，整体错误通过 Void 保留作废原因。作废 Run 不能接受。
+- `scopeType` 区分完整、局部和未知，原 `scope` 文本说明具体覆盖。范围缺失视为未知，平台不根据文本猜测完整性；局部复验不合并历史通过结果。
+- 每项人工状态初始为待审，可通过、不通过或撤回。每次操作追加历史，评论不改变状态，最新明确判断决定当前状态。人工不通过必须写理由；接受原始 `failed`、`blocked`、`skipped` 结果也必须写理由。普通通过与撤回理由可选，评论须非空。
+- Run 作废优先；任一项人工不通过则整轮不通过；无不通过但仍有待审则整轮待审；全部人工通过才整轮通过。整轮状态自动计算，API 和 Web 均不能直接整轮通过或拒绝。
+- Campaign 仅由最新 Run 决定。最新完整 Run 全部人工通过才需求整体通过；局部或未知范围 Run 人工通过后 Campaign 仍待审。新 Run 从待审开始，历史 Run 改判不影响当前需求。
+- 人工判断可以接受原始验证未通过的项，原始结果保持不变。反馈复验用 `followUp` 关联同 Campaign 来源 Run、来源反馈、非空处理说明和本次检查项；未处理或受阻可无关联检查项，但须说明原因。响应不自动关闭反馈或继承人工判断。
+- 已保存报告、附件、范围和反馈响应不能原地修改。文字纠错通过补充说明，整体错误通过 Void 保留作废原因。作废 Run 可补充评论，不能通过、不通过或撤回。
 - 相同提交 ID 与相同内容返回既有 Run；相同 ID 与不同内容返回冲突。完整报告与全部附件保存完成后才可见，上传重试不产生新 Run。
 - Web 支持项目与需求管理、结果搜索和筛选、当前及历史 Run 浏览、图片和视频及文本证据查看、下载与人工反馈。
-- Web 支持删除 Project、Campaign 或 Run，确认时展示级联影响范围。删除清理所属报告、附件与反馈；删除最新 Run 后需求待审，不恢复旧接受状态。无回收站或自动历史清理。
+- Web 支持删除 Project、Campaign 或 Run，确认时展示级联影响范围。删除清理所属报告、附件与反馈；删除最新 Run 后需求待审，不恢复旧接受状态。被删除来源的后续 Run 保留原始反馈引用及处理说明，并显示来源已删除。无回收站或自动历史清理。
 - 无认证时，人工决定依赖产品流程和 Agent 使用约定，不承诺通过身份凭据区分人和 Agent。验证指令本身不授权修改业务代码或自动作出人工接受决定。
-- 当前产品范围不包含远程访问、团队协作、多实例部署、对象存储、在容器中执行 Agent 或业务测试、跨 Run 覆盖合并、旧协议兼容及旧数据迁移。
+- 当前本地 SQLite 向逐项评审增量迁移，保留报告、附件与旧整轮决定。旧决定仅作历史，已有非作废 Run 各项回到待审；作废保持作废，重启不重复清空新判断。实际运行库升级前先核对数据卷并保存一致备份。
+- 当前产品范围不包含远程访问、团队协作、多实例部署、对象存储、在容器中执行 Agent 或业务测试、跨 Run 覆盖合并，以及历史旧架构的协议兼容和数据导入。保存评论不会自动唤醒或调度 Agent。
 - 公开分发范围与许可条件尚未确定，以 [LICENSE-SCOPE.md](LICENSE-SCOPE.md) 和许可文档为准，不将本机运行记录写成公开发行或全仓开源声明。
 
 ## Brand Commitments
@@ -62,11 +67,11 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 
 ## Evidence on Hand
 
-- [领域词汇表](GLOSSARY.md)、[ADR-0001](docs/adr/0001-local-report-archive.md)、[Agent 接入](docs/agents/v1-integration.md) 和 [实现交接](docs/v1-implementation-handoff.md) 记录产品契约与验证方法。
+- [领域词汇表](GLOSSARY.md)、[ADR-0001](docs/adr/0001-local-report-archive.md)、[ADR-0002](docs/adr/0002-per-check-human-review.md)、[Agent 接入](docs/agents/v1-integration.md) 和 [实现交接](docs/v1-implementation-handoff.md) 记录产品契约与验证方法。
 - `apps/web/src/` 包含实际网页实现；`packages/api-client/` 包含其 HTTP 客户端与类型；`skills/acceptances-v1/` 包含宿主机验证接入流程与报告格式。
 - 本地 `.scratch/local-simplification/verification/REPORT.md` 记录 2026-10-09 的平台实施验收，相关回执和截图位于 `artifacts/local-simplification/`。这些目录不进入 Git，其他 checkout 不保证存在；该记录不代表此后每次代码变更或业务需求已验收。
 - 本地 `artifacts/workbench/` 与 `artifacts/reviewbar/` 存有桌面和窄屏界面截图。使用前核对截图与当前实现是否一致。
-- 本次 init 核对了仓库文档和网页实现，未重新执行 Docker、CLI 或浏览器验收。平台测试数据与合成媒体不作为客户案例、业务成果或用户背书。
+- 2026-10-10 的 init 只核对了文档和网页实现，未重新执行 Docker、CLI 或浏览器验收。逐项评审的实际验证结果另记，本文列出的产品规则不作为通过证据。平台测试数据与合成媒体不作为客户案例、业务成果或用户背书。
 
 ## Product Principles
 

@@ -4,7 +4,7 @@ export { request };
 export function message(error: unknown) {
   return error instanceof Error ? error.message : "操作失败，请重试。";
 }
-export function useResource<T>(path: string, revision = 0) {
+export function useResource<T>(path: string, revision = 0, retainData = false) {
   const [state, setState] = useState<{
     data?: T;
     error?: string;
@@ -24,19 +24,22 @@ export function useResource<T>(path: string, revision = 0) {
       active = false;
     };
   }, [path, revision]);
-  return state.path === path && state.revision === revision ? state : {};
+  return state.path === path &&
+    (state.revision === revision || (retainData && state.data !== undefined))
+    ? state
+    : {};
 }
 export function Status({ value }: { value: string }) {
   const labels: Record<string, string> = {
     pending: "待审",
-    accepted: "已接受",
-    rejected: "已拒绝",
+    accepted: "通过",
+    rejected: "不通过",
     void: "已作废",
     passed: "通过",
     failed: "失败",
     blocked: "阻塞",
     skipped: "未执行",
-    comment: "补充说明 / 反馈",
+    comment: "评论",
   };
   return <span className={`badge ${value}`}>{labels[value] || value}</span>;
 }

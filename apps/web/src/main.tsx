@@ -20,7 +20,7 @@ function App() {
   }, []);
   function navigate(next: string) {
     history.pushState(null, "", next);
-    setPath(next);
+    setPath(location.pathname);
   }
   const parts = path.split("/").filter(Boolean);
   const project = parts[0] === "projects" ? parts[1] : undefined;

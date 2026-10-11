@@ -1,8 +1,15 @@
 import { useState } from "react";
-import type { Report } from "@acceptances/api-client";
+import type {
+  Report,
+  Review,
+  ReviewInput,
+  ReviewStatus,
+  Run as RunData,
+} from "@acceptances/api-client";
 import { Status } from "./client";
 import { Evidence } from "./evidence";
 import { FilterBar } from "./filter-bar";
+import { ReviewForm, ReviewHistory, type RunNavigation } from "./review";
 
 const statuses = [
   { value: "all", label: "全部" },
@@ -12,10 +19,36 @@ const statuses = [
   { value: "skipped", label: "未执行" },
 ];
 
-export function Checklist({ run, report }: { run: string; report: Report }) {
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
+export function Checklist({
+  run,
+  onReview,
+  runPath,
+  navigate,
+  onTarget,
+  query,
+  status,
+  onQueryChange,
+  onStatusChange,
+}: RunNavigation & {
+  run: RunData;
+  onReview: (input: ReviewInput) => Promise<void>;
+  query: string;
+  status: string;
+  onQueryChange: (value: string) => void;
+  onStatusChange: (value: string) => void;
+}) {
+  const report = run.report;
   const evidence = new Map(report.evidence?.map((item) => [item.path, item]));
+  const humanStates = new Map(
+    run.checkReviews.map((item) => [item.checkId, item.status]),
+  );
+  const reviews = new Map<string, Review[]>();
+  for (const review of run.reviews || []) {
+    if (!review.checkId) continue;
+    const history = reviews.get(review.checkId) || [];
+    history.push(review);
+    reviews.set(review.checkId, history);
+  }
   const search = query.trim().toLocaleLowerCase();
   const checks = report.checks.filter(
     (check) =>
@@ -35,14 +68,14 @@ export function Checklist({ run, report }: { run: string; report: Report }) {
         <input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => onQueryChange(event.target.value)}
           placeholder="标题、预期或实际结果"
         />
       </label>
       <FilterBar
-        label="检查项状态筛选"
+        label="原始验证结果筛选"
         value={status}
-        onChange={setStatus}
+        onChange={onStatusChange}
         options={statuses.map((item) => ({
           ...item,
           count:
@@ -56,7 +89,20 @@ export function Checklist({ run, report }: { run: string; report: Report }) {
         显示 {checks.length} / {report.checks.length} 项
       </p>
       {checks.map((check) => (
-        <CheckItem key={check.id} check={check} run={run} evidence={evidence} />
+        <CheckItem
+          key={check.id}
+          check={check}
+          run={run.id}
+          evidence={evidence}
+          humanStatus={humanStates.get(check.id) || "pending"}
+          reviews={reviews.get(check.id) || []}
+          responses={run.feedbackResponses}
+          isVoid={run.status === "void"}
+          onReview={onReview}
+          runPath={runPath}
+          navigate={navigate}
+          onTarget={onTarget}
+        />
       ))}
       {!checks.length && (
         <p>
@@ -73,15 +119,32 @@ function CheckItem({
   check,
   run,
   evidence,
-}: {
+  humanStatus,
+  reviews,
+  responses,
+  isVoid,
+  onReview,
+  runPath,
+  navigate,
+  onTarget,
+}: RunNavigation & {
   check: Report["checks"][number];
   run: string;
   evidence: Map<string, Report["evidence"][number]>;
+  humanStatus: ReviewStatus;
+  reviews: Review[];
+  responses: RunData["feedbackResponses"];
+  isVoid: boolean;
+  onReview: (input: ReviewInput) => Promise<void>;
 }) {
-  const [expanded, setExpanded] = useState(check.status !== "passed");
+  const [expanded, setExpanded] = useState(
+    check.status !== "passed" || humanStatus === "pending",
+  );
   return (
     <details
       className="check-item"
+      id={`check-${check.id}`}
+      aria-label={`检查项 ${check.title}`}
       open={expanded}
       onToggle={(event) => setExpanded(event.currentTarget.open)}
     >
@@ -90,7 +153,12 @@ function CheckItem({
           <code>{check.id}</code> {check.title}
         </span>
         <span className="check-meta">
-          <Status value={check.status} />
+          <span>
+            验证 <Status value={check.status} />
+          </span>
+          <span>
+            人工 <Status value={humanStatus} />
+          </span>
           <span className="muted">{check.evidence?.length || 0} 个附件</span>
         </span>
       </summary>
@@ -118,6 +186,17 @@ function CheckItem({
           ) : (
             <p className="muted">此检查项未关联附件。</p>
           ))}
+        <ReviewForm check={check} isVoid={isVoid} onSubmit={onReview} />
+        <details>
+          <summary>评审历史 · {reviews.length} 条</summary>
+          <ReviewHistory
+            reviews={reviews}
+            responses={responses}
+            runPath={runPath}
+            navigate={navigate}
+            onTarget={onTarget}
+          />
+        </details>
       </div>
     </details>
   );

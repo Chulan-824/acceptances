@@ -126,14 +126,15 @@ func TestCompleteReportAndIdempotentRetry(t *testing.T) {
 }
 func TestReviewHistoryAndVoid(t *testing.T) {
 	app, _, cid := setup(t)
-	a := upload(t, app, cid, "first", report, map[string]string{"log.txt": "log"}, 201)
+	fullReport := strings.Replace(report, `"scope":`, `"scopeType":"full","scope":`, 1)
+	a := upload(t, app, cid, "first", fullReport, map[string]string{"log.txt": "log"}, 201)
 	aid := a["id"].(string)
-	request(t, app, "POST", "/api/v1/runs/"+aid+"/reviews", `{"kind":"accepted","body":""}`, 201)
+	request(t, app, "POST", "/api/v1/runs/"+aid+"/reviews", `{"checkId":"c1","kind":"accepted","body":"Human accepts the recorded evidence"}`, 201)
 	c := request(t, app, "GET", "/api/v1/campaigns/"+cid, "", 200)
 	if c["status"] != "accepted" {
 		t.Fatal(c)
 	}
-	b := upload(t, app, cid, "second", report, map[string]string{"log.txt": "new"}, 201)
+	b := upload(t, app, cid, "second", fullReport, map[string]string{"log.txt": "new"}, 201)
 	bid := b["id"].(string)
 	c = request(t, app, "GET", "/api/v1/campaigns/"+cid, "", 200)
 	if c["status"] != "pending" {
@@ -144,9 +145,9 @@ func TestReviewHistoryAndVoid(t *testing.T) {
 		t.Fatal(old)
 	}
 	request(t, app, "POST", "/api/v1/runs/"+bid+"/reviews", `{"kind":"comment","body":"Correction"}`, 201)
-	request(t, app, "POST", "/api/v1/runs/"+bid+"/reviews", `{"kind":"accepted","body":""}`, 201)
+	request(t, app, "POST", "/api/v1/runs/"+bid+"/reviews", `{"checkId":"c1","kind":"accepted","body":"Human accepts the recorded evidence"}`, 201)
 	request(t, app, "POST", "/api/v1/runs/"+bid+"/void", `{"reason":"Wrong environment"}`, 200)
-	request(t, app, "POST", "/api/v1/runs/"+bid+"/reviews", `{"kind":"accepted","body":""}`, 409)
+	request(t, app, "POST", "/api/v1/runs/"+bid+"/reviews", `{"checkId":"c1","kind":"accepted","body":"Human accepts the recorded evidence"}`, 409)
 	c = request(t, app, "GET", "/api/v1/campaigns/"+cid, "", 200)
 	if c["status"] != "pending" {
 		t.Fatal(c)
@@ -160,7 +161,7 @@ func TestDeleteScopeAndNoResurrectedAcceptance(t *testing.T) {
 	app, pid, cid := setup(t)
 	a := upload(t, app, cid, "first", report, map[string]string{"log.txt": "old"}, 201)
 	aid := a["id"].(string)
-	request(t, app, "POST", "/api/v1/runs/"+aid+"/reviews", `{"kind":"accepted"}`, 201)
+	request(t, app, "POST", "/api/v1/runs/"+aid+"/reviews", `{"checkId":"c1","kind":"accepted","body":"Human accepts the recorded evidence"}`, 201)
 	b := upload(t, app, cid, "second", report, map[string]string{"log.txt": "new"}, 201)
 	bid := b["id"].(string)
 	preview := request(t, app, "GET", "/api/v1/projects/"+pid+"/delete-preview", "", 200)
@@ -251,7 +252,7 @@ func TestArchiveAndEvidenceSurviveRestart(t *testing.T) {
 	cid := request(t, app, "POST", "/api/v1/projects/"+pid+"/campaigns", `{"title":"delivery"}`, 201)["id"].(string)
 	v := upload(t, app, cid, "persist", report, map[string]string{"log.txt": "persistent evidence"}, 201)
 	rid := v["id"].(string)
-	request(t, app, "POST", "/api/v1/runs/"+rid+"/reviews", `{"kind":"rejected","body":"fix it"}`, 201)
+	request(t, app, "POST", "/api/v1/runs/"+rid+"/reviews", `{"checkId":"c1","kind":"rejected","body":"fix it"}`, 201)
 	app.Close()
 	app, e = api.Open(dir)
 	if e != nil {
@@ -347,7 +348,7 @@ func TestStorageFailureIsNotResourceNotFound(t *testing.T) {
 		{"GET", "/campaigns/" + cid + "/runs", ""},
 		{"GET", "/runs/" + rid, ""},
 		{"GET", "/runs/" + rid + "/evidence/log.txt", ""},
-		{"POST", "/runs/" + rid + "/reviews", `{"kind":"accepted"}`},
+		{"POST", "/runs/" + rid + "/reviews", `{"checkId":"c1","kind":"accepted","body":"Human accepts the recorded evidence"}`},
 		{"POST", "/runs/" + rid + "/void", `{"reason":"wrong report"}`},
 		{"GET", "/projects/" + pid + "/delete-preview", ""},
 		{"DELETE", "/campaigns/" + cid, ""},

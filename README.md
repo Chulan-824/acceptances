@@ -1,12 +1,12 @@
 # Acceptances
 
-个人本机使用的验证报告归档工具。Agent 在业务目录执行验证，通过 CLI 保存报告与证据；用户在 Web 查看 Project → Campaign → Run，补充说明、接受、拒绝或作废。
+个人本机使用的验证报告归档工具。Agent 在业务目录执行验证，通过 CLI 保存报告与证据；用户在 Web 查看 Project → Campaign → Run，逐项人工评审、评论或作废。
 
-Go 同时提供 API 和 React Web。SQLite 和附件使用一个持久卷，不需要账号、token、外部数据库或对象存储。保存成功不代表人工接受；局部复验不会自动合并历史通过结果。
+Go 同时提供 API 和 React Web。SQLite 和附件使用一个持久卷，不需要账号、token、外部数据库或对象存储。全部检查项人工通过才整轮通过；只有最新完整范围 Run 全部人工通过，需求才整体通过。保存成功与 Agent 检查通过分别显示，局部复验不合并历史结果。
 
 ## 本机启动
 
-在仓库根执行：
+首次使用时在仓库根执行。已有本地运行库升级先按下方说明核对目标并保存一致备份，再运行启动命令：
 
 ```sh
 docker compose -f deploy/compose.yaml up --build -d
@@ -19,7 +19,9 @@ curl --fail http://127.0.0.1:8765/health/ready
 docker compose -f deploy/compose.yaml restart app
 ```
 
-旧版数据和协议不迁移。替换旧安装前先核对容器的 Compose 项目标签及其挂载卷，只清理确认属于旧 Acceptances 的资源。新版不读取旧密码文件，业务仓库不挂载进容器。
+本次逐项评审升级会增量迁移当前本地 SQLite，保留报告、证据和旧评审。旧整轮接受、拒绝只作历史，已有非作废 Run 的各项从待审开始，作废状态保持不变；以后重启不会重复清空人工判断。
+
+升级日常运行库前，先核对容器的 Compose 项目标签和挂载卷，停止应用写入，备份完整的 `/var/lib/acceptances` 数据目录，包括 SQLite 相关文件及 `evidence`，再启动新版。保留可恢复备份，不删除或重建持久卷。具体核对步骤见[实施交接](docs/v1-implementation-handoff.md)。更早的旧架构协议与数据导入仍不支持；业务仓库不挂载进容器。
 
 ## 关联业务项目
 
@@ -40,6 +42,16 @@ make install-skill
 首次由 skill 选择已有 Project，后续复用宿主机关联。同仓库 worktree 共用关联，多个仓库可关联同一个 Project。日常调用无需源码路径、UUID 或凭据。验证任务不自动授权修改业务代码或作出人工接受决定。
 
 操作流程见 [Agent 接入](docs/agents/v1-integration.md)。
+
+## 人工反馈后再次验证
+
+在 Web 对每项通过、不通过、撤回或评论。人工不通过必填理由；Agent 原始结果为失败、阻塞或跳过时人工通过也必填理由。评论不改状态，发现问题需要明确改判；系统立即重算本轮状态。
+
+在原业务聊天中发送：
+
+> 使用 $acceptances-v1，读取 Campaign「需求名称」中 Run「ID」的逐项人工判断和评论。授权修复当前人工不通过项及本次指定的新问题，执行复验和必要回归。保留原始验证结果，实际完成后在同一 Campaign 保存新 Run，明确完整或局部范围，逐条关联来源反馈、处理说明及本次检查项，交给我再次评审。
+
+Agent 使用 `acceptances feedback --campaign <标题或ID>` 读取反馈，`acceptances status --run <ID>` 核对指定 Run。人工通过的项不因 Agent 原来判断失败就自动进入修复范围。未处理或受阻如实说明，新 Run 各项重新待审；局部 Run 通过后需求整体仍待审。保存评论不会自动触发 Agent。
 
 ## 开发和验证
 
@@ -69,7 +81,7 @@ make test SUITE=platform
 | deploy                      | 单容器构建和 Compose               |
 | skills/acceptances-v1       | 宿主机 Agent 接入                  |
 
-领域词汇见 [GLOSSARY](GLOSSARY.md)，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md)。旧 V1 文档及 Git 历史保留为历史依据，不用于补回已删除能力。
+领域词汇见 [GLOSSARY](GLOSSARY.md)，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md) 和[逐项评审决策](docs/adr/0002-per-check-human-review.md)。旧 V1 文档及 Git 历史保留为历史依据，不用于补回已删除能力。
 
 ## 许可与分发状态
 

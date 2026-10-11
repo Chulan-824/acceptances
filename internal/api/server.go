@@ -52,9 +52,9 @@ func Open(dir string) (*Server, error) {
 		db.Close()
 		return nil, err
 	}
-	if version > 1 {
+	if version > 2 {
 		db.Close()
-		return nil, fmt.Errorf("database schema version %d is newer than supported version 1", version)
+		return nil, fmt.Errorf("database schema version %d is newer than supported version 2", version)
 	}
 	if version == 0 {
 		if _, err = db.Exec(`BEGIN;
@@ -68,6 +68,10 @@ func Open(dir string) (*Server, error) {
 			db.Close()
 			return nil, err
 		}
+	}
+	if err = s.migrateCheckReviews(version == 1); err != nil {
+		db.Close()
+		return nil, err
 	}
 	if err = s.cleanupOrphans(); err != nil {
 		db.Close()

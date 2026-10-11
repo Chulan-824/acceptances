@@ -23,9 +23,27 @@ export interface Campaign {
 export interface Review {
   id: string;
   runId: string;
-  kind: "comment" | "accepted" | "rejected";
+  checkId?: string;
+  kind: "comment" | ReviewStatus;
   body: string;
   createdAt: string;
+  legacy: boolean;
+}
+export interface ReviewInput {
+  checkId?: string;
+  kind: Review["kind"];
+  body: string;
+}
+export interface ReviewCounts {
+  pending: number;
+  accepted: number;
+  rejected: number;
+}
+export interface FeedbackResponse {
+  runId: string;
+  reviewId: string;
+  explanation: string;
+  checkIds: string[];
 }
 export interface Evidence {
   path: string;
@@ -36,6 +54,11 @@ export interface Report {
   description: string;
   verifiedAt: string;
   scope: string;
+  scopeType?: "full" | "partial" | "unknown";
+  followUp?: {
+    sourceRunId: string;
+    responses: Omit<FeedbackResponse, "runId">[];
+  };
   environment: string;
   versions: { repository: string; commit: string; dirty: boolean | null }[];
   checks: {
@@ -57,6 +80,14 @@ export interface Run {
   voidReason: string;
   createdAt: string;
   reviews: Review[];
+  checkReviews: {
+    checkId: string;
+    status: ReviewStatus;
+    lastReviewId: string;
+  }[];
+  reviewCounts: ReviewCounts;
+  sourceRunAvailable?: boolean;
+  feedbackResponses: FeedbackResponse[];
 }
 export interface DeletePreview {
   projects: number;

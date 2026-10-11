@@ -38,10 +38,27 @@ type Report struct {
 	Description string     `json:"description"`
 	VerifiedAt  string     `json:"verifiedAt"`
 	Scope       string     `json:"scope"`
+	ScopeType   string     `json:"scopeType,omitempty"`
 	Environment string     `json:"environment"`
 	Versions    []Version  `json:"versions"`
 	Checks      []Check    `json:"checks"`
 	Evidence    []Evidence `json:"evidence"`
+	FollowUp    *FollowUp  `json:"followUp,omitempty"`
+}
+type FollowUp struct {
+	SourceRunID string             `json:"sourceRunId"`
+	Responses   []FeedbackResponse `json:"responses"`
+}
+type FeedbackResponse struct {
+	ReviewID    string   `json:"reviewId"`
+	Explanation string   `json:"explanation"`
+	CheckIDs    []string `json:"checkIds"`
+}
+type RunFeedbackResponse struct {
+	RunID       string   `json:"runId"`
+	ReviewID    string   `json:"reviewId"`
+	Explanation string   `json:"explanation"`
+	CheckIDs    []string `json:"checkIds"`
 }
 type Review struct {
 	ID        string `json:"id"`
@@ -49,16 +66,32 @@ type Review struct {
 	Kind      string `json:"kind"`
 	Body      string `json:"body"`
 	CreatedAt string `json:"createdAt"`
+	CheckID   string `json:"checkId,omitempty"`
+	Legacy    bool   `json:"legacy"`
+}
+type CheckReview struct {
+	CheckID      string `json:"checkId"`
+	Status       string `json:"status"`
+	LastReviewID string `json:"lastReviewId"`
+}
+type ReviewCounts struct {
+	Pending  int `json:"pending"`
+	Accepted int `json:"accepted"`
+	Rejected int `json:"rejected"`
 }
 type Run struct {
-	ID           string   `json:"id"`
-	CampaignID   string   `json:"campaignId"`
-	SubmissionID string   `json:"submissionId"`
-	Report       Report   `json:"report"`
-	Status       string   `json:"status"`
-	VoidReason   string   `json:"voidReason"`
-	CreatedAt    string   `json:"createdAt"`
-	Reviews      []Review `json:"reviews"`
+	ID                 string                `json:"id"`
+	CampaignID         string                `json:"campaignId"`
+	SubmissionID       string                `json:"submissionId"`
+	Report             Report                `json:"report"`
+	Status             string                `json:"status"`
+	VoidReason         string                `json:"voidReason"`
+	CreatedAt          string                `json:"createdAt"`
+	Reviews            []Review              `json:"reviews"`
+	CheckReviews       []CheckReview         `json:"checkReviews"`
+	ReviewCounts       ReviewCounts          `json:"reviewCounts"`
+	SourceRunAvailable *bool                 `json:"sourceRunAvailable,omitempty"`
+	FeedbackResponses  []RunFeedbackResponse `json:"feedbackResponses"`
 }
 
 func validName(name string) bool {
@@ -67,6 +100,11 @@ func validName(name string) bool {
 func validateReport(doc *Report) error {
 	if strings.TrimSpace(doc.Title) == "" || strings.TrimSpace(doc.Scope) == "" || len(doc.Checks) == 0 {
 		return fmt.Errorf("title, scope and checks required")
+	}
+	switch doc.ScopeType {
+	case "", "unknown", "partial", "full":
+	default:
+		return fmt.Errorf("invalid scopeType")
 	}
 	if _, e := time.Parse(time.RFC3339Nano, doc.VerifiedAt); e != nil {
 		return fmt.Errorf("invalid verifiedAt")
@@ -113,6 +151,31 @@ func validateReport(doc *Report) error {
 		}
 		if c.Evidence == nil {
 			doc.Checks[i].Evidence = []string{}
+		}
+	}
+	if doc.FollowUp != nil {
+		if strings.TrimSpace(doc.FollowUp.SourceRunID) == "" {
+			return fmt.Errorf("followUp sourceRunId required")
+		}
+		responses := map[string]bool{}
+		for i, response := range doc.FollowUp.Responses {
+			if strings.TrimSpace(response.ReviewID) == "" || responses[response.ReviewID] || strings.TrimSpace(response.Explanation) == "" {
+				return fmt.Errorf("invalid or duplicate feedback response")
+			}
+			responses[response.ReviewID] = true
+			linked := map[string]bool{}
+			for _, checkID := range response.CheckIDs {
+				if !checks[checkID] || linked[checkID] {
+					return fmt.Errorf("invalid or duplicate feedback check")
+				}
+				linked[checkID] = true
+			}
+			if response.CheckIDs == nil {
+				doc.FollowUp.Responses[i].CheckIDs = []string{}
+			}
+		}
+		if doc.FollowUp.Responses == nil {
+			doc.FollowUp.Responses = []FeedbackResponse{}
 		}
 	}
 	return nil
@@ -266,7 +329,14 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 		fail(w, 500, "READ_FAILED")
 		return
 	}
-	v := Run{ID: id(), CampaignID: r.PathValue("id"), SubmissionID: submission, Report: doc, Status: "pending", CreatedAt: now(), Reviews: []Review{}}
+	if !s.validateFollowUpSource(w, r, doc.FollowUp) {
+		return
+	}
+	v := Run{ID: id(), CampaignID: r.PathValue("id"), SubmissionID: submission, Report: doc, Status: "pending", CreatedAt: now(), Reviews: []Review{}, FeedbackResponses: []RunFeedbackResponse{}}
+	if doc.FollowUp != nil {
+		available := true
+		v.SourceRunAvailable = &available
+	}
 	target := filepath.Join(s.dir, "evidence", v.ID)
 	if e = os.Rename(stage, target); e != nil {
 		fail(w, 500, "SAVE_FAILED")
@@ -296,6 +366,7 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	committed = true
+	v.deriveCheckReviews()
 	respond(w, 201, v)
 }
 func (s *Server) run(key string) (Run, error) {
@@ -309,19 +380,27 @@ func (s *Server) run(key string) (Run, error) {
 		return v, e
 	}
 	v.Reviews = []Review{}
-	rows, e := s.db.Query("SELECT id,run_id,kind,body,created_at FROM reviews WHERE run_id=? ORDER BY created_at,id", key)
+	// SQLite rowid follows save order, including judgments with identical timestamps.
+	rows, e := s.db.Query("SELECT id,run_id,kind,body,created_at,check_id,legacy FROM reviews WHERE run_id=? ORDER BY rowid", key)
 	if e != nil {
 		return v, e
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var review Review
-		if e = rows.Scan(&review.ID, &review.RunID, &review.Kind, &review.Body, &review.CreatedAt); e != nil {
+		if e = rows.Scan(&review.ID, &review.RunID, &review.Kind, &review.Body, &review.CreatedAt, &review.CheckID, &review.Legacy); e != nil {
 			return v, e
 		}
 		v.Reviews = append(v.Reviews, review)
 	}
-	return v, rows.Err()
+	if e = rows.Err(); e != nil {
+		return v, e
+	}
+	if e = rows.Close(); e != nil {
+		return v, e
+	}
+	v.deriveCheckReviews()
+	return v, s.deriveFeedbackResponses(&v)
 }
 func (s *Server) getRun(w http.ResponseWriter, r *http.Request) {
 	v, e := s.run(r.PathValue("id"))

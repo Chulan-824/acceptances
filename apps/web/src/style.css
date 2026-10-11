@@ -424,7 +424,8 @@
     @apply scroll-pb-40;
   }
   .has-review-bar {
-    @apply pb-30;
+    @apply pb-15 scroll-pb-6;
+    margin-bottom: var(--review-bar-height, 80px);
   }
   .check-counts {
     @apply flex flex-wrap gap-[6px] tabular-nums;
@@ -471,5 +472,19 @@
   }
   #run-feedback {
     @apply scroll-mb-40;
+  }
+  .check-review-form {
+    @apply mt-5 pt-4 border-t border-border;
+  }
+  .check-review-form h3 {
+    @apply mt-0;
+  }
+  .feedback-entry,
+  .check-item,
+  #follow-up {
+    @apply scroll-mb-40;
+  }
+  .feedback-response {
+    @apply mt-3 p-3 bg-surface-subtle border border-border rounded-default;
   }
 }

@@ -5,15 +5,66 @@ import (
 	"strings"
 )
 
+func (v *Run) deriveCheckReviews() {
+	current := make(map[string]CheckReview, len(v.Report.Checks))
+	for _, check := range v.Report.Checks {
+		current[check.ID] = CheckReview{CheckID: check.ID, Status: "pending"}
+	}
+	for _, review := range v.Reviews {
+		if review.Legacy || review.CheckID == "" || review.Kind == "comment" {
+			continue
+		}
+		if _, exists := current[review.CheckID]; exists {
+			current[review.CheckID] = CheckReview{CheckID: review.CheckID, Status: review.Kind, LastReviewID: review.ID}
+		}
+	}
+	v.CheckReviews = make([]CheckReview, 0, len(v.Report.Checks))
+	v.ReviewCounts = ReviewCounts{}
+	for _, check := range v.Report.Checks {
+		judgment := current[check.ID]
+		v.CheckReviews = append(v.CheckReviews, judgment)
+		switch judgment.Status {
+		case "accepted":
+			v.ReviewCounts.Accepted++
+		case "rejected":
+			v.ReviewCounts.Rejected++
+		default:
+			v.ReviewCounts.Pending++
+		}
+	}
+}
+
+func (v Run) humanStatus() string {
+	if v.Status == "void" {
+		return "void"
+	}
+	if v.ReviewCounts.Rejected > 0 {
+		return "rejected"
+	}
+	if v.ReviewCounts.Pending > 0 || len(v.Report.Checks) == 0 {
+		return "pending"
+	}
+	return "accepted"
+}
+
+func (v Run) campaignStatus() string {
+	status := v.humanStatus()
+	if status == "void" || (status == "accepted" && v.Report.ScopeType != "full") {
+		return "pending"
+	}
+	return status
+}
+
 func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Kind string `json:"kind"`
-		Body string `json:"body"`
+		Kind    string `json:"kind"`
+		Body    string `json:"body"`
+		CheckID string `json:"checkId"`
 	}
 	if !decode(w, r, &in) {
 		return
 	}
-	if in.Kind != "comment" && in.Kind != "accepted" && in.Kind != "rejected" {
+	if in.Kind != "comment" && in.Kind != "accepted" && in.Kind != "rejected" && in.Kind != "pending" {
 		fail(w, 400, "INVALID_REVIEW_KIND")
 		return
 	}
@@ -32,18 +83,41 @@ func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 		fail(w, 409, "RUN_VOID")
 		return
 	}
-	review := Review{id(), v.ID, in.Kind, in.Body, now()}
+	if in.CheckID == "" && in.Kind != "comment" {
+		fail(w, 400, "CHECK_REQUIRED")
+		return
+	}
+	if in.CheckID != "" {
+		var check *Check
+		for i := range v.Report.Checks {
+			if v.Report.Checks[i].ID == in.CheckID {
+				check = &v.Report.Checks[i]
+				break
+			}
+		}
+		if check == nil {
+			fail(w, 400, "CHECK_NOT_FOUND")
+			return
+		}
+		if (in.Kind == "rejected" || (in.Kind == "accepted" && check.Status != "passed")) && strings.TrimSpace(in.Body) == "" {
+			fail(w, 400, "BODY_REQUIRED")
+			return
+		}
+	}
+	review := Review{ID: id(), RunID: v.ID, Kind: in.Kind, Body: in.Body, CreatedAt: now(), CheckID: in.CheckID}
+	v.Reviews = append(v.Reviews, review)
+	v.deriveCheckReviews()
 	tx, e := s.db.BeginTx(r.Context(), nil)
 	if e != nil {
 		fail(w, 500, "SAVE_FAILED")
 		return
 	}
 	defer tx.Rollback()
-	_, e = tx.ExecContext(r.Context(), "INSERT INTO reviews VALUES(?,?,?,?,?)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt)
+	_, e = tx.ExecContext(r.Context(), "INSERT INTO reviews(id,run_id,kind,body,created_at,check_id,legacy) VALUES(?,?,?,?,?,?,0)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt, review.CheckID)
 	if e == nil && in.Kind != "comment" {
-		_, e = tx.ExecContext(r.Context(), "UPDATE runs SET status=? WHERE id=?", in.Kind, v.ID)
+		_, e = tx.ExecContext(r.Context(), "UPDATE runs SET status=? WHERE id=?", v.humanStatus(), v.ID)
 		if e == nil {
-			_, e = tx.ExecContext(r.Context(), "UPDATE campaigns SET status=? WHERE id=? AND latest_run_id=?", in.Kind, v.CampaignID, v.ID)
+			_, e = tx.ExecContext(r.Context(), "UPDATE campaigns SET status=? WHERE id=? AND latest_run_id=?", v.campaignStatus(), v.CampaignID, v.ID)
 		}
 	}
 	if e == nil {

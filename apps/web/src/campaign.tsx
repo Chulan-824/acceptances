@@ -6,6 +6,7 @@ import type {
 import { useResource, Status, Load, DeleteButton } from "./client";
 import { Run } from "./run";
 import { CheckCounts } from "./check-counts";
+import { ReviewCounts, ScopeType } from "./review";
 export function Campaign({
   id,
   runId,
@@ -22,10 +23,15 @@ export function Campaign({
   onChanged: () => void;
 }) {
   const [revision, setRevision] = useState(0);
-  const campaign = useResource<CampaignData>(`/campaigns/${id}`, revision);
+  const campaign = useResource<CampaignData>(
+    `/campaigns/${id}`,
+    revision,
+    true,
+  );
   const runs = useResource<{ items: RunData[] }>(
     `/campaigns/${id}/runs`,
     revision,
+    true,
   );
   const selectedRun =
     runId || campaign.data?.latestRunId || runs.data?.items[0]?.id;
@@ -69,6 +75,8 @@ export function Campaign({
                 id={selectedRun}
                 isLatest={campaign.data.latestRunId === selectedRun}
                 onChanged={refresh}
+                runPath={(targetRun) => `${base}/runs/${targetRun}`}
+                navigate={navigate}
                 onDeleted={() => {
                   refresh();
                   navigate(base);
@@ -111,7 +119,10 @@ export function Campaign({
                 <span>{run.report.title}</span>
                 <time>{new Date(run.report.verifiedAt).toLocaleString()}</time>
                 <span className="muted">{run.report.scope}</span>
+                <ScopeType value={run.report.scopeType} />
                 <CheckCounts checks={run.report.checks} />
+                <span className="muted">人工评审</span>
+                <ReviewCounts counts={run.reviewCounts} />
               </button>
             ))}
           </div>
