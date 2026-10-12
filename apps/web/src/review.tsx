@@ -1,3 +1,9 @@
+import { Card } from "./components/ui/card";
+import { Alert } from "./components/ui/alert";
+import { Button } from "./components/ui/button";
+import { Textarea } from "./components/ui/textarea";
+import { Label } from "./components/ui/label";
+import { Badge } from "./components/ui/badge";
 import { useState, type ReactNode } from "react";
 import type {
   FeedbackResponse,
@@ -19,10 +25,11 @@ export function revealTarget(id: string) {
   if (!target) return;
   let ancestor: HTMLElement | null = target;
   while (ancestor) {
-    if (ancestor instanceof HTMLDetailsElement) ancestor.open = true;
+    if (ancestor.dataset.slot === "collapsible")
+      ancestor.dispatchEvent(new Event("reveal-disclosure"));
     ancestor = ancestor.parentElement;
   }
-  target.scrollIntoView();
+  requestAnimationFrame(() => target.scrollIntoView());
 }
 
 export function RunLink({
@@ -69,15 +76,15 @@ export function ScopeType({ value }: { value?: Report["scopeType"] }) {
     partial: "局部验证",
     unknown: "范围未知",
   };
-  return <span className="badge">{labels[value || "unknown"]}</span>;
+  return <Badge className="badge">{labels[value || "unknown"]}</Badge>;
 }
 
 export function ReviewCounts({ counts }: { counts: ReviewCountsData }) {
   return (
     <span className="check-counts" aria-label="人工评审数量">
-      <span className="badge accepted">{counts.accepted} 通过</span>
-      <span className="badge rejected">{counts.rejected} 不通过</span>
-      <span className="badge pending">{counts.pending} 待审</span>
+      <Badge className="badge accepted">{counts.accepted} 通过</Badge>
+      <Badge className="badge rejected">{counts.rejected} 不通过</Badge>
+      <Badge className="badge pending">{counts.pending} 待审</Badge>
     </span>
   );
 }
@@ -119,9 +126,13 @@ export function ReviewForm({
       aria-label={check ? `人工评审 ${check.title}` : "整轮评论"}
       onSubmit={(event) => event.preventDefault()}
     >
-      {check && isVoid && <p className="notice">本轮已作废，仅可添加评论。</p>}
+      {check && isVoid && (
+        <Alert role="note" className="notice">
+          本轮已作废，仅可添加评论。
+        </Alert>
+      )}
       {(!check || editing) && (
-        <div className="review-editor">
+        <Card className="review-editor">
           <p className="muted">
             {check
               ? editing === "rejected"
@@ -131,9 +142,9 @@ export function ReviewForm({
                   : "评论不改变人工判断。"
               : "整轮评论不改变人工状态。没有对应检查项的新问题可在这里说明。"}
           </p>
-          <label>
+          <Label>
             {check ? `评审理由或评论 · ${check.title}` : "整轮评论内容"}
-            <textarea
+            <Textarea
               value={body}
               disabled={locked}
               onChange={(event) => setBody(event.target.value)}
@@ -141,20 +152,20 @@ export function ReviewForm({
                 check ? "填写判断依据或检查项问题" : "对整次交付说点什么…"
               }
             />
-          </label>
+          </Label>
           <div className="actions">
             {check && (
-              <button
+              <Button
                 type="button"
                 disabled={locked}
                 onClick={() => setEditing(undefined)}
               >
                 取消
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
-              className={editing === "rejected" ? "danger" : "primary-button"}
+              variant={editing === "rejected" ? "destructive" : "default"}
               disabled={
                 locked ||
                 !hasReason ||
@@ -169,39 +180,39 @@ export function ReviewForm({
                   : editing === "accepted"
                     ? "确认人工通过"
                     : "保存检查项评论"}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
       {check && !editing && (
         <div className="actions check-review-actions">
-          <button
+          <Button
             type="button"
-            className="text-button"
+            variant="ghost"
             disabled={locked || isVoid}
             onClick={() => void save("pending")}
           >
             撤回到待审
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="text-button"
+            variant="ghost"
             disabled={locked}
             onClick={() => setEditing("comment")}
           >
             添加检查项评论
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
             type="button"
-            className="text-button danger"
             disabled={locked || isVoid}
             onClick={() => setEditing("rejected")}
           >
             人工不通过
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="default"
             type="button"
-            className="primary-button"
             disabled={locked || isVoid}
             onClick={() =>
               check.status === "passed"
@@ -210,11 +221,15 @@ export function ReviewForm({
             }
           >
             人工通过
-          </button>
+          </Button>
         </div>
       )}
       {busy && <p role="status">正在保存…</p>}
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <Alert variant="destructive" role="alert">
+          {error}
+        </Alert>
+      )}
     </form>
   );
 }
@@ -237,11 +252,11 @@ export function ReviewHistory({
         key={review.id}
       >
         {review.legacy ? (
-          <span className="badge">
+          <Badge className="badge">
             旧规则整轮{review.kind === "accepted" ? "接受" : "拒绝"}
-          </span>
+          </Badge>
         ) : review.kind === "pending" ? (
-          <span className="badge pending">撤回到待审</span>
+          <Badge className="badge pending">撤回到待审</Badge>
         ) : (
           <Status value={review.kind} />
         )}

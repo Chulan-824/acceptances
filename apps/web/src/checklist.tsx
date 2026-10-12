@@ -1,3 +1,9 @@
+import { Alert } from "./components/ui/alert";
+import { Disclosure } from "./components/disclosure";
+import { Input } from "./components/ui/input";
+import { Label } from "./components/ui/label";
+import { ChoiceSelect } from "./components/choice-select";
+import { SelectItem } from "./components/ui/select";
 import { useState } from "react";
 import type {
   Report,
@@ -64,35 +70,35 @@ export function Checklist({
       <div className="section-heading checklist-heading">
         <h2 id="checks-title">验收检查清单</h2>
         <div className="checklist-tools">
-          <label className="search-field">
+          <Label className="search-field">
             <span className="sr-only">搜索检查项</span>
             <Icon name="search" />
-            <input
+            <Input
               type="search"
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder="搜索检查项"
             />
-          </label>
-          <label>
+          </Label>
+          <Label>
             <span className="sr-only">原始验证结果筛选</span>
-            <select
+            <ChoiceSelect
               aria-label="原始验证结果筛选"
               value={status}
-              onChange={(event) => onStatusChange(event.target.value)}
+              onValueChange={(value) => onStatusChange(value)}
             >
               {statuses.map((item) => (
-                <option key={item.value} value={item.value}>
+                <SelectItem key={item.value} value={item.value}>
                   {item.label}{" "}
                   {item.value === "all"
                     ? report.checks.length
                     : report.checks.filter(
                         (check) => check.status === item.value,
                       ).length}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </label>
+            </ChoiceSelect>
+          </Label>
         </div>
       </div>
       <p className="muted" role="status">
@@ -155,28 +161,30 @@ function CheckItem({
 }) {
   const [expanded, setExpanded] = useState(humanStatus !== "accepted");
   return (
-    <details
+    <Disclosure
       className="check-item"
       id={`check-${check.id}`}
       aria-label={`检查项 ${check.title}`}
       open={expanded}
-      onToggle={(event) => setExpanded(event.currentTarget.open)}
+      onOpenChange={setExpanded}
+      title={
+        <>
+          <span className="check-title">
+            <code title={check.id}>C{number}</code> {check.title}
+          </span>
+          <span className="check-meta">
+            <span>
+              验证 <Status value={check.status} />
+            </span>
+            <span>
+              人工 <Status value={humanStatus} />
+            </span>
+            <span className="muted">{check.evidence?.length || 0} 个附件</span>
+          </span>
+          <Icon name="chevron" />
+        </>
+      }
     >
-      <summary>
-        <span className="check-title">
-          <code title={check.id}>C{number}</code> {check.title}
-        </span>
-        <span className="check-meta">
-          <span>
-            验证 <Status value={check.status} />
-          </span>
-          <span>
-            人工 <Status value={humanStatus} />
-          </span>
-          <span className="muted">{check.evidence?.length || 0} 个附件</span>
-        </span>
-        <Icon name="chevron" />
-      </summary>
       <div className="check-body">
         <dl>
           <dt>预期</dt>
@@ -192,9 +200,9 @@ function CheckItem({
                 return item ? (
                   <Evidence key={path} run={run} item={item} inline />
                 ) : (
-                  <p key={path} className="notice">
+                  <Alert role="note" key={path} className="notice">
                     附件清单中未找到 {path}。
-                  </p>
+                  </Alert>
                 );
               })}
             </div>
@@ -207,8 +215,7 @@ function CheckItem({
           disabled={disabled}
           onSubmit={onReview}
         />
-        <details>
-          <summary>评审历史 · {reviews.length} 条</summary>
+        <Disclosure title={<>评审历史 · {reviews.length} 条</>}>
           <ReviewHistory
             reviews={reviews}
             responses={responses}
@@ -216,8 +223,8 @@ function CheckItem({
             navigate={navigate}
             onTarget={onTarget}
           />
-        </details>
+        </Disclosure>
       </div>
-    </details>
+    </Disclosure>
   );
 }

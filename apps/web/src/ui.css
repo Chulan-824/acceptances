@@ -1,0 +1,168 @@
+@layer components {
+  .ui-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-default border border-border-dark bg-surface-subtle text-fg-secondary px-4 py-[10px] cursor-pointer;
+    font: inherit;
+  }
+  .ui-button:hover {
+    @apply bg-surface-hover;
+  }
+  .ui-button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .ui-button-primary {
+    @apply bg-brand text-brand-fg border-brand;
+  }
+  .ui-button-primary:hover {
+    @apply bg-brand-hover;
+  }
+  .ui-button-destructive {
+    @apply bg-danger-soft text-danger-dark border-danger-border;
+  }
+  .ui-button-outline {
+    @apply bg-surface;
+  }
+  .ui-button-ghost,
+  .ui-button-link {
+    @apply bg-transparent border-transparent;
+  }
+  .ui-button-link {
+    @apply underline-offset-4;
+  }
+  .ui-button-link:hover {
+    @apply underline bg-transparent;
+  }
+  .ui-button-sm {
+    @apply text-[13px] px-3 py-2;
+  }
+  .ui-button-lg {
+    @apply px-6 py-3;
+  }
+  .ui-button-icon {
+    @apply w-8 h-8 p-0 shrink-0;
+  }
+  .ui-input,
+  .ui-textarea,
+  .ui-select-trigger {
+    @apply p-[10px] border border-border-dark rounded-default bg-surface text-fg max-w-full caret-brand;
+    font: inherit;
+  }
+  .ui-input,
+  .ui-textarea {
+    @apply w-full;
+  }
+  .ui-textarea {
+    @apply min-h-[85px] resize-y;
+  }
+  .ui-input::placeholder,
+  .ui-textarea::placeholder {
+    @apply text-muted opacity-100;
+  }
+  .ui-label {
+    @apply flex flex-col gap-[7px] mb-4;
+  }
+  .ui-card {
+    @apply bg-surface text-fg border border-border rounded-lg shadow-subtle;
+  }
+  .badge {
+    @apply inline-block py-1 px-[9px] rounded-sm bg-surface-subtle text-[13px] whitespace-nowrap;
+  }
+  .accepted,
+  .passed {
+    @apply bg-accent-soft text-accent-dark;
+  }
+  .failed,
+  .rejected,
+  .void {
+    @apply bg-danger-soft text-danger-dark;
+  }
+  .pending,
+  .blocked {
+    @apply bg-warning-soft text-warning-dark;
+  }
+  .ui-badge-outline {
+    @apply border border-border;
+  }
+  .ui-button:focus-visible,
+  .ui-input:focus-visible,
+  .ui-textarea:focus-visible,
+  .ui-select-trigger:focus-visible,
+  [data-slot="collapsible-trigger"]:focus-visible {
+    @apply outline-2 outline-solid outline-brand outline-offset-[3px];
+  }
+  [data-slot="collapsible-content"][data-state="closed"] {
+    display: none;
+  }
+  .disclosure-trigger {
+    @apply w-full text-left cursor-pointer border-0 bg-transparent rounded-none px-4 py-[10px] text-fg-secondary border-border-dark;
+    font: inherit;
+  }
+  .disclosure-trigger:hover {
+    @apply bg-surface-hover;
+  }
+  .disclosure-trigger > svg:last-child {
+    @apply shrink-0;
+  }
+  [data-slot="collapsible"][data-state="open"]
+    > .disclosure-trigger
+    > svg:last-child {
+    @apply rotate-90;
+  }
+  .ui-select-trigger {
+    @apply flex w-full items-center justify-between gap-2 text-left;
+  }
+  .ui-select-trigger > [data-slot="select-value"] {
+    @apply min-w-0 truncate;
+  }
+  [data-slot="select-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="popover-content"] {
+    @apply shadow-dropdown;
+  }
+  [data-slot="tabs-content"][hidden] {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot] {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+  .ui-alert {
+    @apply block my-3 p-[14px] rounded-default text-[14px] bg-warning-soft;
+  }
+  .ui-alert-destructive {
+    @apply bg-danger-soft border border-danger-border text-danger-dark;
+  }
+  .action-menu-content {
+    @apply w-auto min-w-48 p-2;
+  }
+  .delete-dialog {
+    @apply text-fg shadow-window;
+  }
+  .ui-tabs-list {
+    @apply inline-flex items-center gap-1 p-1 rounded-md;
+  }
+  .ui-tabs-list-filled {
+    @apply bg-surface-subtle;
+  }
+  .ui-tabs-trigger {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-2 rounded-default border-0 bg-transparent text-muted cursor-pointer;
+    font: inherit;
+  }
+  .ui-tabs-trigger[data-state="active"] {
+    @apply bg-surface text-fg shadow-subtle;
+  }
+  .ui-tabs-trigger:focus-visible {
+    @apply outline-2 outline-brand outline-offset-2;
+  }
+  .ui-tabs-trigger:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .ui-tabs-trigger:hover {
+    @apply text-fg;
+  }
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+    clip-path: inset(50%);
+  }
+}

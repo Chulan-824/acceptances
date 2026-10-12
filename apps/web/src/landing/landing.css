@@ -1,0 +1,33 @@
+@layer theme, base, components, utilities;
+@import "./landing-base.css" layer(base);
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "../theme.css";
+@import "../ui.css";
+
+@layer components {
+  .landing-lightbox {
+    @apply w-[min(1024px,calc(100%-32px))] max-w-none max-h-[90dvh] bg-transparent border-0 p-0 text-white shadow-none;
+  }
+  .lightbox-close {
+    @apply absolute -top-10 right-0 p-0 text-white/80 text-xs hover:text-white hover:bg-transparent;
+  }
+  .theme-dialog {
+    @apply w-[min(896px,calc(100%-32px))] max-w-none max-h-[90dvh] p-0 overflow-auto text-xs text-fg;
+  }
+  .theme-tabs {
+    @apply h-auto w-full justify-start overflow-x-auto rounded-none border-b border-border bg-surface p-0;
+  }
+  .theme-tabs [data-slot="tabs-trigger"] {
+    @apply flex-none rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-xs text-muted;
+  }
+  .theme-tabs [data-slot="tabs-trigger"][data-state="active"] {
+    @apply bg-surface text-fg border-brand shadow-none;
+  }
+  .theme-dialog pre {
+    @apply whitespace-pre-wrap wrap-anywhere;
+  }
+  .showcase-preview:hover {
+    @apply bg-transparent;
+  }
+}

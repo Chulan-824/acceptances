@@ -1,3 +1,7 @@
+import { Badge } from "./components/ui/badge";
+import type { ReactNode } from "react";
+import { DropdownMenuItem } from "./components/ui/dropdown-menu";
+import { Button } from "./components/ui/button";
 import { useState } from "react";
 import type {
   Campaign as CampaignData,
@@ -10,7 +14,7 @@ import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 export function Campaign({
   id,
   runId,
-  historyCollapsed,
+  renderLayout,
   onToggleHistory,
   base,
   navigate,
@@ -19,7 +23,7 @@ export function Campaign({
 }: {
   id: string;
   runId?: string;
-  historyCollapsed: boolean;
+  renderLayout: (main: ReactNode, right: ReactNode) => ReactNode;
   onToggleHistory: () => void;
   base: string;
   navigate: (path: string) => void;
@@ -44,7 +48,7 @@ export function Campaign({
     setRevision((value) => value + 1);
     onChanged();
   }
-  return (
+  return renderLayout(
     <>
       <main
         className="workspace-main has-review-bar"
@@ -59,8 +63,11 @@ export function Campaign({
                 <h2>{campaign.data.title}</h2>
                 <ActionMenu label="需求操作" icon="more">
                   <div className="menu-content">
-                    <button onClick={refresh}>刷新报告</button>
+                    <DropdownMenuItem asChild>
+                      <Button onClick={refresh}>刷新报告</Button>
+                    </DropdownMenuItem>
                     <DeleteButton
+                      menuItem
                       path={`/campaigns/${id}`}
                       label="需求"
                       onDeleted={onDeleted}
@@ -98,16 +105,16 @@ export function Campaign({
           </>
         )}
       </main>
-      <aside
-        className="workspace-history"
-        aria-label="运行记录"
-        hidden={historyCollapsed}
-      >
+    </>,
+    <>
+      <aside className="workspace-history" aria-label="运行记录">
         <div className="section-heading workspace-sidebar-heading">
           <h2>
             <Icon name="history" />
             运行记录{" "}
-            <span className="tab-count">{runs.data?.items.length ?? "—"}</span>
+            <Badge className="tab-count">
+              {runs.data?.items.length ?? "—"}
+            </Badge>
           </h2>
           <PanelButton
             side="right"
@@ -121,7 +128,7 @@ export function Campaign({
         ) : runs.data.items.length ? (
           <div className="navigation-list">
             {runs.data.items.map((run, index) => (
-              <button
+              <Button
                 key={run.id}
                 className="navigation-item run-list-item"
                 aria-current={selectedRun === run.id ? "page" : undefined}
@@ -150,13 +157,13 @@ export function Campaign({
                     ? ` · ${run.reviewCounts.rejected} 不通过`
                     : ""}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         ) : (
           <p className="muted">提交报告后，这里会显示运行历史。</p>
         )}
       </aside>
-    </>
+    </>,
   );
 }

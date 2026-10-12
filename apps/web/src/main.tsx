@@ -1,3 +1,4 @@
+import { TooltipProvider } from "./components/ui/tooltip";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type { Project as ProjectData } from "@acceptances/api-client";
@@ -57,6 +58,8 @@ function App() {
 }
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <TooltipProvider>
+      <App />
+    </TooltipProvider>
   </StrictMode>,
 );

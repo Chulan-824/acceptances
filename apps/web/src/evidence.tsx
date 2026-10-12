@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "./components/ui/dialog";
+import { Disclosure } from "./components/disclosure";
+import { Button } from "./components/ui/button";
+import { useRef, useState } from "react";
 import { TextEvidence } from "./text-evidence";
 import { Icon } from "./workspace-controls";
 import {
@@ -18,15 +26,10 @@ export function Evidence({
 }) {
   const url = evidenceURL(run, item.path);
   const extension = item.path.split(".").pop()?.toLowerCase();
+  const previewTrigger = useRef<HTMLButtonElement>(null);
   const [textExpanded, setTextExpanded] = useState(false);
   const [preview, setPreview] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  useEffect(() => {
-    if (preview) dialog.current?.showModal();
-    else dialog.current?.close();
-  }, [preview]);
   return (
     <figure
       className={`evidence${inline ? " inline-preview" : ""}${gallery ? " gallery-evidence" : ""}`}
@@ -38,8 +41,9 @@ export function Evidence({
       </figcaption>
       {["png", "jpg", "jpeg", "gif", "webp"].includes(extension || "") ? (
         <>
-          <button
+          <Button
             className="image-preview"
+            ref={previewTrigger}
             aria-label={`放大预览 ${item.path}`}
             onClick={() => setPreview(true)}
           >
@@ -52,21 +56,25 @@ export function Evidence({
             <span>
               {imageError ? "图片加载失败，可尝试打开原文件" : "放大预览"}
             </span>
-          </button>
-          <dialog
-            ref={dialog}
-            className="evidence-dialog"
-            aria-labelledby={titleId}
-            onCancel={() => setPreview(false)}
-            onClose={() => setPreview(false)}
-          >
-            {preview && (
+          </Button>
+          <Dialog open={preview} onOpenChange={setPreview}>
+            <DialogContent
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                previewTrigger.current?.focus();
+              }}
+              className="evidence-dialog"
+              showCloseButton={false}
+            >
+              <DialogDescription className="sr-only">
+                查看图片证据，或打开原文件与下载附件。
+              </DialogDescription>
               <>
                 <div className="section-heading">
-                  <h2 id={titleId}>{item.description || item.path}</h2>
-                  <button autoFocus onClick={() => setPreview(false)}>
+                  <DialogTitle>{item.description || item.path}</DialogTitle>
+                  <Button autoFocus onClick={() => setPreview(false)}>
                     关闭预览
-                  </button>
+                  </Button>
                 </div>
                 <img src={url} alt={item.description || item.path} />
                 <div className="actions">
@@ -78,24 +86,26 @@ export function Evidence({
                   </a>
                 </div>
               </>
-            )}
-          </dialog>
+            </DialogContent>
+          </Dialog>
         </>
       ) : ["mp4", "webm", "ogg"].includes(extension || "") ? (
         <video controls preload="metadata" src={url} />
       ) : ["txt", "log", "json", "csv"].includes(extension || "") ? (
-        <details
+        <Disclosure
           className="text-evidence-disclosure"
           open={textExpanded}
-          onToggle={(event) => setTextExpanded(event.currentTarget.open)}
+          onOpenChange={setTextExpanded}
+          title={
+            <>
+              <Icon name="file" />
+              <span>{item.path}</span>
+              <Icon name="chevron" />
+            </>
+          }
         >
-          <summary>
-            <Icon name="file" />
-            <span>{item.path}</span>
-            <Icon name="chevron" />
-          </summary>
           {textExpanded && <TextEvidence url={url} />}
-        </details>
+        </Disclosure>
       ) : (
         <p>此附件仅提供下载。</p>
       )}

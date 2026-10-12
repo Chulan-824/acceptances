@@ -4,10 +4,6 @@
   .acceptance-workbench [hidden] {
     display: none !important;
   }
-  .sr-only {
-    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
-    clip-path: inset(50%);
-  }
   .acceptance-workbench {
     @apply text-[14px];
   }
@@ -46,7 +42,7 @@
   .acceptance-workbench .workspace-project-select {
     @apply mb-3;
   }
-  .acceptance-workbench .workspace-project-select select {
+  .acceptance-workbench .workspace-project-select .ui-select-trigger {
     @apply py-2;
   }
   .acceptance-workbench .workspace-sidebar-heading {
@@ -55,12 +51,10 @@
   .acceptance-workbench .workspace-sidebar-heading h2 {
     @apply flex items-center gap-2 text-[14px];
   }
-  .icon-button,
-  .action-menu > summary {
+  .icon-button {
     @apply grid place-items-center shrink-0 w-8 h-8 p-0 border-0 rounded-default bg-transparent text-muted;
   }
-  .icon-button:hover,
-  .action-menu > summary:hover {
+  .icon-button:hover {
     @apply bg-surface-subtle text-fg;
   }
   .icon-button svg {
@@ -81,17 +75,8 @@
   .acceptance-workbench .search-field input {
     @apply pl-9 pr-3 py-2 text-[13px];
   }
-  .action-menu {
-    @apply relative m-0;
-  }
-  .action-menu > summary {
-    @apply m-0 list-none;
-  }
-  .action-menu > summary::-webkit-details-marker {
-    display: none;
-  }
   .menu-content {
-    @apply absolute right-0 top-10 z-40 min-w-48 p-2 bg-surface border border-border rounded-md shadow-dropdown;
+    @apply min-w-48 p-0;
   }
   .menu-content button {
     @apply flex items-center gap-2 w-full text-left p-2 text-[13px] bg-transparent border-0;
@@ -99,7 +84,7 @@
   .menu-content label {
     @apply m-0 p-2 text-[13px];
   }
-  .menu-content select {
+  .menu-content .ui-select-trigger {
     @apply w-full py-2 text-[13px];
   }
   .acceptance-workbench .workspace-deliveries > [role="status"] {
@@ -154,25 +139,6 @@
     @apply text-muted text-[12px];
     writing-mode: vertical-rl;
   }
-  .history-rail {
-    @apply col-start-3 row-start-1;
-  }
-  .panel-resize {
-    @apply absolute top-0 bottom-0 z-40 w-[6px] cursor-col-resize touch-none;
-  }
-  .panel-resize-left {
-    left: calc(var(--workspace-left-width) - 3px);
-  }
-  .panel-resize-right {
-    right: calc(var(--workspace-right-width) - 3px);
-  }
-  .panel-resize:hover,
-  .panel-resize:focus-visible {
-    @apply bg-border-dark;
-  }
-  .panel-resize:focus-visible {
-    @apply outline-2 outline-brand;
-  }
   .report-version-line {
     @apply flex flex-wrap items-center gap-4 text-muted text-[12px] mb-3;
   }
@@ -188,16 +154,13 @@
   .report-summary .badge {
     @apply text-[12px] py-0.5;
   }
-  .report-summary > summary {
+  .report-summary > .disclosure-trigger {
     @apply flex items-center gap-2 text-[12px] text-muted py-2 m-0 list-none;
   }
-  .report-summary > summary::-webkit-details-marker {
-    display: none;
-  }
-  .report-summary > summary > svg {
+  .report-summary > .disclosure-trigger > svg {
     @apply ml-auto shrink-0;
   }
-  .report-summary[open] > summary > svg {
+  .report-summary[data-state="open"] > .disclosure-trigger > svg {
     @apply rotate-90;
   }
   .report-name {
@@ -214,18 +177,6 @@
   }
   .report-summary-body .report-metrics {
     @apply text-[12px];
-  }
-  .report-tabs {
-    @apply sticky top-0 z-20 flex items-center gap-6 bg-surface border-b border-border mb-0;
-  }
-  .report-tabs button {
-    @apply inline-flex items-center justify-center gap-2 bg-transparent border-0 border-b-2 border-transparent rounded-none px-2 py-4 text-[13px] text-muted;
-  }
-  .report-tabs button[aria-selected="true"] {
-    @apply border-brand text-fg;
-  }
-  .report-tabs button:hover {
-    @apply text-fg bg-surface-hover;
   }
   .tab-count {
     @apply rounded-full bg-surface-subtle text-muted text-[12px] min-w-5 px-1.5 py-0.5 text-center tabular-nums;
@@ -248,25 +199,22 @@
   .checklist-tools label {
     @apply m-0;
   }
-  .checklist-tools select {
+  .checklist-tools .ui-select-trigger {
     @apply py-2 px-3 text-[13px] bg-surface-subtle border-transparent;
   }
   .report-panel [role="status"] {
     @apply text-[12px];
   }
-  .acceptance-workbench .check-item > summary {
+  .acceptance-workbench .check-item > .disclosure-trigger {
     @apply flex items-center gap-2 py-4 list-none;
-  }
-  .check-item > summary::-webkit-details-marker {
-    display: none;
   }
   .acceptance-workbench .check-title {
     @apply flex-1 min-w-0 font-medium text-[13px];
   }
-  .check-item > summary > svg {
+  .check-item > .disclosure-trigger > svg {
     @apply shrink-0 text-muted;
   }
-  .check-item[open] > summary > svg {
+  .check-item[data-state="open"] > .disclosure-trigger > svg {
     @apply rotate-90;
   }
   .acceptance-workbench .check-meta {
@@ -302,23 +250,19 @@
   .text-evidence-disclosure {
     @apply m-0 border border-border rounded-default;
   }
-  .text-evidence-disclosure summary {
+  .text-evidence-disclosure .disclosure-trigger {
     @apply flex items-center gap-2 p-3 m-0 text-[12px] list-none;
   }
-  .text-evidence-disclosure summary::-webkit-details-marker {
-    display: none;
-  }
-  .text-evidence-disclosure summary > span {
+  .text-evidence-disclosure .disclosure-trigger > span {
     @apply min-w-0 flex-1 wrap-anywhere;
   }
-  .text-evidence-disclosure[open] summary > svg:last-child {
+  .text-evidence-disclosure[data-state="open"]
+    .disclosure-trigger
+    > svg:last-child {
     @apply rotate-90;
   }
   .text-evidence-disclosure .text-evidence {
     @apply rounded-none border-0 m-0;
-  }
-  .text-evidence-disclosure > p {
-    @apply px-3;
   }
   .acceptance-workbench .check-review-form {
     @apply mt-4 pt-3 border-0 max-w-none;
@@ -335,13 +279,7 @@
   .check-review-actions {
     @apply justify-end gap-2;
   }
-  .text-button {
-    @apply bg-transparent border-transparent;
-  }
-  .text-button:hover {
-    @apply bg-surface-subtle;
-  }
-  .acceptance-workbench .check-body > details {
+  .acceptance-workbench .check-body > [data-slot="collapsible"] {
     @apply mt-3 text-[12px];
   }
   .review-editor {
@@ -396,8 +334,29 @@
   .acceptance-workbench .review-bar button {
     @apply px-3 py-2 text-[12px];
   }
-  .acceptance-workbench .has-review-bar {
-    @apply pb-10;
-    margin-bottom: calc(var(--review-bar-height, 80px) + 32px);
+  .workspace .workspace-resize {
+    @apply relative w-px shrink-0 z-30 bg-border touch-none;
+  }
+  .workspace .workspace-resize:hover {
+    @apply bg-border-dark;
+  }
+  .workspace.acceptance-workbench .has-review-bar {
+    @apply m-0;
+    padding-bottom: calc(var(--review-bar-height, 80px) + 64px);
+  }
+  .workspace [data-slot="resizable-panel"] > div {
+    @apply h-full min-h-0;
+  }
+  .workspace [data-slot="resizable-panel"] > div > :is(main, aside) {
+    @apply h-full;
+  }
+  .report-tabs[data-slot="tabs-list"] .ui-tabs-trigger {
+    @apply flex-none h-auto rounded-none bg-transparent border-0 border-b-2 border-transparent px-2 py-4 text-[13px] text-muted font-normal shadow-none;
+  }
+  .report-tabs[data-slot="tabs-list"] .ui-tabs-trigger[data-state="active"] {
+    @apply border-brand text-fg;
+  }
+  .report-tabs[data-slot="tabs-list"] {
+    @apply h-auto rounded-none p-0 justify-start flex sticky top-0 z-20 w-full bg-surface border-b border-border gap-6 mb-0;
   }
 }

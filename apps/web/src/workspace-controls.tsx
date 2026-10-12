@@ -1,4 +1,20 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./components/ui/tooltip";
+import { Button } from "./components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "./components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "./components/ui/popover";
+import { type ReactNode } from "react";
 
 export type IconName =
   | "panel-left"
@@ -96,41 +112,37 @@ export function ActionMenu({
   className?: string;
   children: ReactNode;
 }) {
-  const menu = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    const outside = (event: PointerEvent) => {
-      if (menu.current && !menu.current.contains(event.target as Node))
-        menu.current.open = false;
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && menu.current?.open) {
-        menu.current.open = false;
-        menu.current.querySelector("summary")?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", outside);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("pointerdown", outside);
-      document.removeEventListener("keydown", escape);
-    };
-  }, []);
-  return (
-    <details
-      ref={menu}
-      className={`action-menu ${className}`}
-      onChange={(event) => {
-        if (event.target instanceof HTMLSelectElement && menu.current) {
-          menu.current.open = false;
-          menu.current.querySelector("summary")?.focus();
-        }
-      }}
+  const trigger = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="icon-button"
+      aria-label={label}
+      title={label}
     >
-      <summary aria-label={label} title={label}>
-        <Icon name={icon} />
-      </summary>
-      {children}
-    </details>
+      <Icon name={icon} />
+    </Button>
+  );
+  return icon === "filter" ? (
+    <Popover>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        className={`action-menu-content ${className}`}
+        align="end"
+      >
+        {children}
+      </PopoverContent>
+    </Popover>
+  ) : (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuContent
+        className={`action-menu-content ${className}`}
+        align="end"
+      >
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -144,72 +156,22 @@ export function PanelButton({
   onClick: () => void;
 }) {
   const name = side === "left" ? "需求列表" : "运行记录";
+  const label = `${collapsed ? "展开" : "收起"}${name}`;
   return (
-    <button
-      className="icon-button"
-      aria-label={`${collapsed ? "展开" : "收起"}${name}`}
-      title={`${collapsed ? "展开" : "收起"}${name}`}
-      aria-expanded={!collapsed}
-      onClick={onClick}
-    >
-      <Icon name={`panel-${side}`} />
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="icon-button"
+          aria-label={`${collapsed ? "展开" : "收起"}${name}`}
+          aria-expanded={!collapsed}
+          onClick={onClick}
+        >
+          <Icon name={`panel-${side}`} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
-}
-
-export function PanelResize({
-  side,
-  width,
-  onChange,
-}: {
-  side: "left" | "right";
-  width: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div
-      className={`panel-resize panel-resize-${side}`}
-      role="separator"
-      aria-label={`调整${side === "left" ? "需求列表" : "运行记录"}宽度`}
-      aria-orientation="vertical"
-      aria-valuemin={200}
-      aria-valuemax={side === "left" ? 400 : 440}
-      aria-valuenow={width}
-      tabIndex={0}
-      onPointerDown={(event) => {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }}
-      onPointerMove={(event) => {
-        if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
-        const workspace = event.currentTarget
-          .closest(".workspace")
-          ?.getBoundingClientRect();
-        if (workspace)
-          onChange(
-            side === "left"
-              ? event.clientX - workspace.left
-              : workspace.right - event.clientX,
-          );
-      }}
-      onPointerUp={(event) => {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-        event.preventDefault();
-        onChange(
-          width +
-            (event.key === "ArrowRight" ? 16 : -16) *
-              (side === "left" ? 1 : -1),
-        );
-      }}
-    />
-  );
-}
-
-export function workspaceStyle(left: number, right: number): CSSProperties {
-  return {
-    "--workspace-left-width": `${left}px`,
-    "--workspace-right-width": `${right}px`,
-  } as CSSProperties;
 }

@@ -206,7 +206,7 @@ Acceptances 的现有视觉系统是克制、清晰、偏紧凑的验收工作�
 
 品牌与主要文字使用深石板灰，冷白与浅石板灰构成画布和内容表面。组件保持克制、明确、轻圆角。主体依靠底色和分隔线建立层次。首页项目卡片使用轻阴影，创建表单使用细边框；固定评审栏与弹窗使用阴影表达覆盖关系。
 
-本文件记录现有实现，供整个仓库共享。定性描述于 2026-10-10 经用户确认。共享主题来源为 [style.css](apps/web/src/style.css)，首页局部样式见 [home.css](apps/web/src/home.css)，三栏工作台局部样式见 [workbench.css](apps/web/src/workbench.css)，来源对应关系见 [设计参考](docs/design-reference.md)，产品范围见 [PRODUCT.md](PRODUCT.md)。机器令牌在 frontmatter 中登记，阴影、断点与组件预览扩展在 [.impeccable/design.json](.impeccable/design.json) 中登记。
+本文件记录现有实现，供整个仓库共享。定性描述于 2026-10-10 经用户确认。共享主题来源为 [theme.css](apps/web/src/theme.css)，工作台入口为 [style.css](apps/web/src/style.css)，首页局部样式见 [home.css](apps/web/src/home.css)，三栏工作台局部样式见 [workbench.css](apps/web/src/workbench.css)，来源对应关系见 [设计参考](docs/design-reference.md)，产品范围见 [PRODUCT.md](PRODUCT.md)。机器令牌在 frontmatter 中登记，阴影、断点与组件预览扩展在 [.impeccable/design.json](.impeccable/design.json) 中登记。
 
 初始记录于 2026-10-10 核对源码、本地截图与临时 Vite 首页计算样式，当时未启动业务 API。2026-10-11 首页按已确认的 `homepage-redesign.html` 更新，1440px、1024px、390px 浏览器检查通过；在独立临时数据库及 8766 服务上验证了真实创建、进入项目、200 字名称与失败重试。本次记录仅更新首页实现，其他页面延续原有记录。未使用的主题令牌不纳入规范。
 
@@ -281,7 +281,7 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 
 ## Elevation & Depth
 
-主体依靠底色与细边框分层，阴影用于容器和覆盖关系。首页分区透明且无外框、圆角与阴影，项目卡片使用 `subtle`，创建表单无阴影。通用 section 保留 `card`，固定评审栏使用 `elevated`，原生 dialog 使用 `window`。工作台正文 section 显式移除阴影、外边框与圆角，保留底部分隔线。
+主体依靠底色与细边框分层，阴影用于容器和覆盖关系。首页分区透明且无外框、圆角与阴影，项目卡片使用 `subtle`，创建表单无阴影。通用 section 保留 `card`，固定评审栏使用 `elevated`，shadcn Dialog 使用 `window`。工作台正文 section 显式移除阴影、外边框与圆角，保留底部分隔线。
 
 ### Shadow vocabulary
 
@@ -316,7 +316,7 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 
 ### Cards and containers
 
-首页项目卡片为真实项目链接，白底、1px 细边框、`lg` 圆角和 `subtle` 阴影。内边距 24px，图标、文字与箭头间隔 16px。名称与说明允许任意位置换行。悬停使用次级表面与较深边框，按下使用 `border` 底色。首页创建区使用白底、细边框和 `lg` 圆角的原生 details，表单内边距 20px，分区本身无容器装饰。
+首页项目卡片为真实项目链接，白底、1px 细边框、`lg` 圆角和 `subtle` 阴影。内边距 24px，图标、文字与箭头间隔 16px。名称与说明允许任意位置换行。悬停使用次级表面与较深边框，按下使用 `border` 底色。首页创建区使用白底、细边框和 `lg` 圆角的shadcn Collapsible，表单内边距 20px，分区本身无容器装饰。
 
 报告指标区采用次级表面、细边框、中等圆角和 16px 内边距；指标分为比例 2:1 的两列，最近人工决定另占整行。工作台正文区继续使用分隔线，不套用首页容器样式。
 
@@ -334,9 +334,9 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 
 ### Check items and evidence
 
-检查项使用原生 details/summary 与底部分隔线。摘要上下内边距 16px，显示 C 序号、13px 标题、原始验证结果、人工状态和附件数量；原技术 ID 保留在序号 tooltip 中。摘要焦点轮廓为 2px，偏移 3px。人工已通过项默认收起，其他人工状态默认展开。判断按钮保持紧凑，拒绝、评论与异常结果接受按需展开文字编辑器；原有理由门禁保留。
+检查项使用shadcn Collapsible 与底部分隔线。摘要上下内边距 16px，显示 C 序号、13px 标题、原始验证结果、人工状态和附件数量；原技术 ID 保留在序号 tooltip 中。摘要焦点轮廓为 2px，偏移 3px。人工已通过项默认收起，其他人工状态默认展开。判断按钮保持紧凑，拒绝、评论与异常结果接受按需展开文字编辑器；原有理由门禁保留。
 
-检查项内联证据纵向展示，图片占满正文可用宽度并保持比例；文本证据默认折叠，展开后才加载，采用次级表面、等宽字体与最大高度 260px 的滚动容器。文件标签使用三列网格，图片缩略图为 16:9、最大高度 160px；保留文本展开、原文件与下载入口。放大图在原生 dialog 中显示，关闭和 Esc 操作保留。
+检查项内联证据纵向展示，图片占满正文可用宽度并保持比例；文本证据默认折叠，展开后才加载，采用次级表面、等宽字体与最大高度 260px 的滚动容器。文件标签使用三列网格，图片缩略图为 16:9、最大高度 160px；保留文本展开、原文件与下载入口。放大图在shadcn Dialog 中显示，关闭和 Esc 操作保留。
 
 ### Review bar and dialogs
 
@@ -352,7 +352,7 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 
 - Do 复用当前语义颜色、轻圆角和系统字体，组件状态沿用同一主题。
 - Do 保留文字状态、当前与历史报告提示、计数和选中语义，让颜色之外仍有识别依据。
-- Do 保留键盘焦点轮廓、原生 dialog 与 details 的操作方式。
+- Do 保留键盘焦点轮廓、shadcn Dialog 与 details 的操作方式。
 - Do 让长标题、版本标识和日志换行或滚动，固定评审栏为正文与历史列表预留底部空间。
 - Do 区分首页容器与工作台平面分区，按实际上下文选择字号、内边距和阴影。
 
@@ -367,3 +367,15 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 2026-10-11 按用户要求移除非 Landing Page 的视口断点，改为桌面布局与 Tailwind `@apply`。此前手机验证记录属于旧版本，不代表当前支持范围。
 
 本次验证：`make lint typecheck build` 与 `git diff --check` 通过；真实浏览器在 1120px、1280px、1440px 检查三栏与评审栏，1440px 检查首页和评审弹窗，创建空名称校验及 Esc 关闭通过。Landing Page 源文件哈希保持一致。仅检查展示和导航，不写入既有项目或人工决定。检测器指出的 32px、17px、18px、28px 字号均沿用迁移前实现，未在此次迁移中新增字号。
+
+## shadcn/ui 组件迁移
+
+2026-10-12 按用户要求将首页、项目管理、需求与 Run 工作台、证据预览和独立 Landing Page 的可替换控件统一迁移到 shadcn/ui。组件源码来自官方 `new-york-v4` registry，保存在 `apps/web/src/components/ui/`，原始 MIT 许可证随源码保留。`apps/web/components.json` 配置组件目录、Tailwind 4 CSS 入口和 `@/` 别名。
+
+主题令牌从工作台样式提取到 `apps/web/src/theme.css`，两个入口共享原有 Modern Slate 色值、字体、圆角和阴影。shadcn 的 primary、secondary、background、popover、input、ring 等语义映射到已有令牌。已有 `muted` 表示辅助文字颜色，`accent` 表示通过绿，因此组件普通悬停直接使用 `surface-subtle`，不会把状态绿用于通用交互。控件默认样式放在 `ui.css` 的 components 层，页面局部规则继续负责密度和布局。
+
+首页项目卡片使用 Card，创建表单使用 Collapsible、Input、Textarea、Label、Button 和 Spinner。工作台使用 Select、DropdownMenu、Popover、Tabs、Badge、Alert、Dialog、AlertDialog、Tooltip 和 Resizable；侧栏默认 300px/340px，中栏至少 480px，页面最小宽度仍为 1120px。检查项、评审历史、文本证据和摘要使用 Collapsible，深链接展开后再滚动到目标。删除确认使用 AlertDialog，图片与交付确认使用 Dialog，关闭时恢复触发按钮焦点。
+
+Landing Page 入口改为 `src/landing/main.tsx` 和 `theme-modal.tsx`。截图切换与主题页签使用 Tabs，截图放大与主题规范使用 Dialog，卡片、表格、分隔线、按钮和复制提示分别使用 Card、Table、Separator、Button 与 Sonner。旧样式快照已移除，`landing-base.css` 仅保留当前页面所需的浏览器重置；组件与主题由共享 Tailwind 4 输出。原型文案、静态图片及固定链接边界继续沿用现有内容，不作为新增产品能力。
+
+逐页替换清单与组件维护约定见 [shadcn/ui 页面覆盖](docs/shadcn-ui.md)。历史验证段落仍记录其对应版本，不代表本次迁移后的运行结果。

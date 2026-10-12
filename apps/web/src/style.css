@@ -3,57 +3,8 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-/* Modern Slate，来源与映射见 docs/design-reference.md。 */
-@theme static {
-  --color-canvas: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #f1f5f9;
-  --color-surface-hover: #f8fafc;
-  --color-fg: #0f172a;
-  --color-fg-secondary: #334155;
-  --color-fg-muted: #64748b;
-  --color-muted: #64748b;
-  --color-fg-subtle: #94a3b8;
-  --color-border: #e2e8f0;
-  --color-border-dark: #cbd5e1;
-  --color-brand: #0f172a;
-  --color-brand-hover: #1e293b;
-  --color-brand-fg: #ffffff;
-  --color-topnav-bg: rgba(248, 250, 252, 0.88);
-  --color-accent: #059669;
-  --color-accent-soft: #ecfdf5;
-  --color-accent-border: #a7f3d0;
-  --color-accent-dark: #047857;
-  --color-warning: #d97706;
-  --color-warning-soft: #fffbeb;
-  --color-warning-border: #fde68a;
-  --color-warning-dark: #b45309;
-  --color-danger: #e11d48;
-  --color-danger-soft: #fff1f2;
-  --color-danger-border: #fecdd3;
-  --color-danger-dark: #be123c;
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --radius-sm: 4px;
-  --radius-default: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-full: 9999px;
-  --shadow-subtle: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --shadow-card:
-    0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
-  --shadow-dropdown:
-    0 10px 15px -3px rgba(15, 23, 42, 0.08),
-    0 4px 6px -4px rgba(15, 23, 42, 0.04);
-  --shadow-elevated:
-    0 10px 15px -3px rgba(15, 23, 42, 0.08),
-    0 4px 6px -4px rgba(15, 23, 42, 0.04);
-  --shadow-window:
-    0 20px 25px -5px rgba(15, 23, 42, 0.1),
-    0 8px 10px -6px rgba(15, 23, 42, 0.06);
-}
+@import "./theme.css";
+@import "./ui.css";
 
 /* 保留现有浏览器默认样式，页面迁移前不加载 Preflight。 */
 @layer components {
@@ -85,9 +36,6 @@
   h3 {
     @apply text-[17px];
   }
-  .eyebrow {
-    @apply tracking-[0.13em] text-[12px] text-muted;
-  }
   nav,
   .actions,
   .section-heading {
@@ -102,69 +50,13 @@
   section {
     @apply bg-surface border border-border rounded-lg p-6 mt-[18px] mr-0 mb-[18px] ml-0 shadow-card;
   }
-  button,
-  select,
-  input,
-  textarea {
-    font: inherit;
-  }
-  button {
-    @apply border border-border-dark bg-surface-subtle text-fg-secondary rounded-default pt-[10px] pr-4 pb-[10px] pl-4 cursor-pointer;
-  }
-  button:hover {
-    @apply bg-surface-hover;
-  }
-  button:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-  button:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible {
+  a:focus-visible {
     @apply outline-3 outline-solid outline-brand outline-offset-[3px];
-  }
-  input,
-  textarea,
-  select {
-    @apply p-[10px] border border-border-dark rounded-default bg-surface max-w-full;
-  }
-  label {
-    @apply flex flex-col gap-[7px] mb-4;
-  }
-  textarea {
-    @apply min-h-[85px] resize-y;
   }
   form {
     @apply max-w-165;
   }
-  .cards {
-    @apply grid grid-cols-[repeat(auto-fit,_minmax(240px,_1fr))] gap-3;
-  }
-  .card {
-    @apply flex flex-col items-start text-left gap-3 p-5;
-  }
-  .badge {
-    @apply inline-block pt-1 pr-[9px] pb-1 pl-[9px] rounded-sm bg-surface-subtle text-[13px] whitespace-nowrap;
-  }
-  .accepted,
-  .passed {
-    @apply bg-accent-soft text-accent-dark;
-  }
-  .failed,
-  .rejected,
-  .void {
-    @apply bg-danger-soft text-danger-dark;
-  }
-  .pending,
-  .blocked {
-    @apply bg-warning-soft text-warning-dark;
-  }
-  .danger {
-    @apply text-danger-dark border-danger-border bg-danger-soft;
-  }
-  .muted,
-  header p {
+  .muted {
     @apply text-muted text-[14px] leading-[1.7];
   }
   .prose {
@@ -197,9 +89,6 @@
   a {
     @apply text-fg-secondary;
   }
-  .evidence-link {
-    @apply inline-block mr-[15px];
-  }
   figure {
     @apply mt-5 mr-0 mb-5 ml-0 p-4 border border-border rounded-md;
   }
@@ -210,23 +99,11 @@
   video {
     @apply max-w-full max-h-150 block mb-3;
   }
-  iframe {
-    @apply w-full h-65 border border-border mb-3;
-  }
-  details {
+  :where([data-slot="collapsible"]) {
     @apply mt-6;
   }
-  summary {
+  :where(.disclosure-trigger) {
     @apply cursor-pointer mb-4;
-  }
-  [role="alert"] {
-    @apply text-danger-dark;
-  }
-  dialog {
-    @apply text-inherit w-[min(520px,_calc(100%_-_48px))] border border-border rounded-lg p-6 shadow-window;
-  }
-  dialog::backdrop {
-    @apply bg-[color-mix(in_srgb,_var(--color-brand)_60%,_transparent)];
   }
 }
 
@@ -234,11 +111,8 @@
   .app-shell {
     @apply w-full min-w-[1120px];
   }
-  .compact-button {
-    @apply pt-[7px] pr-[10px] pb-[7px] pl-[10px] text-[13px];
-  }
   .workspace {
-    @apply relative grid grid-cols-[var(--workspace-left-width)_minmax(0,_1fr)_var(--workspace-right-width)] h-[100dvh] overflow-hidden bg-surface;
+    @apply relative h-[100dvh] overflow-hidden bg-surface;
     --workspace-left-width: 256px;
     --workspace-right-width: 288px;
   }
@@ -271,7 +145,7 @@
   .workspace-project-select {
     @apply text-[12px] text-muted;
   }
-  .workspace-project-select select {
+  .workspace-project-select .ui-select-trigger {
     @apply w-full text-[13px] text-fg;
   }
   .workspace-sidebar-heading {
@@ -280,9 +154,6 @@
   .workspace-deliveries h2,
   .workspace-history h2 {
     @apply text-[16px] m-0;
-  }
-  .project-overview {
-    @apply w-full mt-0 mr-0 mb-4 ml-0 text-left text-[13px];
   }
   .workspace-main {
     @apply min-w-0 min-h-0 max-w-none w-full m-0 pt-2 pr-8 pb-15 pl-8 bg-surface border-x border-border overflow-y-auto scroll-pb-30;
@@ -336,31 +207,11 @@
   .search-field input {
     @apply w-full min-w-0;
   }
-  .filter-bar {
-    @apply flex flex-wrap gap-[6px];
-  }
-  .filter-bar button {
-    @apply pt-[6px] pr-2 pb-[6px] pl-2 bg-transparent border-border text-[12px];
-  }
-  .filter-bar button[aria-pressed="true"],
-  .primary-button {
-    @apply bg-brand border-brand text-brand-fg;
-  }
-  .filter-bar button[aria-pressed="true"]:hover,
-  .primary-button:hover {
-    @apply bg-brand-hover;
-  }
-  .filter-bar span {
-    @apply tabular-nums;
-  }
   .check-item {
     @apply mt-0 border-b border-border;
   }
-  .check-item summary {
+  .check-item .disclosure-trigger {
     @apply pt-4 pr-0 pb-4 pl-0 m-0 leading-[1.6] wrap-anywhere;
-  }
-  summary:focus-visible {
-    @apply outline-2 outline-solid outline-brand outline-offset-[3px];
   }
   .check-title {
     @apply text-[15px] font-semibold;
@@ -410,10 +261,6 @@
   .evidence-dialog img {
     @apply mt-5 mr-auto mb-5 ml-auto max-h-[70dvh] object-contain;
   }
-  input::placeholder,
-  textarea::placeholder {
-    @apply text-muted opacity-100;
-  }
   ::selection {
     @apply text-accent-dark bg-accent-soft;
   }
@@ -424,8 +271,7 @@
     @apply scroll-pb-40;
   }
   .has-review-bar {
-    @apply pb-15 scroll-pb-6;
-    margin-bottom: var(--review-bar-height, 80px);
+    @apply scroll-pb-6;
   }
   .check-counts {
     @apply flex flex-wrap gap-[6px] tabular-nums;
@@ -441,10 +287,6 @@
   }
   .latest-decision {
     @apply col-[1_/_-1];
-  }
-  .latest-decision time,
-  .latest-decision p {
-    @apply m-0;
   }
   .review-bar {
     @apply flex-wrap absolute inset-[auto_var(--workspace-right-width,_0px)_0_var(--workspace-left-width,_0px)] z-[30] flex justify-between items-center gap-4 [padding:12px_32px_calc(12px_+_env(safe-area-inset-bottom))] bg-surface border-t border-border-dark shadow-elevated;
@@ -475,9 +317,6 @@
   }
   .check-review-form {
     @apply mt-5 pt-4 border-t border-border;
-  }
-  .check-review-form h3 {
-    @apply mt-0;
   }
   .feedback-entry,
   .check-item,

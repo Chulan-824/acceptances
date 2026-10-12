@@ -1,4 +1,15 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { Alert } from "./components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogCancel,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "./components/ui/alert-dialog";
+import { DropdownMenuItem } from "./components/ui/dropdown-menu";
+import { Button } from "./components/ui/button";
+import { Badge } from "./components/ui/badge";
+import { useEffect, useRef, useState } from "react";
 import { request, type DeletePreview } from "@acceptances/api-client";
 export { request };
 export function message(error: unknown) {
@@ -41,27 +52,28 @@ export function Status({ value }: { value: string }) {
     skipped: "未执行",
     comment: "评论",
   };
-  return <span className={`badge ${value}`}>{labels[value] || value}</span>;
+  return <Badge className={`badge ${value}`}>{labels[value] || value}</Badge>;
 }
 export function Load({ error }: { error?: string }) {
-  return <p role={error ? "alert" : "status"}>{error || "正在加载…"}</p>;
+  return error ? (
+    <Alert variant="destructive">{error}</Alert>
+  ) : (
+    <p role="status">正在加载…</p>
+  );
 }
 export function DeleteButton({
   path,
   label,
   onDeleted,
+  menuItem = false,
 }: {
   path: string;
   label: string;
   onDeleted: () => void;
+  menuItem?: boolean;
 }) {
+  const deleteTrigger = useRef<HTMLButtonElement>(null);
   const [preview, setPreview] = useState<DeletePreview>();
-  const dialog = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  useEffect(() => {
-    if (preview) dialog.current?.showModal();
-    else dialog.current?.close();
-  }, [preview]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function act(remove: boolean) {
@@ -80,46 +92,78 @@ export function DeleteButton({
   }
   return (
     <>
-      <button
-        className="danger"
-        disabled={busy}
-        onClick={() => void act(false)}
+      {menuItem ? (
+        <DropdownMenuItem asChild onSelect={(event) => event.preventDefault()}>
+          <Button
+            variant="destructive"
+            ref={deleteTrigger}
+            disabled={busy}
+            onClick={() => void act(false)}
+          >
+            删除{label}
+          </Button>
+        </DropdownMenuItem>
+      ) : (
+        <Button
+          variant="destructive"
+          ref={deleteTrigger}
+          disabled={busy}
+          onClick={() => void act(false)}
+        >
+          删除{label}
+        </Button>
+      )}
+      {error && (
+        <Alert variant="destructive" role="alert">
+          {error}
+        </Alert>
+      )}
+      <AlertDialog
+        open={Boolean(preview)}
+        onOpenChange={(open) => {
+          if (!open && !busy) setPreview(undefined);
+        }}
       >
-        删除{label}
-      </button>
-      {error && <p role="alert">{error}</p>}
-      <dialog
-        ref={dialog}
-        aria-labelledby={titleId}
-        onCancel={() => setPreview(undefined)}
-      >
-        {preview && (
-          <>
-            <h2 id={titleId}>确认删除{label}</h2>
-            <p>
-              将永久删除 {preview.projects} 个项目、{preview.campaigns} 个需求、
-              {preview.runs} 次验证、{preview.evidence} 个附件和{" "}
-              {preview.reviews} 条反馈。无法恢复。
-            </p>
-            <div className="actions">
-              <button
-                autoFocus
-                disabled={busy}
-                onClick={() => setPreview(undefined)}
-              >
-                取消
-              </button>
-              <button
-                className="danger"
-                disabled={busy}
-                onClick={() => void act(true)}
-              >
-                确认永久删除
-              </button>
-            </div>
-          </>
-        )}
-      </dialog>
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            deleteTrigger.current?.focus();
+          }}
+          className="delete-dialog"
+          onEscapeKeyDown={(event) => {
+            if (busy) event.preventDefault();
+          }}
+        >
+          <AlertDialogTitle>确认删除{label}</AlertDialogTitle>
+          {preview && (
+            <>
+              <AlertDialogDescription>
+                将永久删除 {preview.projects} 个项目、{preview.campaigns}{" "}
+                个需求、
+                {preview.runs} 次验证、{preview.evidence} 个附件和{" "}
+                {preview.reviews} 条反馈。无法恢复。
+              </AlertDialogDescription>
+              {error && <Alert variant="destructive">{error}</Alert>}
+              <div className="actions">
+                <AlertDialogCancel
+                  autoFocus
+                  disabled={busy}
+                  onClick={() => setPreview(undefined)}
+                >
+                  取消
+                </AlertDialogCancel>
+                <Button
+                  variant="destructive"
+                  disabled={busy}
+                  onClick={() => void act(true)}
+                >
+                  确认永久删除
+                </Button>
+              </div>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

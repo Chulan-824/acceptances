@@ -1,3 +1,4 @@
+import { Alert } from "./components/ui/alert";
 import { useEffect, useState } from "react";
 
 const previewLimit = 64 * 1024;
@@ -53,7 +54,12 @@ export function TextEvidence({ url }: { url: string }) {
     return () => controller.abort();
   }, [url]);
   if (result?.url !== url) return <p role="status">正在加载文本附件…</p>;
-  if (result.error) return <p role="alert">{result.error}</p>;
+  if (result.error)
+    return (
+      <Alert variant="destructive" role="alert">
+        {result.error}
+      </Alert>
+    );
   return (
     <>
       <pre className="text-evidence">{result.text || "文件为空。"}</pre>

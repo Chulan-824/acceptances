@@ -1,4 +1,17 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { Badge } from "./components/ui/badge";
+import { Alert } from "./components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "./components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
+import { Disclosure } from "./components/disclosure";
+import { Button } from "./components/ui/button";
+import { Textarea } from "./components/ui/textarea";
+import { Label } from "./components/ui/label";
+import { useEffect, useRef, useState } from "react";
 import type { ReviewInput, Run as RunData } from "@acceptances/api-client";
 import {
   useResource,
@@ -11,7 +24,7 @@ import {
 import { Evidence } from "./evidence";
 import { Checklist } from "./checklist";
 import { CheckCounts } from "./check-counts";
-import { Icon, type IconName } from "./workspace-controls";
+import { Icon } from "./workspace-controls";
 import {
   ReviewCounts,
   ReviewForm,
@@ -57,10 +70,9 @@ export function Run({
       return undefined;
     }
   });
-  const dialog = useRef<HTMLDialogElement>(null);
+  const deliveryTrigger = useRef<HTMLButtonElement>(null);
   const mutationInFlight = useRef(false);
   const reviewBar = useRef<HTMLDivElement>(null);
-  const reviewTitle = useId();
   function targetTab(targetId?: string) {
     const review = targetId?.startsWith("feedback-")
       ? run?.reviews.find((review) => `feedback-${review.id}` === targetId)
@@ -93,10 +105,6 @@ export function Run({
       window.removeEventListener("popstate", followHash);
     };
   }, []);
-  useEffect(() => {
-    if (deliveryOpen) dialog.current?.showModal();
-    else dialog.current?.close();
-  }, [deliveryOpen, run]);
   useEffect(() => {
     const bar = reviewBar.current;
     const workspace = bar?.closest<HTMLElement>(".workspace");
@@ -195,13 +203,18 @@ export function Run({
           {isLatest ? "当前报告" : "历史报告"} <Status value={run.status} />
         </span>
       </div>
-      <details className="report-summary" aria-label="报告摘要">
-        <summary>
-          <span>报告信息</span>
-          <span className="report-name">{report.title}</span>
-          <ScopeType value={report.scopeType} />
-          <Icon name="chevron" />
-        </summary>
+      <Disclosure
+        className="report-summary"
+        aria-label="报告摘要"
+        title={
+          <>
+            <span>报告信息</span>
+            <span className="report-name">{report.title}</span>
+            <ScopeType value={report.scopeType} />
+            <Icon name="chevron" />
+          </>
+        }
+      >
         <div className="report-summary-body">
           <div className="section-heading">
             <h3>{report.title}</h3>
@@ -219,7 +232,9 @@ export function Run({
             保存成功不代表验证通过或人工接受。报告与附件不可原地修改。
           </p>
           {run.status === "void" && (
-            <p className="notice">作废原因：{run.voidReason}</p>
+            <Alert role="note" className="notice">
+              作废原因：{run.voidReason}
+            </Alert>
           )}
           <div className="report-metrics">
             <div>
@@ -252,11 +267,11 @@ export function Run({
             </dd>
           </dl>
           {report.scopeType !== "full" && (
-            <p className="notice">
+            <Alert role="note" className="notice">
               {report.scopeType === "partial"
                 ? "局部验证通过仅代表本轮范围。需求整体仍需最新完整验证的全部检查项人工通过。"
                 : "本轮范围未知，人工通过仅代表本轮，不能代表需求整体通过。"}
-            </p>
+            </Alert>
           )}
           <h3>代码版本</h3>
           {report.versions?.length ? (
@@ -282,233 +297,228 @@ export function Run({
             <p>代码版本与未提交改动：未知</p>
           )}
         </div>
-      </details>
+      </Disclosure>
       {!isLatest && (
-        <p className="notice">这是历史报告，对它的决定不会改变需求当前状态。</p>
+        <Alert role="note" className="notice">
+          这是历史报告，对它的决定不会改变需求当前状态。
+        </Alert>
       )}
       {run.status === "void" && (
-        <p className="notice">本轮已作废：{run.voidReason}</p>
+        <Alert role="note" className="notice">
+          本轮已作废：{run.voidReason}
+        </Alert>
       )}
-      <div className="report-tabs" role="tablist" aria-label="报告视图">
-        {(
-          [
-            {
-              value: "discussion",
-              label: "讨论",
-              icon: "comment",
-              count: run.reviews.filter(
-                (review) => !review.checkId && review.kind === "comment",
-              ).length,
-            },
-            {
-              value: "checks",
-              label: "检查清单",
-              icon: "checks",
-              count: report.checks.length,
-            },
-            {
-              value: "files",
-              label: "文件",
-              icon: "file",
-              count: report.evidence?.length ?? 0,
-            },
-          ] as const
-        ).map((item, index) => (
-          <button
-            key={item.value}
-            id={`report-tab-${item.value}`}
-            role="tab"
-            aria-selected={tab === item.value}
-            aria-controls={`report-panel-${item.value}`}
-            tabIndex={tab === item.value ? 0 : -1}
-            onClick={() => setTab(item.value)}
-            onKeyDown={(event) => {
-              const tabs = ["discussion", "checks", "files"] as const;
-              const next =
-                event.key === "ArrowRight"
-                  ? (index + 1) % 3
-                  : event.key === "ArrowLeft"
-                    ? (index + 2) % 3
-                    : event.key === "Home"
-                      ? 0
-                      : event.key === "End"
-                        ? 2
-                        : -1;
-              if (next < 0) return;
-              event.preventDefault();
-              setTab(tabs[next]);
-              document.getElementById(`report-tab-${tabs[next]}`)?.focus();
-            }}
-          >
-            <Icon name={item.icon as IconName} />
-            {item.label}
-            <span className="tab-count">{item.count}</span>
-          </button>
-        ))}
-      </div>
-      <div
-        id="report-panel-checks"
-        className="report-panel"
-        role="tabpanel"
-        aria-labelledby="report-tab-checks"
-        hidden={tab !== "checks"}
+      <Tabs
+        value={tab}
+        onValueChange={(value) =>
+          setTab(value as "discussion" | "checks" | "files")
+        }
       >
-        {report.followUp && (
-          <section id="follow-up" aria-label="反馈处理与复验来源">
-            <h2>反馈处理与复验来源</h2>
-            <p>
-              来源 Run：{" "}
-              {run.sourceRunAvailable === false ? (
-                <span>
-                  来源已删除 · <code>{report.followUp.sourceRunId}</code>
-                </span>
+        <TabsList className="report-tabs" aria-label="报告视图">
+          {(
+            [
+              {
+                value: "discussion",
+                label: "讨论",
+                icon: "comment",
+                count: run.reviews.filter(
+                  (review) => !review.checkId && review.kind === "comment",
+                ).length,
+              },
+              {
+                value: "checks",
+                label: "检查清单",
+                icon: "checks",
+                count: report.checks.length,
+              },
+              {
+                value: "files",
+                label: "文件",
+                icon: "file",
+                count: report.evidence?.length ?? 0,
+              },
+            ] as const
+          ).map((item) => (
+            <TabsTrigger
+              key={item.value}
+              value={item.value}
+              id={`report-tab-${item.value}`}
+            >
+              <Icon name={item.icon} />
+              {item.label}
+              <Badge className="tab-count">{item.count}</Badge>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent
+          forceMount
+          value="checks"
+          id="report-panel-checks"
+          className="report-panel"
+          hidden={tab !== "checks"}
+        >
+          {report.followUp && (
+            <section id="follow-up" aria-label="反馈处理与复验来源">
+              <h2>反馈处理与复验来源</h2>
+              <p>
+                来源 Run：{" "}
+                {run.sourceRunAvailable === false ? (
+                  <span>
+                    来源已删除 · <code>{report.followUp.sourceRunId}</code>
+                  </span>
+                ) : (
+                  <RunLink
+                    id={report.followUp.sourceRunId}
+                    runPath={runPath}
+                    navigate={navigate}
+                    onTarget={showTarget}
+                  >
+                    {report.followUp.sourceRunId}
+                  </RunLink>
+                )}
+              </p>
+              <p className="muted">
+                处理说明保留 Agent 本次声明，本轮仍需独立人工评审。
+              </p>
+              {report.followUp.responses.length ? (
+                report.followUp.responses.map((response) => (
+                  <article className="check" key={response.reviewId}>
+                    {run.sourceRunAvailable === false ? (
+                      <span>
+                        原反馈已删除 · <code>{response.reviewId}</code>
+                      </span>
+                    ) : (
+                      <RunLink
+                        id={report.followUp!.sourceRunId}
+                        target={`feedback-${response.reviewId}`}
+                        runPath={runPath}
+                        navigate={navigate}
+                        onTarget={showTarget}
+                      >
+                        查看原反馈 {response.reviewId.slice(0, 8)}
+                      </RunLink>
+                    )}
+                    <p className="prose">{response.explanation}</p>
+                    {response.checkIds.length ? (
+                      <div className="actions">
+                        <span>本轮关联检查项</span>
+                        {response.checkIds.map((checkId) => (
+                          <a
+                            key={checkId}
+                            href={`#${encodeURIComponent(`check-${checkId}`)}`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(
+                                `${runPath(id)}#${encodeURIComponent(`check-${checkId}`)}`,
+                              );
+                              showTarget(`check-${checkId}`);
+                            }}
+                          >
+                            {checkId}
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted">
+                        未关联本轮检查项，处理原因见说明。
+                      </p>
+                    )}
+                  </article>
+                ))
               ) : (
-                <RunLink
-                  id={report.followUp.sourceRunId}
-                  runPath={runPath}
-                  navigate={navigate}
-                  onTarget={showTarget}
-                >
-                  {report.followUp.sourceRunId}
-                </RunLink>
+                <p className="muted">本轮未填写反馈响应。</p>
               )}
-            </p>
-            <p className="muted">
-              处理说明保留 Agent 本次声明，本轮仍需独立人工评审。
-            </p>
-            {report.followUp.responses.length ? (
-              report.followUp.responses.map((response) => (
-                <article className="check" key={response.reviewId}>
-                  {run.sourceRunAvailable === false ? (
-                    <span>
-                      原反馈已删除 · <code>{response.reviewId}</code>
-                    </span>
-                  ) : (
-                    <RunLink
-                      id={report.followUp!.sourceRunId}
-                      target={`feedback-${response.reviewId}`}
-                      runPath={runPath}
-                      navigate={navigate}
-                      onTarget={showTarget}
-                    >
-                      查看原反馈 {response.reviewId.slice(0, 8)}
-                    </RunLink>
-                  )}
-                  <p className="prose">{response.explanation}</p>
-                  {response.checkIds.length ? (
-                    <div className="actions">
-                      <span>本轮关联检查项</span>
-                      {response.checkIds.map((checkId) => (
-                        <a
-                          key={checkId}
-                          href={`#${encodeURIComponent(`check-${checkId}`)}`}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigate(
-                              `${runPath(id)}#${encodeURIComponent(`check-${checkId}`)}`,
-                            );
-                            showTarget(`check-${checkId}`);
-                          }}
-                        >
-                          {checkId}
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="muted">未关联本轮检查项，处理原因见说明。</p>
-                  )}
-                </article>
-              ))
-            ) : (
-              <p className="muted">本轮未填写反馈响应。</p>
-            )}
-          </section>
-        )}
-        <Checklist
-          run={run}
-          disabled={busy}
-          onReview={saveReview}
-          runPath={runPath}
-          navigate={navigate}
-          onTarget={showTarget}
-          query={checkQuery}
-          status={checkStatus}
-          onQueryChange={setCheckQuery}
-          onStatusChange={setCheckStatus}
-        />
-      </div>
-      <div
-        id="report-panel-files"
-        className="report-panel"
-        role="tabpanel"
-        aria-labelledby="report-tab-files"
-        hidden={tab !== "files"}
-      >
-        <section className="file-section">
-          <h2 className="sr-only">证据附件</h2>
-          <div className="file-grid">
-            {report.evidence?.length ? (
-              report.evidence.map((item) => (
-                <Evidence key={item.path} run={id} item={item} gallery />
-              ))
-            ) : (
-              <p>本次报告未提供附件。</p>
-            )}
-          </div>
-        </section>
-      </div>
-      <div
-        id="report-panel-discussion"
-        className="report-panel"
-        role="tabpanel"
-        aria-labelledby="report-tab-discussion"
-        hidden={tab !== "discussion"}
-      >
-        <section id="run-feedback">
-          <div className="section-heading">
-            <h2>整轮评论与历史决定</h2>
-            <Status value={run.status} />
-          </div>
-          {!isLatest && (
-            <p className="notice">
-              这是历史报告，对它的决定不会改变需求当前状态。
-            </p>
+            </section>
           )}
-          <ReviewHistory
-            reviews={(run.reviews || []).filter((review) => !review.checkId)}
-            responses={run.feedbackResponses}
+          <Checklist
+            run={run}
+            disabled={busy}
+            onReview={saveReview}
             runPath={runPath}
             navigate={navigate}
             onTarget={showTarget}
+            query={checkQuery}
+            status={checkStatus}
+            onQueryChange={setCheckQuery}
+            onStatusChange={setCheckStatus}
           />
-          <ReviewForm
-            isVoid={run.status === "void"}
-            disabled={busy}
-            onSubmit={saveReview}
-          />
-          {run.status !== "void" && (
-            <details>
-              <summary>报告整体有误：作废</summary>
-              <label>
-                作废原因
-                <textarea
-                  value={reason}
-                  disabled={busy}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </label>
-              <button
-                className="danger"
-                disabled={busy || !reason.trim()}
-                onClick={() => void mutate("void", { reason })}
-              >
-                确认作废
-              </button>
-            </details>
-          )}
-          {actionError && <p role="alert">{actionError}</p>}
-        </section>
-      </div>
+        </TabsContent>
+        <TabsContent
+          forceMount
+          value="files"
+          id="report-panel-files"
+          className="report-panel"
+          hidden={tab !== "files"}
+        >
+          <section className="file-section">
+            <h2 className="sr-only">证据附件</h2>
+            <div className="file-grid">
+              {report.evidence?.length ? (
+                report.evidence.map((item) => (
+                  <Evidence key={item.path} run={id} item={item} gallery />
+                ))
+              ) : (
+                <p>本次报告未提供附件。</p>
+              )}
+            </div>
+          </section>
+        </TabsContent>
+        <TabsContent
+          forceMount
+          value="discussion"
+          id="report-panel-discussion"
+          className="report-panel"
+          hidden={tab !== "discussion"}
+        >
+          <section id="run-feedback">
+            <div className="section-heading">
+              <h2>整轮评论与历史决定</h2>
+              <Status value={run.status} />
+            </div>
+            {!isLatest && (
+              <Alert role="note" className="notice">
+                这是历史报告，对它的决定不会改变需求当前状态。
+              </Alert>
+            )}
+            <ReviewHistory
+              reviews={(run.reviews || []).filter((review) => !review.checkId)}
+              responses={run.feedbackResponses}
+              runPath={runPath}
+              navigate={navigate}
+              onTarget={showTarget}
+            />
+            <ReviewForm
+              isVoid={run.status === "void"}
+              disabled={busy}
+              onSubmit={saveReview}
+            />
+            {run.status !== "void" && (
+              <Disclosure title={<>报告整体有误：作废</>}>
+                <Label>
+                  作废原因
+                  <Textarea
+                    value={reason}
+                    disabled={busy}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
+                </Label>
+                <Button
+                  variant="destructive"
+                  disabled={busy || !reason.trim()}
+                  onClick={() => void mutate("void", { reason })}
+                >
+                  确认作废
+                </Button>
+              </Disclosure>
+            )}
+            {actionError && (
+              <Alert variant="destructive" role="alert">
+                {actionError}
+              </Alert>
+            )}
+          </section>
+        </TabsContent>
+      </Tabs>
       <div
         ref={reviewBar}
         className="review-bar"
@@ -527,20 +537,15 @@ export function Run({
           </span>
         </div>
         <div className="actions">
-          <button
-            className="text-button"
-            onClick={() => showTarget("checks-title")}
-          >
+          <Button variant="ghost" onClick={() => showTarget("checks-title")}>
             逐项评审
-          </button>
-          <button
-            className="text-button"
-            onClick={() => showTarget("run-feedback")}
-          >
+          </Button>
+          <Button variant="ghost" onClick={() => showTarget("run-feedback")}>
             讨论
-          </button>
-          <button
-            className="primary-button"
+          </Button>
+          <Button
+            variant="default"
+            ref={deliveryTrigger}
             disabled={
               busy ||
               run.status === "void" ||
@@ -553,44 +558,56 @@ export function Run({
             }}
           >
             {run.status === "accepted" ? "本轮已交付" : "一键交付"}
-          </button>
+          </Button>
         </div>
       </div>
-      <dialog
-        ref={dialog}
-        className="review-dialog"
-        aria-labelledby={reviewTitle}
-        onCancel={(event) => {
-          if (busy) event.preventDefault();
-          else setDeliveryOpen(false);
+      <Dialog
+        open={deliveryOpen}
+        onOpenChange={(open) => {
+          if (!busy) setDeliveryOpen(open);
         }}
-        onClose={() => setDeliveryOpen(false)}
       >
-        {deliveryOpen && (
+        <DialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            deliveryTrigger.current?.focus();
+          }}
+          className="review-dialog"
+          showCloseButton={false}
+          onEscapeKeyDown={(event) => {
+            if (busy) event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            if (busy) event.preventDefault();
+          }}
+        >
+          <DialogDescription className="sr-only">
+            确认本轮全部检查项人工通过，原始验证结果与历史判断保留。
+          </DialogDescription>
           <>
             <div className="section-heading">
-              <h2 id={reviewTitle}>确认本轮交付</h2>
-              <button
+              <DialogTitle>确认本轮交付</DialogTitle>
+              <Button
                 autoFocus
                 disabled={busy}
                 onClick={() => setDeliveryOpen(false)}
               >
                 取消
-              </button>
+              </Button>
             </div>
             <p className="prose">{report.title}</p>
             <p>
               人工状态 <Status value={run.status} />
             </p>
             {!isLatest && (
-              <p className="notice">
+              <Alert role="note" className="notice">
                 这是历史报告，对它的决定不会改变需求当前状态。
-              </p>
+              </Alert>
             )}
             {run.status === "void" && (
-              <p className="notice">
+              <Alert role="note" className="notice">
                 此 Run 已作废，仅可添加补充说明。作废原因：{run.voidReason}
-              </p>
+              </Alert>
             )}
             <p>
               本轮共 {report.checks.length}{" "}
@@ -598,7 +615,7 @@ export function Run({
             </p>
             <ReviewCounts counts={run.reviewCounts} />
             {rejectedChecks.length > 0 && (
-              <div className="notice">
+              <Alert role="note" className="notice">
                 <p>
                   以下 {rejectedChecks.length}{" "}
                   项已有人工不通过判断，将改为通过，原判断保留在历史中。
@@ -610,10 +627,10 @@ export function Run({
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Alert>
             )}
             {exceptionalChecks.length > 0 && (
-              <div className="notice">
+              <Alert role="note" className="notice">
                 <p>
                   以下项目原始验证未通过。确认交付表示你仍同意这些项目，无需填写理由；原始结果保持不变。
                 </p>
@@ -624,35 +641,39 @@ export function Run({
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Alert>
             )}
             {report.scopeType !== "full" && (
-              <p className="notice">
+              <Alert role="note" className="notice">
                 {report.scopeType === "partial"
                   ? "本轮为局部验证"
                   : "本轮范围未知"}
                 ，交付仅代表本轮范围，不能代表需求整体通过。
-              </p>
+              </Alert>
             )}
             <p className="muted">
               已通过项保留当前判断。本轮交付后仍可逐项改判或撤回。
             </p>
-            {deliveryError && <p role="alert">{deliveryError}</p>}
+            {deliveryError && (
+              <Alert variant="destructive" role="alert">
+                {deliveryError}
+              </Alert>
+            )}
             {busy && <p role="status">正在交付…</p>}
             <div className="actions">
-              <button
-                className="primary-button"
+              <Button
+                variant="default"
                 disabled={
                   busy || run.status === "void" || run.status === "accepted"
                 }
                 onClick={() => void acceptAll()}
               >
                 确认交付
-              </button>
+              </Button>
             </div>
           </>
-        )}
-      </dialog>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

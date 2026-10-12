@@ -1,3 +1,11 @@
+import { Spinner } from "./components/ui/spinner";
+import { Card } from "./components/ui/card";
+import { Alert } from "./components/ui/alert";
+import { Disclosure } from "./components/disclosure";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Textarea } from "./components/ui/textarea";
+import { Label } from "./components/ui/label";
 import { useRef, useState } from "react";
 import type { Project } from "@acceptances/api-client";
 import { message, request } from "./client";
@@ -47,12 +55,10 @@ export function Home({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
-  const toggle = useRef<HTMLElement>(null);
-  const panel = useRef<HTMLDetailsElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
   const submitting = useRef(false);
 
   function showCreate() {
-    if (panel.current) panel.current.open = true;
     setOpen(true);
     nameInput.current?.focus();
   }
@@ -125,61 +131,68 @@ export function Home({
               <p>选择项目，查看其需求与验证记录。</p>
             </div>
             {!projects ? (
-              <div className="home-state" aria-busy={!loadError}>
+              <Card className="home-state" aria-busy={!loadError}>
                 {loadError ? (
                   <>
                     <h3>项目列表加载失败</h3>
-                    <p role="alert">{loadError}</p>
-                    <button type="button" onClick={onRetry}>
+                    <Alert variant="destructive" role="alert">
+                      {loadError}
+                    </Alert>
+                    <Button type="button" onClick={onRetry}>
                       重新加载
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <p className="home-loading" role="status">
-                    <span className="home-spinner" aria-hidden="true" />
+                    <Spinner
+                      className="home-loading-spinner"
+                      aria-hidden="true"
+                    />
                     正在加载项目…
                   </p>
                 )}
-              </div>
+              </Card>
             ) : projects.length ? (
               <ul className="home-project-list" aria-label="项目列表">
                 {projects.map((project) => (
                   <li key={project.id}>
-                    <a
-                      className="home-project-card"
-                      href={`/projects/${project.id}`}
-                      onClick={(event) => {
-                        if (
-                          event.button !== 0 ||
-                          event.metaKey ||
-                          event.ctrlKey ||
-                          event.shiftKey ||
-                          event.altKey
-                        )
-                          return;
-                        event.preventDefault();
-                        navigate(`/projects/${project.id}`);
-                      }}
-                    >
-                      <span className="home-project-icon">
-                        <Icon name="folder" />
-                      </span>
-                      <span className="home-project-copy">
-                        <strong className="home-project-name">
-                          {project.name}
-                        </strong>
-                        <span className="home-project-description">
-                          {project.description || "暂无说明"}
+                    <Card asChild>
+                      <a
+                        className="home-project-card"
+                        href={`/projects/${project.id}`}
+                        onClick={(event) => {
+                          if (
+                            event.button !== 0 ||
+                            event.metaKey ||
+                            event.ctrlKey ||
+                            event.shiftKey ||
+                            event.altKey
+                          )
+                            return;
+                          event.preventDefault();
+                          navigate(`/projects/${project.id}`);
+                        }}
+                      >
+                        <span className="home-project-icon">
+                          <Icon name="folder" />
                         </span>
-                        <span className="home-project-action">进入项目</span>
-                      </span>
-                      <Icon name="arrow" />
-                    </a>
+                        <span className="home-project-copy">
+                          <strong className="home-project-name">
+                            {project.name}
+                          </strong>
+                          <span className="home-project-description">
+                            {project.description || "暂无说明"}
+                          </span>
+                          <span className="home-project-action">进入项目</span>
+                        </span>
+                        <Icon name="arrow" />
+                      </a>
+                    </Card>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="home-state">
+              <Card className="home-state">
                 <span className="home-project-icon">
                   <Icon name="folder" />
                 </span>
@@ -187,18 +200,19 @@ export function Home({
                 <p>
                   创建第一个项目，然后在业务目录使用 skill 关联项目并提交验证。
                 </p>
-                <button type="button" onClick={showCreate}>
+                <Button type="button" onClick={showCreate}>
                   填写项目名称 <Icon name="arrow" />
-                </button>
-              </div>
+                </Button>
+              </Card>
             )}
           </section>
           <section className="home-create" aria-label="创建项目">
-            <details
+            <Disclosure
               className="home-create-panel"
-              ref={panel}
+              disabled={busy}
+              triggerRef={toggle}
               open={open}
-              onToggle={(event) => setOpen(event.currentTarget.open)}
+              onOpenChange={setOpen}
               onKeyDown={(event) => {
                 if (event.key === "Escape" && open && !busy) {
                   event.preventDefault();
@@ -206,22 +220,18 @@ export function Home({
                   toggle.current?.focus();
                 }
               }}
-            >
-              <summary
-                ref={toggle}
-                aria-disabled={busy || undefined}
-                onClick={(event) => {
-                  if (busy) event.preventDefault();
-                }}
-              >
-                <span>
-                  <span className="home-create-title">创建项目</span>
-                  <span className="home-create-description">
-                    添加一个待验收的产品或系统
+              title={
+                <>
+                  <span>
+                    <span className="home-create-title">创建项目</span>
+                    <span className="home-create-description">
+                      添加一个待验收的产品或系统
+                    </span>
                   </span>
-                </span>
-                <Icon name="toggle" />
-              </summary>
+                  <Icon name="toggle" />
+                </>
+              }
+            >
               <div className="home-create-body">
                 <form
                   noValidate
@@ -232,10 +242,10 @@ export function Home({
                   }}
                 >
                   <fieldset disabled={busy}>
-                    <label htmlFor="home-name">
+                    <Label htmlFor="home-name">
                       项目名称<span>必填</span>
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       id="home-name"
                       name="name"
                       ref={nameInput}
@@ -261,40 +271,49 @@ export function Home({
                       <span>{name.length} / 200</span>
                     </div>
                     {nameError && (
-                      <p
+                      <Alert
+                        variant="destructive"
                         className="home-field-error"
                         role="alert"
                         id="home-name-error"
                       >
                         {nameError}
-                      </p>
+                      </Alert>
                     )}
-                    <label htmlFor="home-description">
+                    <Label htmlFor="home-description">
                       项目说明<span>选填</span>
-                    </label>
-                    <textarea
+                    </Label>
+                    <Textarea
                       id="home-description"
                       name="description"
                       placeholder="简要说明项目用途"
                     />
-                    <button
-                      className="primary-button home-create-submit"
+                    <Button
+                      variant="default"
+                      className="home-create-submit"
                       type="submit"
                     >
                       {busy && (
-                        <span className="home-spinner" aria-hidden="true" />
+                        <Spinner
+                          className="home-loading-spinner"
+                          aria-hidden="true"
+                        />
                       )}
                       {busy ? "正在创建…" : "创建项目"}
-                    </button>
+                    </Button>
                   </fieldset>
                   {error && (
-                    <p className="home-create-error" role="alert">
+                    <Alert
+                      variant="destructive"
+                      className="home-create-error"
+                      role="alert"
+                    >
                       {error}
-                    </p>
+                    </Alert>
                   )}
                 </form>
               </div>
-            </details>
+            </Disclosure>
           </section>
         </div>
         <footer className="home-footer">

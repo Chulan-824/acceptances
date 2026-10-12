@@ -1,3 +1,4 @@
+import { Badge } from "./components/ui/badge";
 import type { Report } from "@acceptances/api-client";
 
 const statuses = [
@@ -13,9 +14,9 @@ export function CheckCounts({ checks }: { checks: Report["checks"] }) {
   return (
     <span className="check-counts" aria-label="检查结果数量">
       {statuses.map(({ value, label }) => (
-        <span key={value} className={`badge ${value}`}>
+        <Badge key={value} className={`badge ${value}`}>
           {counts[value]} {label}
-        </span>
+        </Badge>
       ))}
     </span>
   );
