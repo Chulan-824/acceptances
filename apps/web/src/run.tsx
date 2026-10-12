@@ -25,15 +25,13 @@ import { Evidence } from "./evidence";
 import { Checklist } from "./checklist";
 import { CheckCounts } from "./check-counts";
 import { Icon } from "./workspace-controls";
+import { ReviewCounts, ReviewForm, ReviewHistory, ScopeType } from "./review";
 import {
-  ReviewCounts,
-  ReviewForm,
-  ReviewHistory,
   RunLink,
-  ScopeType,
-  revealTarget,
+  RunNavigationProvider,
+  useRunNavigation,
   type RunNavigation,
-} from "./review";
+} from "./run-navigation";
 export function Run({
   id,
   isLatest,
@@ -47,7 +45,6 @@ export function Run({
   onChanged: () => void;
   onDeleted: () => void;
 }) {
-  const [selectedTab, setTab] = useState<"discussion" | "checks" | "files">();
   const [revision, setRevision] = useState(0);
   const { data: run, error } = useResource<RunData>(
     `/runs/${id}`,
@@ -59,52 +56,22 @@ export function Run({
   const [reason, setReason] = useState("");
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [deliveryError, setDeliveryError] = useState("");
-  const [checkQuery, setCheckQuery] = useState("");
-  const [checkStatus, setCheckStatus] = useState("all");
-  const [target, setTarget] = useState<{ id: string } | undefined>(() => {
-    try {
-      return location.hash
-        ? { id: decodeURIComponent(location.hash.slice(1)) }
-        : undefined;
-    } catch {
-      return undefined;
-    }
-  });
+  const {
+    tab,
+    setTab,
+    checkQuery,
+    setCheckQuery,
+    checkStatus,
+    setCheckStatus,
+    showTarget,
+    missingTarget,
+    returnToOverview,
+    reportTop,
+    targetNotice,
+  } = useRunNavigation(run);
   const deliveryTrigger = useRef<HTMLButtonElement>(null);
   const mutationInFlight = useRef(false);
   const reviewBar = useRef<HTMLDivElement>(null);
-  function targetTab(targetId?: string) {
-    const review = targetId?.startsWith("feedback-")
-      ? run?.reviews.find((review) => `feedback-${review.id}` === targetId)
-      : undefined;
-    return targetId?.startsWith("evidence-")
-      ? "files"
-      : targetId === "run-feedback" || (review && !review.checkId)
-        ? "discussion"
-        : "checks";
-  }
-  const tab = selectedTab || targetTab(target?.id);
-  useEffect(() => {
-    const followHash = () => {
-      try {
-        const id = location.hash
-          ? decodeURIComponent(location.hash.slice(1))
-          : undefined;
-        setTab(undefined);
-        setTarget(id ? { id } : undefined);
-        setCheckQuery("");
-        setCheckStatus("all");
-      } catch {
-        // Keep the current view for malformed URL fragments.
-      }
-    };
-    window.addEventListener("hashchange", followHash);
-    window.addEventListener("popstate", followHash);
-    return () => {
-      window.removeEventListener("hashchange", followHash);
-      window.removeEventListener("popstate", followHash);
-    };
-  }, []);
   useEffect(() => {
     const bar = reviewBar.current;
     const workspace = bar?.closest<HTMLElement>(".workspace");
@@ -122,15 +89,6 @@ export function Run({
       workspace.style.removeProperty("--review-bar-height");
     };
   }, [run?.id]);
-  useEffect(() => {
-    if (target) revealTarget(target.id);
-  }, [target, tab, run]);
-  function showTarget(id: string) {
-    setTab(targetTab(id));
-    setCheckQuery("");
-    setCheckStatus("all");
-    setTarget({ id });
-  }
   async function saveAction(path: string, payload: unknown) {
     if (mutationInFlight.current) throw new Error("正在保存，请稍后再试。");
     mutationInFlight.current = true;
@@ -180,8 +138,8 @@ export function Run({
     (check) => check.status !== "passed",
   );
   return (
-    <>
-      <div className="report-version-line">
+    <RunNavigationProvider value={{ runPath, navigate }}>
+      <div className="report-version-line" ref={reportTop}>
         {report.versions?.map((version, index) => (
           <span key={index} title={`${version.repository} · ${version.commit}`}>
             <Icon name="file" />
@@ -203,6 +161,12 @@ export function Run({
           {isLatest ? "当前报告" : "历史报告"} <Status value={run.status} />
         </span>
       </div>
+      {missingTarget && (
+        <Alert role="alert" ref={targetNotice}>
+          <p>目标不存在或已不可用</p>
+          <Button onClick={returnToOverview}>返回本轮概览</Button>
+        </Alert>
+      )}
       <Disclosure
         className="report-summary"
         aria-label="报告摘要"
@@ -367,12 +331,7 @@ export function Run({
                     来源已删除 · <code>{report.followUp.sourceRunId}</code>
                   </span>
                 ) : (
-                  <RunLink
-                    id={report.followUp.sourceRunId}
-                    runPath={runPath}
-                    navigate={navigate}
-                    onTarget={showTarget}
-                  >
+                  <RunLink id={report.followUp.sourceRunId}>
                     {report.followUp.sourceRunId}
                   </RunLink>
                 )}
@@ -391,9 +350,6 @@ export function Run({
                       <RunLink
                         id={report.followUp!.sourceRunId}
                         target={`feedback-${response.reviewId}`}
-                        runPath={runPath}
-                        navigate={navigate}
-                        onTarget={showTarget}
                       >
                         查看原反馈 {response.reviewId.slice(0, 8)}
                       </RunLink>
@@ -403,19 +359,13 @@ export function Run({
                       <div className="actions">
                         <span>本轮关联检查项</span>
                         {response.checkIds.map((checkId) => (
-                          <a
+                          <RunLink
                             key={checkId}
-                            href={`#${encodeURIComponent(`check-${checkId}`)}`}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              navigate(
-                                `${runPath(id)}#${encodeURIComponent(`check-${checkId}`)}`,
-                              );
-                              showTarget(`check-${checkId}`);
-                            }}
+                            id={id}
+                            target={`check-${checkId}`}
                           >
                             {checkId}
-                          </a>
+                          </RunLink>
                         ))}
                       </div>
                     ) : (
@@ -434,9 +384,6 @@ export function Run({
             run={run}
             disabled={busy}
             onReview={saveReview}
-            runPath={runPath}
-            navigate={navigate}
-            onTarget={showTarget}
             query={checkQuery}
             status={checkStatus}
             onQueryChange={setCheckQuery}
@@ -483,9 +430,6 @@ export function Run({
             <ReviewHistory
               reviews={(run.reviews || []).filter((review) => !review.checkId)}
               responses={run.feedbackResponses}
-              runPath={runPath}
-              navigate={navigate}
-              onTarget={showTarget}
             />
             <ReviewForm
               isVoid={run.status === "void"}
@@ -674,6 +618,6 @@ export function Run({
           </>
         </DialogContent>
       </Dialog>
-    </>
+    </RunNavigationProvider>
   );
 }

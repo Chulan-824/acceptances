@@ -4,7 +4,7 @@ import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { Label } from "./components/ui/label";
 import { Badge } from "./components/ui/badge";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type {
   FeedbackResponse,
   Report,
@@ -14,61 +14,7 @@ import type {
 } from "@acceptances/api-client";
 import { message, Status } from "./client";
 
-export interface RunNavigation {
-  runPath: (id: string) => string;
-  navigate: (path: string) => void;
-  onTarget?: (id: string) => void;
-}
-
-export function revealTarget(id: string) {
-  const target = document.getElementById(id);
-  if (!target) return;
-  let ancestor: HTMLElement | null = target;
-  while (ancestor) {
-    if (ancestor.dataset.slot === "collapsible")
-      ancestor.dispatchEvent(new Event("reveal-disclosure"));
-    ancestor = ancestor.parentElement;
-  }
-  requestAnimationFrame(() => target.scrollIntoView());
-}
-
-export function RunLink({
-  id,
-  target,
-  children,
-  runPath,
-  navigate,
-  onTarget,
-}: RunNavigation & {
-  id: string;
-  target?: string;
-  children: ReactNode;
-}) {
-  const href = `${runPath(id)}${target ? `#${encodeURIComponent(target)}` : ""}`;
-  return (
-    <a
-      href={href}
-      onClick={(event) => {
-        if (
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey
-        )
-          return;
-        event.preventDefault();
-        navigate(href);
-        if (target) {
-          if (onTarget) onTarget(target);
-          else revealTarget(target);
-        }
-      }}
-    >
-      {children}
-    </a>
-  );
-}
+import { RunLink } from "./run-navigation";
 
 export function ScopeType({ value }: { value?: Report["scopeType"] }) {
   const labels = {
@@ -237,10 +183,7 @@ export function ReviewForm({
 export function ReviewHistory({
   reviews,
   responses,
-  runPath,
-  navigate,
-  onTarget,
-}: RunNavigation & {
+}: {
   reviews: Review[];
   responses: FeedbackResponse[];
 }) {
@@ -278,9 +221,6 @@ export function ReviewHistory({
                     ? `check-${response.checkIds[0]}`
                     : "follow-up"
                 }
-                runPath={runPath}
-                navigate={navigate}
-                onTarget={onTarget}
               >
                 查看后续复验 {response.runId.slice(0, 8)}
               </RunLink>

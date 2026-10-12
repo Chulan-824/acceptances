@@ -15,7 +15,7 @@ import type {
 import { Status } from "./client";
 import { Evidence } from "./evidence";
 import { Icon } from "./workspace-controls";
-import { ReviewForm, ReviewHistory, type RunNavigation } from "./review";
+import { ReviewForm, ReviewHistory } from "./review";
 
 const statuses = [
   { value: "all", label: "全部" },
@@ -29,14 +29,11 @@ export function Checklist({
   run,
   disabled,
   onReview,
-  runPath,
-  navigate,
-  onTarget,
   query,
   status,
   onQueryChange,
   onStatusChange,
-}: RunNavigation & {
+}: {
   run: RunData;
   disabled: boolean;
   onReview: (input: ReviewInput) => Promise<void>;
@@ -117,9 +114,6 @@ export function Checklist({
           isVoid={run.status === "void"}
           disabled={disabled}
           onReview={onReview}
-          runPath={runPath}
-          navigate={navigate}
-          onTarget={onTarget}
         />
       ))}
       {!checks.length && (
@@ -144,10 +138,7 @@ function CheckItem({
   isVoid,
   disabled,
   onReview,
-  runPath,
-  navigate,
-  onTarget,
-}: RunNavigation & {
+}: {
   number: number;
   check: Report["checks"][number];
   run: string;
@@ -216,13 +207,7 @@ function CheckItem({
           onSubmit={onReview}
         />
         <Disclosure title={<>评审历史 · {reviews.length} 条</>}>
-          <ReviewHistory
-            reviews={reviews}
-            responses={responses}
-            runPath={runPath}
-            navigate={navigate}
-            onTarget={onTarget}
-          />
+          <ReviewHistory reviews={reviews} responses={responses} />
         </Disclosure>
       </div>
     </Disclosure>
