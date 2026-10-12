@@ -4,7 +4,6 @@ import { Alert } from "./components/ui/alert";
 import { DropdownMenuItem } from "./components/ui/dropdown-menu";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
-import { Textarea } from "./components/ui/textarea";
 import { Label } from "./components/ui/label";
 import { ChoiceSelect } from "./components/choice-select";
 import { SelectItem } from "./components/ui/select";
@@ -14,14 +13,7 @@ import type {
   Repository,
   Campaign as CampaignData,
 } from "@acceptances/api-client";
-import {
-  useResource,
-  request,
-  message,
-  Status,
-  Load,
-  DeleteButton,
-} from "./client";
+import { useResource, Status, Load, DeleteButton } from "./client";
 import { Campaign } from "./campaign";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 import "./workbench.css";
@@ -51,8 +43,6 @@ export function Project({
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [revision, setRevision] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const project = useResource<ProjectData>(`/projects/${id}`, revision);
@@ -74,26 +64,6 @@ export function Project({
   );
   function refresh() {
     setRevision((value) => value + 1);
-  }
-  async function create(form: HTMLFormElement) {
-    setBusy(true);
-    setError("");
-    const values = new FormData(form);
-    try {
-      const item = await request<CampaignData>(`${base}/campaigns`, "POST", {
-        title: values.get("title"),
-        description: values.get("description"),
-      });
-      refresh();
-      form.reset();
-      setQuery("");
-      setStatus("all");
-      navigate(`${base}/campaigns/${item.id}`);
-    } catch (error) {
-      setError(message(error));
-    } finally {
-      setBusy(false);
-    }
   }
   const sidebar = (
     <aside className="workspace-deliveries" aria-label="需求交付导航">
@@ -154,9 +124,7 @@ export function Project({
               <Button onClick={() => navigate("/")}>所有项目</Button>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Button onClick={() => navigate(base)}>
-                项目设置 / 创建需求
-              </Button>
+              <Button onClick={() => navigate(base)}>项目设置</Button>
             </DropdownMenuItem>
           </div>
         </ActionMenu>
@@ -228,7 +196,7 @@ export function Project({
             <p className="muted">
               {items.length
                 ? "没有匹配的需求，请调整搜索或状态筛选。"
-                : "暂无需求。进入项目设置，创建第一项需求交付。"}
+                : "暂无需求。先在业务目录执行真实验证，再通过 CLI 提交报告与附件。"}
             </p>
           )}
         </>
@@ -296,32 +264,6 @@ export function Project({
             )}
           </section>
         )}
-        <section>
-          <h2>创建需求交付</h2>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void create(event.currentTarget);
-            }}
-          >
-            <Label>
-              需求标题
-              <Input name="title" required maxLength={200} />
-            </Label>
-            <Label>
-              需求说明
-              <Textarea name="description" />
-            </Label>
-            <Button variant="default" disabled={busy}>
-              创建需求
-            </Button>
-          </form>
-          {error && (
-            <Alert variant="destructive" role="alert">
-              {error}
-            </Alert>
-          )}
-        </section>
       </main>,
       <aside className="workspace-history" aria-label="工作台说明">
         <PanelButton
