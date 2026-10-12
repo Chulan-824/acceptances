@@ -15,10 +15,14 @@
     @apply pt-0 px-6;
   }
   .acceptance-workbench .workspace-main > section,
+  .acceptance-workbench .workspace-main > .notice,
+  .acceptance-workbench .workspace-main > [data-slot="alert"],
+  .acceptance-workbench .workspace-main > [role="status"],
   .report-panel,
   .report-summary,
   .report-version-line,
-  .report-tabs {
+  .report-tabs,
+  .report-notice {
     @apply w-full max-w-224 mx-auto;
   }
   .acceptance-workbench .workspace-main section {
@@ -150,6 +154,9 @@
   }
   .report-summary {
     @apply mt-0 mb-2 mx-auto;
+  }
+  .report-notice {
+    @apply my-3 mx-auto;
   }
   .report-summary .badge {
     @apply text-[12px] py-0.5;
@@ -309,9 +316,6 @@
   }
   .gallery-evidence .image-preview img {
     @apply aspect-video max-h-40 object-contain;
-  }
-  .gallery-evidence .image-preview span {
-    @apply sr-only;
   }
   .gallery-evidence .actions {
     @apply order-3 mt-0 gap-2 text-[12px];

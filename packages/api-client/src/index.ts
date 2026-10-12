@@ -114,6 +114,6 @@ export async function request<T>(
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
-export function evidenceURL(run: string, path: string, download = false) {
-  return `/api/v1/runs/${encodeURIComponent(run)}/evidence/${encodeURIComponent(path)}${download ? "?download=1" : ""}`;
+export function evidenceURL(run: string, path: string) {
+  return `/api/v1/runs/${encodeURIComponent(run)}/evidence/${encodeURIComponent(path)}`;
 }

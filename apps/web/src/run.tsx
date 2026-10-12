@@ -299,12 +299,12 @@ export function Run({
         </div>
       </Disclosure>
       {!isLatest && (
-        <Alert role="note" className="notice">
+        <Alert role="note" className="report-notice notice">
           这是历史报告，对它的决定不会改变需求当前状态。
         </Alert>
       )}
       {run.status === "void" && (
-        <Alert role="note" className="notice">
+        <Alert role="note" className="report-notice notice">
           本轮已作废：{run.voidReason}
         </Alert>
       )}

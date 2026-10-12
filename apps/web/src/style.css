@@ -238,12 +238,12 @@
     @apply m-0 p-3 rounded-default;
   }
   .image-preview {
-    @apply block w-full p-0 border-0 bg-surface-subtle text-left;
+    @apply block w-full overflow-hidden p-0 border-0 bg-surface-subtle text-left cursor-zoom-in;
   }
   .image-preview img {
     @apply w-full max-h-70 object-contain m-0;
   }
-  .image-preview span {
+  .image-preview-error {
     @apply block p-2 text-[12px];
   }
   .text-evidence {
@@ -252,14 +252,70 @@
   .evidence .actions {
     @apply mt-3 text-[13px];
   }
-  .evidence-dialog {
-    @apply w-[min(1100px,_calc(100%_-_32px))] max-h-[calc(100dvh_-_32px)] overflow-auto;
+  .image-viewer-overlay {
+    @apply fixed inset-0 z-50 bg-brand/90;
   }
-  .evidence-dialog h2 {
-    @apply text-[18px] m-0;
+  .image-viewer {
+    @apply fixed inset-0 z-50 overflow-clip outline-none text-brand-fg;
   }
-  .evidence-dialog img {
-    @apply mt-5 mr-auto mb-5 ml-auto max-h-[70dvh] object-contain;
+  .image-viewer-backdrop {
+    @apply absolute inset-0 w-full h-full border-0 bg-transparent cursor-pointer;
+  }
+  .image-viewer-stage {
+    @apply absolute inset-0 flex items-center justify-center p-16 pointer-events-none;
+    animation: image-viewer-enter 180ms ease-out;
+  }
+  .image-viewer-image {
+    @apply m-0 w-auto h-auto max-w-full max-h-full object-contain select-none pointer-events-auto;
+    touch-action: none;
+  }
+  .image-viewer-image[data-zoomed="true"] {
+    @apply cursor-grab;
+  }
+  .image-viewer-image[data-dragging="true"] {
+    @apply cursor-grabbing;
+  }
+  .image-viewer-close {
+    @apply absolute top-4 right-4;
+  }
+  .image-viewer-controls {
+    @apply absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 rounded-full bg-brand text-brand-fg;
+  }
+  .image-viewer .image-viewer-control {
+    @apply size-11 p-0 border-0 rounded-full bg-transparent text-brand-fg cursor-pointer;
+  }
+  .image-viewer .image-viewer-control:hover {
+    @apply bg-brand-hover;
+  }
+  .image-viewer .image-viewer-control:focus-visible {
+    @apply outline-brand-fg;
+  }
+  .image-viewer .image-viewer-control:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+  .image-viewer-control svg {
+    @apply size-5;
+  }
+  .image-viewer-controls output {
+    @apply min-w-12 text-center text-[13px] tabular-nums;
+  }
+  .image-viewer-error {
+    @apply text-brand-fg text-[14px];
+  }
+  @keyframes image-viewer-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .image-viewer-stage {
+      animation: none;
+    }
   }
   ::selection {
     @apply text-accent-dark bg-accent-soft;

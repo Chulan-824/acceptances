@@ -17,7 +17,7 @@ export function TextEvidence({ url }: { url: string }) {
         const response = await fetch(url, { signal: controller.signal });
         if (!response.ok) throw new Error(`附件请求失败（${response.status}）`);
         const reader = response.body?.getReader();
-        if (!reader) throw new Error("浏览器无法读取附件，请打开原文件。");
+        if (!reader) throw new Error("浏览器无法读取附件。");
         const decoder = new TextDecoder();
         let text = "";
         let length = 0;
@@ -64,9 +64,7 @@ export function TextEvidence({ url }: { url: string }) {
     <>
       <pre className="text-evidence">{result.text || "文件为空。"}</pre>
       {result.truncated && (
-        <p className="muted">
-          仅预览前 64 KiB，完整内容请打开原文件或下载附件。
-        </p>
+        <p className="muted">仅预览前 64 KiB，内容已截断。</p>
       )}
     </>
   );
