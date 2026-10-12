@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   Project as ProjectData,
   Repository,
@@ -13,7 +13,14 @@ import {
   DeleteButton,
 } from "./client";
 import { Campaign } from "./campaign";
-import { FilterBar } from "./filter-bar";
+import {
+  ActionMenu,
+  Icon,
+  PanelButton,
+  PanelResize,
+  workspaceStyle,
+} from "./workspace-controls";
+import "./workbench.css";
 const statuses = [
   { value: "all", label: "全部" },
   { value: "pending", label: "待审" },
@@ -37,6 +44,46 @@ export function Project({
   navigate: (path: string) => void;
   onDeleted: () => void;
 }) {
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    Math.max(1120, window.innerWidth),
+  );
+  useEffect(() => {
+    const resize = () => setViewportWidth(Math.max(1120, window.innerWidth));
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(300);
+  const [rightWidth, setRightWidth] = useState(340);
+  const requestedLeft = leftCollapsed ? 48 : leftWidth;
+  const requestedRight = rightCollapsed ? 48 : rightWidth;
+  const scale = Math.min(
+    1,
+    (viewportWidth - 480) / (requestedLeft + requestedRight),
+  );
+  const visibleLeft = Math.floor(requestedLeft * scale);
+  const visibleRight = Math.floor(requestedRight * scale);
+  function resizePanel(side: "left" | "right", value: number) {
+    const opposite = side === "left" ? visibleRight : visibleLeft;
+    const width = Math.round(
+      Math.max(
+        200,
+        Math.min(
+          side === "left" ? 400 : 440,
+          value,
+          viewportWidth - opposite - 480,
+        ),
+      ),
+    );
+    if (side === "left") {
+      setLeftWidth(width);
+      if (!rightCollapsed) setRightWidth(visibleRight);
+    } else {
+      setRightWidth(width);
+      if (!leftCollapsed) setLeftWidth(visibleLeft);
+    }
+  }
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -83,8 +130,25 @@ export function Project({
     }
   }
   return (
-    <div className="workspace">
-      <aside className="workspace-deliveries" aria-label="需求交付导航">
+    <div
+      className={`workspace acceptance-workbench${leftCollapsed ? " left-collapsed" : ""}${rightCollapsed ? " right-collapsed" : ""}`}
+      style={workspaceStyle(visibleLeft, visibleRight)}
+    >
+      {leftCollapsed && (
+        <aside className="panel-rail" aria-label="需求列表已收起">
+          <PanelButton
+            side="left"
+            collapsed
+            onClick={() => setLeftCollapsed(false)}
+          />
+          <span>需求</span>
+        </aside>
+      )}
+      <aside
+        className="workspace-deliveries"
+        aria-label="需求交付导航"
+        hidden={leftCollapsed}
+      >
         <nav className="workspace-home" aria-label="项目导航">
           <a
             href="/"
@@ -98,9 +162,11 @@ export function Project({
             </span>
             <span>Acceptances</span>
           </a>
-          <button className="compact-button" onClick={() => navigate("/")}>
-            所有项目
-          </button>
+          <PanelButton
+            side="left"
+            collapsed={false}
+            onClick={() => setLeftCollapsed(true)}
+          />
         </nav>
         <label className="workspace-project-select">
           当前项目
@@ -124,39 +190,57 @@ export function Project({
         {projectsError && <p role="alert">{projectsError}</p>}
         <div className="section-heading workspace-sidebar-heading">
           <h2>需求交付</h2>
-          <button className="compact-button" onClick={refresh}>
-            刷新列表
-          </button>
+          <ActionMenu label="需求更多操作" icon="more">
+            <div className="menu-content">
+              <button onClick={refresh}>
+                <Icon name="refresh" />
+                刷新列表
+              </button>
+              <button onClick={() => navigate("/")}>所有项目</button>
+              <button onClick={() => navigate(base)}>
+                项目设置 / 创建需求
+              </button>
+            </div>
+          </ActionMenu>
         </div>
-        <button
-          className="project-overview"
-          aria-current={!campaignId ? "page" : undefined}
-          onClick={() => navigate(base)}
-        >
-          项目设置 / 创建需求
-        </button>
-        <label className="search-field">
-          搜索需求
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="标题或需求说明"
-          />
-        </label>
-        <FilterBar
-          label="需求状态筛选"
-          value={status}
-          onChange={setStatus}
-          options={statuses.map((item) => ({
-            ...item,
-            count:
-              item.value === "all"
-                ? items.length
-                : items.filter((campaign) => campaign.status === item.value)
-                    .length,
-          }))}
-        />
+        <div className="sidebar-search-row">
+          <label className="search-field">
+            <span className="sr-only">搜索需求</span>
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="搜索需求"
+            />
+          </label>
+          <ActionMenu
+            label="需求状态筛选"
+            icon="filter"
+            className="filter-menu"
+          >
+            <div className="menu-content">
+              <label>
+                需求状态筛选
+                <select
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value)}
+                >
+                  {statuses.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}{" "}
+                      {item.value === "all"
+                        ? items.length
+                        : items.filter(
+                            (campaign) => campaign.status === item.value,
+                          ).length}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </ActionMenu>
+        </div>
         {!campaigns.data ? (
           <Load error={campaigns.error} />
         ) : (
@@ -167,16 +251,22 @@ export function Project({
             <div className="navigation-list">
               {filtered.map((campaign) => (
                 <button
-                  className="navigation-item"
+                  className="navigation-item campaign-list-item"
+                  title={`${campaign.title} · ${campaign.description || "暂无说明"}`}
                   key={campaign.id}
                   aria-current={campaignId === campaign.id ? "page" : undefined}
                   onClick={() => navigate(`${base}/campaigns/${campaign.id}`)}
                 >
-                  <strong>{campaign.title}</strong>
-                  <Status value={campaign.status} />
-                  <span className="muted">
-                    {campaign.description || "暂无说明"}
+                  <span className={`campaign-state ${campaign.status}`}>
+                    <Status value={campaign.status} />
                   </span>
+                  <strong>{campaign.title}</strong>
+                  <time dateTime={campaign.createdAt}>
+                    {new Date(campaign.createdAt).toLocaleDateString("zh-CN", {
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}
+                  </time>
                 </button>
               ))}
             </div>
@@ -190,11 +280,20 @@ export function Project({
           </>
         )}
       </aside>
+      {!leftCollapsed && (
+        <PanelResize
+          side="left"
+          width={visibleLeft}
+          onChange={(value) => resizePanel("left", value)}
+        />
+      )}
       {campaignId ? (
         <Campaign
           key={campaignId}
           id={campaignId}
           runId={runId}
+          historyCollapsed={rightCollapsed}
+          onToggleHistory={() => setRightCollapsed((value) => !value)}
           base={`${base}/campaigns/${campaignId}`}
           navigate={navigate}
           onChanged={refresh}
@@ -265,7 +364,16 @@ export function Project({
               {error && <p role="alert">{error}</p>}
             </section>
           </main>
-          <aside className="workspace-history" aria-label="工作台说明">
+          <aside
+            className="workspace-history"
+            aria-label="工作台说明"
+            hidden={rightCollapsed}
+          >
+            <PanelButton
+              side="right"
+              collapsed={false}
+              onClick={() => setRightCollapsed(true)}
+            />
             <h2>开始验收</h2>
             <p className="muted">选择左侧需求，即可在这里查看它的运行历史。</p>
             <p className="muted">
@@ -273,6 +381,23 @@ export function Project({
             </p>
           </aside>
         </>
+      )}
+      {!rightCollapsed && (
+        <PanelResize
+          side="right"
+          width={visibleRight}
+          onChange={(value) => resizePanel("right", value)}
+        />
+      )}
+      {rightCollapsed && (
+        <aside className="panel-rail history-rail" aria-label="运行记录已收起">
+          <PanelButton
+            side="right"
+            collapsed
+            onClick={() => setRightCollapsed(false)}
+          />
+          <span>运行记录</span>
+        </aside>
       )}
     </div>
   );

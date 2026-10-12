@@ -5,11 +5,13 @@ import type {
 } from "@acceptances/api-client";
 import { useResource, Status, Load, DeleteButton } from "./client";
 import { Run } from "./run";
-import { CheckCounts } from "./check-counts";
-import { ReviewCounts, ScopeType } from "./review";
+import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
+
 export function Campaign({
   id,
   runId,
+  historyCollapsed,
+  onToggleHistory,
   base,
   navigate,
   onDeleted,
@@ -17,6 +19,8 @@ export function Campaign({
 }: {
   id: string;
   runId?: string;
+  historyCollapsed: boolean;
+  onToggleHistory: () => void;
   base: string;
   navigate: (path: string) => void;
   onDeleted: () => void;
@@ -35,6 +39,7 @@ export function Campaign({
   );
   const selectedRun =
     runId || campaign.data?.latestRunId || runs.data?.items[0]?.id;
+  const runCount = runs.data?.items.length ?? 0;
   function refresh() {
     setRevision((value) => value + 1);
     onChanged();
@@ -52,22 +57,24 @@ export function Campaign({
             <section className="campaign-heading">
               <div className="section-heading">
                 <h2>{campaign.data.title}</h2>
+                <ActionMenu label="需求操作" icon="more">
+                  <div className="menu-content">
+                    <button onClick={refresh}>刷新报告</button>
+                    <DeleteButton
+                      path={`/campaigns/${id}`}
+                      label="需求"
+                      onDeleted={onDeleted}
+                    />
+                  </div>
+                </ActionMenu>
+              </div>
+              <div className="campaign-status-line">
                 <Status value={campaign.data.status} />
+                <span className="muted">每轮独立保存与评审</span>
               </div>
               <p className="prose">
                 {campaign.data.description || "暂无需求说明。"}
               </p>
-              <p className="muted">
-                每次验证独立保存。局部复验不会自动合并历史结果；新报告需要重新人审。
-              </p>
-              <div className="actions">
-                <button onClick={refresh}>刷新报告</button>
-                <DeleteButton
-                  path={`/campaigns/${id}`}
-                  label="需求"
-                  onDeleted={onDeleted}
-                />
-              </div>
             </section>
             {selectedRun ? (
               <Run
@@ -91,38 +98,58 @@ export function Campaign({
           </>
         )}
       </main>
-      <aside className="workspace-history" aria-label="运行记录">
+      <aside
+        className="workspace-history"
+        aria-label="运行记录"
+        hidden={historyCollapsed}
+      >
         <div className="section-heading workspace-sidebar-heading">
-          <h2>运行记录</h2>
-          <span className="muted">{runs.data?.items.length ?? "—"} 次</span>
+          <h2>
+            <Icon name="history" />
+            运行记录{" "}
+            <span className="tab-count">{runs.data?.items.length ?? "—"}</span>
+          </h2>
+          <PanelButton
+            side="right"
+            collapsed={false}
+            onClick={onToggleHistory}
+          />
         </div>
-        <p className="muted">选择一次验证，查看当次证据和人工反馈。</p>
+
         {!runs.data ? (
           <Load error={runs.error} />
         ) : runs.data.items.length ? (
           <div className="navigation-list">
-            {runs.data.items.map((run) => (
+            {runs.data.items.map((run, index) => (
               <button
                 key={run.id}
-                className="navigation-item"
+                className="navigation-item run-list-item"
                 aria-current={selectedRun === run.id ? "page" : undefined}
                 onClick={() => navigate(`${base}/runs/${run.id}`)}
               >
                 <span className="section-heading">
-                  <strong>
-                    {run.id === campaign.data?.latestRunId
-                      ? "最新验证"
-                      : "历史验证"}
-                  </strong>
+                  <strong>第 {runCount - index} 轮</strong>
+                  {run.id === campaign.data?.latestRunId && (
+                    <span className="muted">最新</span>
+                  )}
                   <Status value={run.status} />
+                  <time dateTime={run.report.verifiedAt}>
+                    {new Date(run.report.verifiedAt).toLocaleString("zh-CN", {
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </time>
                 </span>
                 <span>{run.report.title}</span>
-                <time>{new Date(run.report.verifiedAt).toLocaleString()}</time>
-                <span className="muted">{run.report.scope}</span>
-                <ScopeType value={run.report.scopeType} />
-                <CheckCounts checks={run.report.checks} />
-                <span className="muted">人工评审</span>
-                <ReviewCounts counts={run.reviewCounts} />
+                <span className="muted">
+                  {run.reviewCounts.accepted}/{run.report.checks.length} 已验收
+                  · {run.reviewCounts.pending} 待审
+                  {run.reviewCounts.rejected
+                    ? ` · ${run.reviewCounts.rejected} 不通过`
+                    : ""}
+                </span>
               </button>
             ))}
           </div>

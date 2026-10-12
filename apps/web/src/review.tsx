@@ -94,6 +94,7 @@ export function ReviewForm({
   onSubmit: (input: ReviewInput) => Promise<void>;
 }) {
   const [body, setBody] = useState("");
+  const [editing, setEditing] = useState<Review["kind"]>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const hasReason = Boolean(body.trim());
@@ -105,6 +106,7 @@ export function ReviewForm({
     try {
       await onSubmit({ checkId: check?.id, kind, body: body.trim() });
       setBody("");
+      setEditing(undefined);
     } catch (error) {
       setError(message(error));
     } finally {
@@ -117,71 +119,100 @@ export function ReviewForm({
       aria-label={check ? `人工评审 ${check.title}` : "整轮评论"}
       onSubmit={(event) => event.preventDefault()}
     >
-      {check ? (
-        <>
-          <h3>人工评审</h3>
+      {check && isVoid && <p className="notice">本轮已作废，仅可添加评论。</p>}
+      {(!check || editing) && (
+        <div className="review-editor">
           <p className="muted">
-            {check.status === "passed"
-              ? "不通过和评论须填写内容；通过、撤回可不填理由。"
-              : "验证未通过，人工通过或不通过均须填写理由；撤回理由可选。"}
-            评论不改变人工判断。
+            {check
+              ? editing === "rejected"
+                ? "请说明不通过的理由。"
+                : editing === "accepted"
+                  ? "验证未通过，请说明人工接受的理由。"
+                  : "评论不改变人工判断。"
+              : "整轮评论不改变人工状态。没有对应检查项的新问题可在这里说明。"}
           </p>
-          {isVoid && <p className="notice">本轮已作废，仅可添加评论。</p>}
-        </>
-      ) : (
-        <p className="muted">
-          整轮评论不改变人工状态。没有对应检查项的新问题可在这里说明。
-        </p>
-      )}
-      <label>
-        {check ? `评审理由或评论 · ${check.title}` : "整轮评论内容"}
-        <textarea
-          value={body}
-          disabled={locked}
-          onChange={(event) => setBody(event.target.value)}
-          placeholder={
-            check ? "填写判断依据或检查项问题" : "填写整体情况或新问题"
-          }
-        />
-      </label>
-      <div className="actions">
-        {check && (
-          <>
-            <button
-              type="button"
-              className="primary-button"
-              disabled={
-                locked || isVoid || (check.status !== "passed" && !hasReason)
+          <label>
+            {check ? `评审理由或评论 · ${check.title}` : "整轮评论内容"}
+            <textarea
+              value={body}
+              disabled={locked}
+              onChange={(event) => setBody(event.target.value)}
+              placeholder={
+                check ? "填写判断依据或检查项问题" : "对整次交付说点什么…"
               }
-              onClick={() => void save("accepted")}
-            >
-              人工通过
-            </button>
+            />
+          </label>
+          <div className="actions">
+            {check && (
+              <button
+                type="button"
+                disabled={locked}
+                onClick={() => setEditing(undefined)}
+              >
+                取消
+              </button>
+            )}
             <button
               type="button"
-              className="danger"
-              disabled={locked || isVoid || !hasReason}
-              onClick={() => void save("rejected")}
+              className={editing === "rejected" ? "danger" : "primary-button"}
+              disabled={
+                locked ||
+                !hasReason ||
+                (isVoid && editing !== "comment" && Boolean(check))
+              }
+              onClick={() => void save(editing || "comment")}
             >
-              人工不通过
+              {!check
+                ? "添加整轮评论"
+                : editing === "rejected"
+                  ? "确认不通过"
+                  : editing === "accepted"
+                    ? "确认人工通过"
+                    : "保存检查项评论"}
             </button>
-            <button
-              type="button"
-              disabled={locked || isVoid}
-              onClick={() => void save("pending")}
-            >
-              撤回到待审
-            </button>
-          </>
-        )}
-        <button
-          type="button"
-          disabled={locked || !hasReason}
-          onClick={() => void save("comment")}
-        >
-          {check ? "添加检查项评论" : "添加整轮评论"}
-        </button>
-      </div>
+          </div>
+        </div>
+      )}
+      {check && !editing && (
+        <div className="actions check-review-actions">
+          <button
+            type="button"
+            className="text-button"
+            disabled={locked || isVoid}
+            onClick={() => void save("pending")}
+          >
+            撤回到待审
+          </button>
+          <button
+            type="button"
+            className="text-button"
+            disabled={locked}
+            onClick={() => setEditing("comment")}
+          >
+            添加检查项评论
+          </button>
+          <button
+            type="button"
+            className="text-button danger"
+            disabled={locked || isVoid}
+            onClick={() => setEditing("rejected")}
+          >
+            人工不通过
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={locked || isVoid}
+            onClick={() =>
+              check.status === "passed"
+                ? void save("accepted")
+                : setEditing("accepted")
+            }
+          >
+            人工通过
+          </button>
+        </div>
+      )}
       {busy && <p role="status">正在保存…</p>}
       {error && <p role="alert">{error}</p>}
     </form>

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { TextEvidence } from "./text-evidence";
+import { Icon } from "./workspace-controls";
 import {
   evidenceURL,
   type Evidence as EvidenceData,
@@ -8,13 +9,16 @@ export function Evidence({
   run,
   item,
   inline = false,
+  gallery = false,
 }: {
   run: string;
   item: EvidenceData;
   inline?: boolean;
+  gallery?: boolean;
 }) {
   const url = evidenceURL(run, item.path);
   const extension = item.path.split(".").pop()?.toLowerCase();
+  const [textExpanded, setTextExpanded] = useState(false);
   const [preview, setPreview] = useState(false);
   const [imageError, setImageError] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -25,7 +29,7 @@ export function Evidence({
   }, [preview]);
   return (
     <figure
-      className={inline ? "evidence inline-preview" : "evidence"}
+      className={`evidence${inline ? " inline-preview" : ""}${gallery ? " gallery-evidence" : ""}`}
       id={inline ? undefined : `evidence-${item.path}`}
     >
       <figcaption>
@@ -80,7 +84,18 @@ export function Evidence({
       ) : ["mp4", "webm", "ogg"].includes(extension || "") ? (
         <video controls preload="metadata" src={url} />
       ) : ["txt", "log", "json", "csv"].includes(extension || "") ? (
-        <TextEvidence url={url} />
+        <details
+          className="text-evidence-disclosure"
+          open={textExpanded}
+          onToggle={(event) => setTextExpanded(event.currentTarget.open)}
+        >
+          <summary>
+            <Icon name="file" />
+            <span>{item.path}</span>
+            <Icon name="chevron" />
+          </summary>
+          {textExpanded && <TextEvidence url={url} />}
+        </details>
       ) : (
         <p>此附件仅提供下载。</p>
       )}

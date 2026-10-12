@@ -8,7 +8,7 @@ import type {
 } from "@acceptances/api-client";
 import { Status } from "./client";
 import { Evidence } from "./evidence";
-import { FilterBar } from "./filter-bar";
+import { Icon } from "./workspace-controls";
 import { ReviewForm, ReviewHistory, type RunNavigation } from "./review";
 
 const statuses = [
@@ -61,38 +61,47 @@ export function Checklist({
   );
   return (
     <section aria-labelledby="checks-title">
-      <div className="section-heading">
-        <h2 id="checks-title">检查项（仅本次）</h2>
-        <span className="muted">{report.checks.length} 项检查</span>
+      <div className="section-heading checklist-heading">
+        <h2 id="checks-title">验收检查清单</h2>
+        <div className="checklist-tools">
+          <label className="search-field">
+            <span className="sr-only">搜索检查项</span>
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="搜索检查项"
+            />
+          </label>
+          <label>
+            <span className="sr-only">原始验证结果筛选</span>
+            <select
+              aria-label="原始验证结果筛选"
+              value={status}
+              onChange={(event) => onStatusChange(event.target.value)}
+            >
+              {statuses.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}{" "}
+                  {item.value === "all"
+                    ? report.checks.length
+                    : report.checks.filter(
+                        (check) => check.status === item.value,
+                      ).length}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
-      <label className="search-field">
-        搜索检查项
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="标题、预期或实际结果"
-        />
-      </label>
-      <FilterBar
-        label="原始验证结果筛选"
-        value={status}
-        onChange={onStatusChange}
-        options={statuses.map((item) => ({
-          ...item,
-          count:
-            item.value === "all"
-              ? report.checks.length
-              : report.checks.filter((check) => check.status === item.value)
-                  .length,
-        }))}
-      />
       <p className="muted" role="status">
         显示 {checks.length} / {report.checks.length} 项
       </p>
       {checks.map((check) => (
         <CheckItem
           key={check.id}
+          number={report.checks.indexOf(check) + 1}
           check={check}
           run={run.id}
           evidence={evidence}
@@ -119,6 +128,7 @@ export function Checklist({
 }
 
 function CheckItem({
+  number,
   check,
   run,
   evidence,
@@ -132,6 +142,7 @@ function CheckItem({
   navigate,
   onTarget,
 }: RunNavigation & {
+  number: number;
   check: Report["checks"][number];
   run: string;
   evidence: Map<string, Report["evidence"][number]>;
@@ -142,9 +153,7 @@ function CheckItem({
   disabled: boolean;
   onReview: (input: ReviewInput) => Promise<void>;
 }) {
-  const [expanded, setExpanded] = useState(
-    check.status !== "passed" || humanStatus === "pending",
-  );
+  const [expanded, setExpanded] = useState(humanStatus !== "accepted");
   return (
     <details
       className="check-item"
@@ -155,7 +164,7 @@ function CheckItem({
     >
       <summary>
         <span className="check-title">
-          <code>{check.id}</code> {check.title}
+          <code title={check.id}>C{number}</code> {check.title}
         </span>
         <span className="check-meta">
           <span>
@@ -166,6 +175,7 @@ function CheckItem({
           </span>
           <span className="muted">{check.evidence?.length || 0} 个附件</span>
         </span>
+        <Icon name="chevron" />
       </summary>
       <div className="check-body">
         <dl>
