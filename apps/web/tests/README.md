@@ -62,7 +62,7 @@ viewport 检查等待目标实际可见，并检查目标顶部在固定评审�
 
 ## Campaign / Run 刷新交互
 
-`campaign-run-refresh.mjs` 导出 `scenarios` 和 `run(page, base, scenario)`。每项使用独立 Playwright browser context 和当前候选 Vite；所有 `/api/**` 均由受控 HTTP fixture 响应，不连接日常数据库。未知场景名直接失败。调用方为每项设置整体超时，失败不得记为 passed，并在 finally 关闭 context。
+`campaign-run-refresh.mjs` 导出 `scenarios` 和 `run(page, base, scenario)`。每项使用独立 Playwright browser context 和当前候选 Vite；所有 `/api/**` 均由受控 HTTP fixture 响应，不连接日常数据库。当前共 29 个场景，单独验证父级缺失重试时调用 `run(page, viteOrigin, "B15-parent-missing-retry")`。未知场景名直接失败。调用方为每项设置整体超时，失败不得记为 passed，并在 finally 关闭 context。
 
 ```js
 import { run, scenarios } from "./campaign-run-refresh.mjs";
@@ -96,5 +96,6 @@ for (const scenario of scenarios) {
 | B12  | `B12` + 本文既有 11 项定位场景                                                         | `B12` 调用 `refresh` 定位场景，保留真实 viewport 与重复定位断言；前进后退等由既有定位回归覆盖 |
 | B13  | `B13-campaign`、`B13-runs`、`B13-campaigns`                                            | 三类外围失败保留旧数据并提示，当前 Run 解锁且历史列表详情一致                                 |
 | B14  | `B14`                                                                                  | 搜索隐藏检查项后，交付确认仍展示全部数量、人工不通过与原始异常项                              |
+| B15  | `B15-parent-missing-retry`                                                             | 父级 404 后，500 / 网络失败仍保持缺失与禁写；同一父级 GET 200 后恢复，全程 0 写请求           |
 
 场景返回请求顺序和写请求信息供保存证据。写入和读取顺序通过显式响应释放控制；驱动结果仅证明受控 HTTP 下的真实前端行为。真实 Go 验证另见 [campaign-run-real.md](campaign-run-real.md)。
