@@ -156,7 +156,12 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     const token = generation;
     view.run = {
       ...view.run,
-      status: view.run.data ? "refreshing" : "loading",
+      status:
+        view.run.status === "missing"
+          ? "missing"
+          : view.run.data
+            ? "refreshing"
+            : "loading",
       error: undefined,
     };
     publish();
@@ -172,6 +177,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         view.run = {
           ...view.run,
           status:
+            view.run.status === "missing" ||
             (error as { status?: number })?.status === 404
               ? "missing"
               : "error",
@@ -236,6 +242,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
           [key]: {
             ...view[key],
             status:
+              view[key].status === "missing" ||
               (error as { status?: number })?.status === 404
                 ? "missing"
                 : "error",
