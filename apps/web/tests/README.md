@@ -59,3 +59,42 @@ viewport 检查等待目标实际可见，并检查目标顶部在固定评审�
 2026-10-13 刷新生命周期回归新增 `refresh`：从 `#check-target` 进入，明确提交一次评审，在响应暂缓时折叠目标并滚回顶部，然后释放写响应和 Run 回读。断言目标保持折叠、滚动位置不变；再次点击相同目标链接仍展开并定位。旧实现失败于 `Ordinary refresh must preserve collapsed target`（Red）；按 Run、定位意图和目标可用性记录已完成定位后通过（Green）。定位只有实际执行滚动后才完成，加载中的目标与被取消的动画帧仍可继续处理。
 
 本次 12 个场景通过独立 headless Chrome 和 15176 隔离 Vite 执行；HTTP 为受控 fixture，不代表真实 Go 接口验收。调用方可以从环境提供的 Playwright 包导入 `chromium`，创建独立 browser/context/page，运行上面的场景列表，并在 finally 关闭 browser。无需修改项目依赖。
+
+## Campaign / Run 刷新交互
+
+`campaign-run-refresh.mjs` 导出 `scenarios` 和 `run(page, base, scenario)`。每项使用独立 Playwright browser context 和当前候选 Vite；所有 `/api/**` 均由受控 HTTP fixture 响应，不连接日常数据库。未知场景名直接失败。调用方为每项设置整体超时，失败不得记为 passed，并在 finally 关闭 context。
+
+```js
+import { run, scenarios } from "./campaign-run-refresh.mjs";
+for (const scenario of scenarios) {
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
+  });
+  try {
+    const page = await context.newPage();
+    page.setDefaultTimeout(10000);
+    console.log(await run(page, viteOrigin, scenario));
+  } finally {
+    await context.close();
+  }
+}
+```
+
+| 清单 | 场景名                                                                                 | 可观察断言                                                                                    |
+| ---- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| B01  | `B01`                                                                                  | 仅提交表单清空；另一表单草稿保留                                                              |
+| B02  | `B02`，`B13-campaign`                                                                  | Run / Campaign 回读失败不卸载草稿，重试仅 GET                                                 |
+| B03  | `B03`                                                                                  | 提交响应丢失，草稿与未知结果提示保留，GET 后恢复操作                                          |
+| B04  | `B04`                                                                                  | Review、评论、交付、Void、删除共锁；Tab/折叠可用；外围慢不延长锁                              |
+| B05  | `B05`                                                                                  | Tab、折叠和同 Run 草稿在刷新后保留                                                            |
+| B06  | `B06`                                                                                  | latest 变化仅提示，主动切换后新 Run 不继承草稿                                                |
+| B07  | `B07-empty`、`B07-latest`、`B07-history`、`B07-explicit`、`B07-loading`、`B07-failure` | 首次选择、空态、显式缺失、列表加载/失败及重试                                                 |
+| B08  | `B08`                                                                                  | 提交中跨 Run、首页、其他 Project 返回仍锁定，旧回调不影响新页面                               |
+| B09  | `B09-empty-default`、`B09-history`、`B09-latest`                                       | 影响预览与删除确认；默认地址、历史与 latest 恢复                                              |
+| B10  | `B10-late`、`B10-external`、`B10-external-default`                                     | 迟到删除不拉回；外部删除保持地址并提供恢复                                                    |
+| B11  | `B11-cleanup`、`B11-unknown`、`B11-unknown-present`、`B11-unknown-read-failure`        | 清理警告；未知删除后 404、200、读失败，均不重发 DELETE                                        |
+| B12  | `B12` + 本文既有 11 项定位场景                                                         | `B12` 调用 `refresh` 定位场景，保留真实 viewport 与重复定位断言；前进后退等由既有定位回归覆盖 |
+| B13  | `B13-campaign`、`B13-runs`、`B13-campaigns`                                            | 三类外围失败保留旧数据并提示，当前 Run 解锁且历史列表详情一致                                 |
+| B14  | `B14`                                                                                  | 搜索隐藏检查项后，交付确认仍展示全部数量、人工不通过与原始异常项                              |
+
+场景返回请求顺序和写请求信息供保存证据。写入和读取顺序通过显式响应释放控制；驱动结果仅证明受控 HTTP 下的真实前端行为。真实 Go 验证另见 [campaign-run-real.md](campaign-run-real.md)。

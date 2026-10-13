@@ -1,3 +1,4 @@
+import type { WriteResult } from "./campaign-run-controller";
 import { Alert } from "./components/ui/alert";
 import {
   AlertDialog,
@@ -66,10 +67,17 @@ export function DeleteButton({
   label,
   onDeleted,
   menuItem = false,
+  disabled = false,
+  commands,
 }: {
   path: string;
   label: string;
-  onDeleted: () => void;
+  onDeleted?: () => void;
+  disabled?: boolean;
+  commands?: {
+    preview: () => Promise<DeletePreview>;
+    remove: () => Promise<WriteResult>;
+  };
   menuItem?: boolean;
 }) {
   const deleteTrigger = useRef<HTMLButtonElement>(null);
@@ -77,13 +85,32 @@ export function DeleteButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function act(remove: boolean) {
+    if (busy || disabled) return;
     setBusy(true);
     setError("");
     try {
       if (remove) {
-        await request(path, "DELETE");
-        onDeleted();
-      } else setPreview(await request<DeletePreview>(`${path}/delete-preview`));
+        if (commands) {
+          const result = await commands.remove();
+          if (result.kind === "committed") setPreview(undefined);
+          else {
+            setError(
+              result.kind === "unknown"
+                ? `删除结果未知，请核对当前记录。${result.message}`
+                : result.message,
+            );
+            setPreview(undefined);
+          }
+        } else {
+          await request(path, "DELETE");
+          onDeleted?.();
+        }
+      } else
+        setPreview(
+          await (commands
+            ? commands.preview()
+            : request<DeletePreview>(`${path}/delete-preview`)),
+        );
     } catch (error) {
       setError(message(error));
     } finally {
@@ -97,7 +124,7 @@ export function DeleteButton({
           <Button
             variant="destructive"
             ref={deleteTrigger}
-            disabled={busy}
+            disabled={busy || disabled}
             onClick={() => void act(false)}
           >
             删除{label}
@@ -107,7 +134,7 @@ export function DeleteButton({
         <Button
           variant="destructive"
           ref={deleteTrigger}
-          disabled={busy}
+          disabled={busy || disabled}
           onClick={() => void act(false)}
         >
           删除{label}
@@ -154,7 +181,7 @@ export function DeleteButton({
                 </AlertDialogCancel>
                 <Button
                   variant="destructive"
-                  disabled={busy}
+                  disabled={busy || disabled}
                   onClick={() => void act(true)}
                 >
                   确认永久删除

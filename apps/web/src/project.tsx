@@ -11,9 +11,9 @@ import { useState } from "react";
 import type {
   Project as ProjectData,
   Repository,
-  Campaign as CampaignData,
 } from "@acceptances/api-client";
 import { useResource, Status, Load, DeleteButton } from "./client";
+import { useCampaignRun } from "./campaign-run";
 import { Campaign } from "./campaign";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 import "./workbench.css";
@@ -28,7 +28,6 @@ export function Project({
   projects,
   projectsError,
   campaignId,
-  runId,
   navigate,
   onDeleted,
 }: {
@@ -36,7 +35,6 @@ export function Project({
   projects?: ProjectData[];
   projectsError?: string;
   campaignId?: string;
-  runId?: string;
   navigate: (path: string) => void;
   onDeleted: () => void;
 }) {
@@ -46,10 +44,8 @@ export function Project({
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const project = useResource<ProjectData>(`/projects/${id}`, revision);
-  const campaigns = useResource<{ items: CampaignData[] }>(
-    `/projects/${id}/campaigns`,
-    revision,
-  );
+  const { view, actions } = useCampaignRun();
+  const campaigns = view.campaigns;
   const repositories = useResource<{ items: Repository[] }>(
     `/projects/${id}/repositories`,
     revision,
@@ -64,6 +60,7 @@ export function Project({
   );
   function refresh() {
     setRevision((value) => value + 1);
+    void actions.refreshCampaigns();
   }
   const sidebar = (
     <aside className="workspace-deliveries" aria-label="需求交付导航">
@@ -115,7 +112,7 @@ export function Project({
         <ActionMenu label="需求更多操作" icon="more">
           <div className="menu-content">
             <DropdownMenuItem asChild>
-              <Button onClick={refresh}>
+              <Button onClick={() => void actions.refreshCampaigns()}>
                 <Icon name="refresh" />
                 刷新列表
               </Button>
@@ -163,6 +160,14 @@ export function Project({
           </div>
         </ActionMenu>
       </div>
+      {campaigns.data && campaigns.error && (
+        <Alert role="alert">
+          需求列表刷新失败：{campaigns.error}
+          <Button onClick={() => void actions.refreshCampaigns()}>
+            重试列表
+          </Button>
+        </Alert>
+      )}
       {!campaigns.data ? (
         <Load error={campaigns.error} />
       ) : (
@@ -219,13 +224,11 @@ export function Project({
       key={campaignId}
       id={campaignId}
       renderLayout={renderLayout}
-      runId={runId}
       onToggleHistory={() => setRightCollapsed((value) => !value)}
       base={`${base}/campaigns/${campaignId}`}
       navigate={navigate}
-      onChanged={refresh}
       onDeleted={() => {
-        refresh();
+        void actions.refreshCampaigns();
         navigate(base);
       }}
     />

@@ -2,60 +2,59 @@ import { Badge } from "./components/ui/badge";
 import type { ReactNode } from "react";
 import { DropdownMenuItem } from "./components/ui/dropdown-menu";
 import { Button } from "./components/ui/button";
-import { useState } from "react";
-import type {
-  Campaign as CampaignData,
-  Run as RunData,
-} from "@acceptances/api-client";
-import { useResource, Status, Load, DeleteButton } from "./client";
+import { Status, Load, DeleteButton } from "./client";
+import { Alert } from "./components/ui/alert";
+import { useCampaignRun } from "./campaign-run";
 import { Run } from "./run";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 
 export function Campaign({
   id,
-  runId,
   renderLayout,
   onToggleHistory,
   base,
   navigate,
   onDeleted,
-  onChanged,
 }: {
   id: string;
-  runId?: string;
   renderLayout: (main: ReactNode, right: ReactNode) => ReactNode;
   onToggleHistory: () => void;
   base: string;
   navigate: (path: string) => void;
   onDeleted: () => void;
-  onChanged: () => void;
 }) {
-  const [revision, setRevision] = useState(0);
-  const campaign = useResource<CampaignData>(
-    `/campaigns/${id}`,
-    revision,
-    true,
-  );
-  const runs = useResource<{ items: RunData[] }>(
-    `/campaigns/${id}/runs`,
-    revision,
-    true,
-  );
-  const selectedRun =
-    runId || campaign.data?.latestRunId || runs.data?.items[0]?.id;
+  const { view, actions } = useCampaignRun();
+  const { campaign, runs, selectedRunId: selectedRun } = view;
   const runCount = runs.data?.items.length ?? 0;
-  function refresh() {
-    setRevision((value) => value + 1);
-    onChanged();
-  }
+  const refresh = () => void actions.refresh();
   return renderLayout(
     <>
       <main
         className="workspace-main has-review-bar"
         aria-label="需求与验证报告"
       >
-        {!campaign.data ? (
-          <Load error={campaign.error} />
+        {view.cleanupWarning && (
+          <Alert role="alert">记录已删除，部分附件清理失败。</Alert>
+        )}
+        {view.campaigns.status === "missing" ? (
+          <Alert role="alert">
+            该项目已不存在。
+            <Button onClick={() => navigate("/")}>返回首页</Button>
+          </Alert>
+        ) : campaign.status === "missing" ? (
+          <Alert role="alert">
+            该需求已不存在。
+            <Button
+              onClick={() => navigate(`/projects/${view.scope.projectId}`)}
+            >
+              返回项目
+            </Button>
+          </Alert>
+        ) : !campaign.data ? (
+          <section>
+            <Load error={campaign.error} />
+            {campaign.error && <Button onClick={refresh}>重试刷新</Button>}
+          </section>
         ) : (
           <>
             <section className="campaign-heading">
@@ -83,19 +82,38 @@ export function Campaign({
                 {campaign.data.description || "暂无需求说明。"}
               </p>
             </section>
+            {campaign.error && (
+              <Alert role="alert">
+                需求状态刷新失败：{campaign.error}
+                <Button onClick={refresh}>重试刷新</Button>
+              </Alert>
+            )}
+            {view.hasNewRun && (
+              <Alert role="status">
+                有新的验证记录
+                <Button
+                  onClick={() =>
+                    navigate(`${base}/runs/${campaign.data!.latestRunId}`)
+                  }
+                >
+                  查看最新验证
+                </Button>
+              </Alert>
+            )}
             {selectedRun ? (
               <Run
                 key={selectedRun}
                 id={selectedRun}
-                isLatest={campaign.data.latestRunId === selectedRun}
-                onChanged={refresh}
+                isLatest={view.isLatest}
+                campaignPath={base}
                 runPath={(targetRun) => `${base}/runs/${targetRun}`}
                 navigate={navigate}
-                onDeleted={() => {
-                  refresh();
-                  navigate(base);
-                }}
               />
+            ) : runs.status !== "ready" ? (
+              <section>
+                <Load error={runs.error} />
+                {runs.error && <Button onClick={refresh}>重试刷新</Button>}
+              </section>
             ) : (
               <section>
                 <h2>验证报告</h2>
@@ -123,6 +141,12 @@ export function Campaign({
           />
         </div>
 
+        {runs.error && runs.data && (
+          <Alert role="alert">
+            运行记录刷新失败：{runs.error}
+            <Button onClick={refresh}>重试刷新</Button>
+          </Alert>
+        )}
         {!runs.data ? (
           <Load error={runs.error} />
         ) : runs.data.items.length ? (
