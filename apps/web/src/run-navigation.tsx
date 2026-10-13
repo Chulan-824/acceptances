@@ -49,6 +49,13 @@ export function useRunNavigation(run: Run | undefined) {
   const [checkStatus, setCheckStatus] = useState("all");
   const reportTop = useRef<HTMLDivElement>(null);
   const targetNotice = useRef<HTMLDivElement>(null);
+  // A snapshot can change without a new navigation intent. Consume an intent
+  // only after its target is rendered and scrolled into view.
+  const revealed = useRef<{
+    runId: string;
+    target: Target;
+    missing: boolean;
+  } | null>(null);
   const targetTab = run ? resolveTab(run, target) : undefined;
   const missingTarget = Boolean(run && targetTab === undefined);
   const tab = selectedTab || targetTab || "checks";
@@ -74,6 +81,12 @@ export function useRunNavigation(run: Run | undefined) {
   }, []);
   useEffect(() => {
     if (!run) return;
+    if (
+      revealed.current?.runId === run.id &&
+      revealed.current.target === target &&
+      revealed.current.missing === missingTarget
+    )
+      return;
     const element = missingTarget
       ? targetNotice.current
       : target.id === "report-top"
@@ -88,7 +101,10 @@ export function useRunNavigation(run: Run | undefined) {
         ancestor.dispatchEvent(new Event("reveal-disclosure"));
       ancestor = ancestor.parentElement;
     }
-    const frame = requestAnimationFrame(() => element.scrollIntoView());
+    const frame = requestAnimationFrame(() => {
+      element.scrollIntoView();
+      revealed.current = { runId: run.id, target, missing: missingTarget };
+    });
     return () => cancelAnimationFrame(frame);
   }, [run, target, missingTarget]);
   function returnToOverview() {

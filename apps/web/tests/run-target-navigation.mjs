@@ -105,6 +105,7 @@ export async function run(
       "deleted",
       "native",
       "missing-viewport",
+      "refresh",
     ].includes(scenario)
   )
     throw new Error(`Unknown navigation scenario: ${scenario}`);
@@ -150,6 +151,28 @@ export async function run(
     const request = route.request();
     if (request.method() !== "GET") {
       writes.push(request.url());
+      if (
+        scenario === "refresh" &&
+        request.method() === "POST" &&
+        request.url().endsWith("/runs/second/reviews")
+      ) {
+        firstStarted();
+        await released;
+        second.reviews.push({
+          id: "refresh-review",
+          runId: "second",
+          checkId: "target",
+          kind: "pending",
+          body: "刷新后的评审",
+          createdAt,
+          legacy: false,
+        });
+        return route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify(second.reviews.at(-1)),
+        });
+      }
       return route.fulfill({ status: 405, body: "{}" });
     }
     const endpoint = new URL(request.url()).pathname.replace("/api/v1", "");
@@ -215,6 +238,54 @@ export async function run(
     }, value);
   };
   try {
+    if (scenario === "refresh") {
+      await open("second#check-target");
+      await visibleTarget("#check-target");
+      await page
+        .locator("#check-target")
+        .getByRole("button", { name: "撤回到待审" })
+        .click();
+      await started;
+      await page.locator("#check-target > button").click();
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const scrollBefore = await page.evaluate(() => window.scrollY);
+      const refreshed = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === "/api/v1/runs/second",
+      );
+      releaseFirst();
+      await (await refreshed).finished();
+      await page
+        .getByText("刷新后的评审", { exact: true })
+        .waitFor({ state: "attached" });
+      await page.evaluate(
+        () =>
+          new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)),
+          ),
+      );
+      assert.equal(
+        await page
+          .locator("#check-target > button")
+          .getAttribute("aria-expanded"),
+        "false",
+        "Ordinary refresh must preserve collapsed target",
+      );
+      assert.equal(
+        await page.evaluate(() => window.scrollY),
+        scrollBefore,
+        "Ordinary refresh must preserve scroll position",
+      );
+      await page.getByRole("link", { name: "target", exact: true }).click();
+      await visibleTarget("#check-target");
+      assert.equal(
+        await page
+          .locator("#check-target > button")
+          .getAttribute("aria-expanded"),
+        "true",
+        "Explicit repeated target must still reveal after refresh",
+      );
+    }
     if (scenario === "missing-viewport") {
       await open("second#feedback-second-review");
       await visibleTarget("#feedback-second-review");
@@ -489,8 +560,8 @@ export async function run(
     }
     assert.deepEqual(
       writes,
-      [],
-      "Navigation must never write reviews or acceptance",
+      scenario === "refresh" ? [base + "/api/v1/runs/second/reviews"] : [],
+      "Navigation must not add writes beyond the explicit refresh fixture review",
     );
     return { scenario, status: "passed" };
   } finally {
