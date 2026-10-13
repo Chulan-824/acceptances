@@ -96,23 +96,72 @@ export interface DeletePreview {
   evidence: number;
   reviews: number;
 }
+/** The last HTTP phase reached, independent of whether a write committed. */
+export class RequestError extends Error {
+  readonly phase: "network" | "response" | "body";
+  readonly status?: number;
+  readonly code?: string;
+
+  constructor(
+    message: string,
+    details: {
+      phase: "network" | "response" | "body";
+      status?: number;
+      code?: string;
+      cause?: unknown;
+    },
+  ) {
+    super(message, { cause: details.cause });
+    this.name = "RequestError";
+    this.phase = details.phase;
+    this.status = details.status;
+    this.code = details.code;
+  }
+}
+
 export async function request<T>(
   path: string,
   method = "GET",
   body?: unknown,
 ): Promise<T> {
-  const response = await fetch(`/api/v1${path}`, {
+  const init: RequestInit = {
     method,
     headers:
       body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  };
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1${path}`, init);
+  } catch (cause) {
+    throw new RequestError(
+      cause instanceof Error ? cause.message : "网络请求失败",
+      { phase: "network", cause },
+    );
+  }
   if (!response.ok) {
     const error = await response.json().catch(() => null);
-    throw new Error(error?.message || `请求失败（${response.status}）`);
+    throw new RequestError(
+      typeof error?.message === "string" && error.message
+        ? error.message
+        : `请求失败（${response.status}）`,
+      {
+        phase: "response",
+        status: response.status,
+        code: typeof error?.code === "string" ? error.code : undefined,
+      },
+    );
   }
   if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  try {
+    return (await response.json()) as T;
+  } catch (cause) {
+    throw new RequestError("响应正文无法读取", {
+      phase: "body",
+      status: response.status,
+      cause,
+    });
+  }
 }
 export function evidenceURL(run: string, path: string) {
   return `/api/v1/runs/${encodeURIComponent(run)}/evidence/${encodeURIComponent(path)}`;
