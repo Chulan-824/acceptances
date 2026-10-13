@@ -96,6 +96,7 @@ export async function run(page, base, scenario = "B02") {
     });
     return { promise, resolve };
   };
+  const writeCompleted = deferred();
   const writeStarted = deferred(),
     writeGate = deferred(),
     runStarted = deferred(),
@@ -171,7 +172,9 @@ export async function run(page, base, scenario = "B02") {
             },
           });
         if (scenario === "B11-unknown") return route.abort("failed");
-        return route.fulfill({ status: 204 });
+        await route.fulfill({ status: 204 });
+        writeCompleted.resolve();
+        return;
       }
       if (endpoint === "/runs/first/accept-all") {
         first.status = "accepted";
@@ -201,7 +204,9 @@ export async function run(page, base, scenario = "B02") {
           ];
         }
         if (scenario === "B03") return route.abort("failed");
-        return route.fulfill({ status: 201, json: first.reviews.at(-1) });
+        await route.fulfill({ status: 201, json: first.reviews.at(-1) });
+        writeCompleted.resolve();
+        return;
       }
       return route.fulfill({
         status: 400,
@@ -345,6 +350,7 @@ export async function run(page, base, scenario = "B02") {
       await page.getByText("second 报告", { exact: true }).first().waitFor();
       holdWrite = false;
       writeGate.resolve();
+      await writeCompleted.promise;
       await page.waitForFunction(
         () =>
           !document.querySelector('[aria-label="整轮评论"] textarea')?.disabled,
@@ -595,6 +601,7 @@ export async function run(page, base, scenario = "B02") {
     await page.getByText("second 报告", { exact: true }).first().waitFor();
     holdWrite = false;
     writeGate.resolve();
+    await writeCompleted.promise;
     await page.getByRole("tab", { name: "检查清单" }).click();
     await one.getByRole("button", { name: "添加检查项评论" }).click();
     await one.getByRole("textbox").fill("新页面草稿");
