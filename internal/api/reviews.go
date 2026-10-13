@@ -120,6 +120,9 @@ func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 			_, e = tx.ExecContext(r.Context(), "UPDATE campaigns SET status=? WHERE id=? AND latest_run_id=?", v.campaignStatus(), v.CampaignID, v.ID)
 		}
 	}
+	if e == nil && (in.Kind == "rejected" || in.Kind == "pending") {
+		e = invalidateRunDeliveries(r.Context(), tx, v.ID, "检查项 "+in.CheckID+" 的人工接受已改判或撤回。"+in.Body, review.ID)
+	}
 	if e == nil {
 		e = tx.Commit()
 	}
@@ -158,6 +161,9 @@ func (s *Server) voidRun(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	_, e = tx.ExecContext(r.Context(), "UPDATE runs SET status='void',void_reason=? WHERE id=?", in.Reason, v.ID)
+	if e == nil {
+		e = invalidateRunDeliveries(r.Context(), tx, v.ID, "来源验证记录已作废："+in.Reason, v.ID)
+	}
 	if e == nil {
 		_, e = tx.ExecContext(r.Context(), "UPDATE campaigns SET status='pending' WHERE id=? AND latest_run_id=?", v.CampaignID, v.ID)
 	}

@@ -21,7 +21,7 @@ docker compose -f deploy/compose.yaml restart app
 
 本次逐项评审升级会增量迁移当前本地 SQLite，保留报告、证据和旧评审。旧整轮接受、拒绝只作历史，已有非作废 Run 的各项从待审开始，作废状态保持不变；以后重启不会重复清空人工判断。
 
-升级日常运行库前，先核对容器的 Compose 项目标签和挂载卷，停止应用写入，备份完整的 `/var/lib/acceptances` 数据目录，包括 SQLite 相关文件及 `evidence`，再启动新版。保留可恢复备份，不删除或重建持久卷。具体核对步骤见[实施交接](docs/v1-implementation-handoff.md)。更早的旧架构协议与数据导入仍不支持；业务仓库不挂载进容器。
+升级日常运行库前，先核对容器的 Compose 项目标签和挂载卷，停止应用写入，备份完整的 `/var/lib/acceptances` 数据目录，包括 SQLite 相关文件、`evidence`、`deliveries` 和 `documents`，再启动新版。库版本 3 迁移前另自动保存一致 SQLite 备份，但该数据库备份不能代替整个目录备份。保留可恢复备份，不删除或重建持久卷。具体核对步骤见[实施交接](docs/v1-implementation-handoff.md)和[交付能力交接](docs/delivery-implementation-handoff.md)。更早的旧架构协议与数据导入仍不支持；业务仓库不挂载进容器。
 
 ## 关联业务项目
 
@@ -42,6 +42,14 @@ make install-skill
 首次由 skill 选择已有 Project，后续复用宿主机关联。同仓库 worktree 共用关联，多个仓库可关联同一个 Project。日常调用无需源码路径、UUID 或凭据。验证任务不自动授权修改业务代码或作出人工接受决定。
 
 操作流程见 [Agent 接入](docs/agents/v1-integration.md)。
+
+## 冻结正式交付与业务说明
+
+在实际验证报告发布前，项目侧 Agent 按[正式交付材料](skills/acceptances-v1/references/delivery.md)准备需求、地图、说明素材、真实构建及截图，以普通附件随报告整包保存。完成最新完整 Run 的全部人审后，点击“冻结正式交付”，确认版本、必验范围、说明内容与敏感信息检查；原始未通过项须有具体接受理由。
+
+冻结快照保存当时结论及独立证据副本。绑定 Run 的改判、撤回、作废或删除让交付失效，原内容保留；再次接受不会自动恢复。新一轮自待审，新的明确冻结才替代旧版本。首页“交付归档”可查看效力历史，来源 Project/Campaign/Run 删除后仍可访问归档。
+
+有效交付详情可生成业务说明，平台确定性渲染带内嵌图片的离线 HTML，无服务端 LLM。说明版本独立，可预览、下载及失败重试，不回写 Run 或快照。协议见[交付 API](contracts/delivery.md)。本轮源码实现不自动升级已有容器、CLI 或已安装 skill。
 
 ## 人工反馈后再次验证
 

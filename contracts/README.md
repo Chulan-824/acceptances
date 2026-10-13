@@ -2,6 +2,8 @@
 
 服务仅供本机使用，无账号或 token。所有业务路由以 `/api/v1` 开头，JSON 字段采用 camelCase。列表返回 `{ "items": [] }`；错误返回 `{ "code": "...", "message": "..." }`。ID 由服务生成，格式为 UUID。
 
+正式冻结、交付效力和独立业务说明接口见[交付 API](delivery.md)。这些材料复用现有 evidence，不扩展严格 Report schema。
+
 ## 项目与需求
 
 | 方法与路由                       | 输入或返回                                                |

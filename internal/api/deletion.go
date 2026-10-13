@@ -9,11 +9,13 @@ import (
 )
 
 type deletionPreview struct {
-	Projects  int `json:"projects"`
-	Campaigns int `json:"campaigns"`
-	Runs      int `json:"runs"`
-	Evidence  int `json:"evidence"`
-	Reviews   int `json:"reviews"`
+	Projects           int `json:"projects"`
+	Campaigns          int `json:"campaigns"`
+	Runs               int `json:"runs"`
+	Evidence           int `json:"evidence"`
+	Reviews            int `json:"reviews"`
+	RetainedDeliveries int `json:"retainedDeliveries"`
+	RetainedDocuments  int `json:"retainedDocuments"`
 }
 
 func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string, remove bool) {
@@ -69,6 +71,17 @@ func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string
 		}
 		preview.Evidence += len(v.Report.Evidence)
 		preview.Reviews += len(v.Reviews)
+		var deliveries, documents int
+		if e = s.db.QueryRow("SELECT count(*) FROM delivery_snapshots WHERE source_run_id=?", id).Scan(&deliveries); e != nil {
+			fail(w, 500, "READ_FAILED")
+			return
+		}
+		if e = s.db.QueryRow("SELECT count(*) FROM business_documents WHERE delivery_id IN (SELECT id FROM delivery_snapshots WHERE source_run_id=?)", id).Scan(&documents); e != nil {
+			fail(w, 500, "READ_FAILED")
+			return
+		}
+		preview.RetainedDeliveries += deliveries
+		preview.RetainedDocuments += documents
 	}
 	if !remove {
 		respond(w, 200, preview)
@@ -80,6 +93,12 @@ func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string
 		return
 	}
 	defer tx.Rollback()
+	for _, runID := range keys {
+		if e = invalidateRunDeliveries(r.Context(), tx, runID, "来源验证记录已删除，交付档案及复制证据保留。", runID); e != nil {
+			fail(w, 500, "DELETE_FAILED")
+			return
+		}
+	}
 	if kind == "runs" {
 		_, e = tx.ExecContext(r.Context(), "UPDATE campaigns SET latest_run_id='',status='pending' WHERE latest_run_id=?", key)
 	}
@@ -131,5 +150,5 @@ func (s *Server) cleanupOrphans() error {
 			}
 		}
 	}
-	return nil
+	return s.recoverDeliveryArtifacts()
 }

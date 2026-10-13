@@ -1,11 +1,8 @@
 import { Badge } from "./components/ui/badge";
 import { Alert } from "./components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "./components/ui/dialog";
+import { RunFollowUp } from "./run-follow-up";
+import { BulkAcceptanceDialog } from "./bulk-acceptance-dialog";
+import { CampaignDelivery } from "./campaign-delivery";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
 import { Disclosure } from "./components/disclosure";
 import { Button } from "./components/ui/button";
@@ -21,7 +18,6 @@ import { CheckCounts } from "./check-counts";
 import { Icon } from "./workspace-controls";
 import { ReviewCounts, ReviewForm, ReviewHistory, ScopeType } from "./review";
 import {
-  RunLink,
   RunNavigationProvider,
   useRunNavigation,
   type RunNavigation,
@@ -122,17 +118,6 @@ export function Run({
       </section>
     );
   const report = run.report;
-  const rejectedIDs = new Set(
-    run.checkReviews
-      .filter((item) => item.status === "rejected")
-      .map((item) => item.checkId),
-  );
-  const rejectedChecks = report.checks.filter((check) =>
-    rejectedIDs.has(check.id),
-  );
-  const exceptionalChecks = report.checks.filter(
-    (check) => check.status !== "passed",
-  );
   return (
     <RunNavigationProvider value={{ runPath, navigate }}>
       {view.operation?.result?.kind === "unknown" && (
@@ -180,6 +165,13 @@ export function Run({
           {isLatest ? "当前报告" : "历史报告"} <Status value={run.status} />
         </span>
       </div>
+      <CampaignDelivery
+        key={run.id}
+        run={run}
+        isLatest={isLatest}
+        busy={busy}
+        navigate={navigate}
+      />
       {missingTarget && (
         <Alert role="alert" ref={targetNotice}>
           <p>目标不存在或已不可用</p>
@@ -339,65 +331,7 @@ export function Run({
           className="report-panel"
           hidden={tab !== "checks"}
         >
-          {report.followUp && (
-            <section id="follow-up" aria-label="反馈处理与复验来源">
-              <h2>反馈处理与复验来源</h2>
-              <p>
-                来源 Run：{" "}
-                {run.sourceRunAvailable === false ? (
-                  <span>
-                    来源已删除 · <code>{report.followUp.sourceRunId}</code>
-                  </span>
-                ) : (
-                  <RunLink id={report.followUp.sourceRunId}>
-                    {report.followUp.sourceRunId}
-                  </RunLink>
-                )}
-              </p>
-              <p className="muted">
-                处理说明保留 Agent 本次声明，本轮仍需独立人工评审。
-              </p>
-              {report.followUp.responses.length ? (
-                report.followUp.responses.map((response) => (
-                  <article className="check" key={response.reviewId}>
-                    {run.sourceRunAvailable === false ? (
-                      <span>
-                        原反馈已删除 · <code>{response.reviewId}</code>
-                      </span>
-                    ) : (
-                      <RunLink
-                        id={report.followUp!.sourceRunId}
-                        target={`feedback-${response.reviewId}`}
-                      >
-                        查看原反馈 {response.reviewId.slice(0, 8)}
-                      </RunLink>
-                    )}
-                    <p className="prose">{response.explanation}</p>
-                    {response.checkIds.length ? (
-                      <div className="actions">
-                        <span>本轮关联检查项</span>
-                        {response.checkIds.map((checkId) => (
-                          <RunLink
-                            key={checkId}
-                            id={id}
-                            target={`check-${checkId}`}
-                          >
-                            {checkId}
-                          </RunLink>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="muted">
-                        未关联本轮检查项，处理原因见说明。
-                      </p>
-                    )}
-                  </article>
-                ))
-              ) : (
-                <p className="muted">本轮未填写反馈响应。</p>
-              )}
-            </section>
-          )}
+          <RunFollowUp run={run} id={id} />
           <Checklist
             run={run}
             disabled={busy}
@@ -516,116 +450,31 @@ export function Run({
           >
             {run.status === "accepted" ? "本轮已交付" : "一键交付"}
           </Button>
+          <Button
+            variant="outline"
+            disabled={
+              busy ||
+              !isLatest ||
+              run.status !== "accepted" ||
+              report.scopeType !== "full"
+            }
+            onClick={() =>
+              navigate("/deliveries/new/" + encodeURIComponent(id))
+            }
+          >
+            冻结正式交付
+          </Button>
         </div>
       </div>
-      <Dialog
+      <BulkAcceptanceDialog
+        run={run}
+        busy={busy}
         open={deliveryOpen}
-        onOpenChange={(open) => {
-          if (!busy) setDeliveryOpen(open);
-        }}
-      >
-        <DialogContent
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            deliveryTrigger.current?.focus();
-          }}
-          className="review-dialog"
-          showCloseButton={false}
-          onEscapeKeyDown={(event) => {
-            if (busy) event.preventDefault();
-          }}
-          onInteractOutside={(event) => {
-            if (busy) event.preventDefault();
-          }}
-        >
-          <DialogDescription className="sr-only">
-            确认本轮全部检查项人工通过，原始验证结果与历史判断保留。
-          </DialogDescription>
-          <>
-            <div className="section-heading">
-              <DialogTitle>确认本轮交付</DialogTitle>
-              <Button
-                autoFocus
-                disabled={busy}
-                onClick={() => setDeliveryOpen(false)}
-              >
-                取消
-              </Button>
-            </div>
-            <p className="prose">{report.title}</p>
-            <p>
-              人工状态 <Status value={run.status} />
-            </p>
-            {run.status === "void" && (
-              <Alert role="note" className="notice">
-                此 Run 已作废，仅可添加补充说明。作废原因：{run.voidReason}
-              </Alert>
-            )}
-            <p>
-              本轮共 {report.checks.length}{" "}
-              项，确认后全部人工通过，不受当前搜索或筛选影响。
-            </p>
-            <ReviewCounts counts={run.reviewCounts} />
-            {rejectedChecks.length > 0 && (
-              <Alert role="note" className="notice">
-                <p>
-                  以下 {rejectedChecks.length}{" "}
-                  项已有人工不通过判断，将改为通过，原判断保留在历史中。
-                </p>
-                <ul>
-                  {rejectedChecks.map((check) => (
-                    <li key={check.id}>
-                      {check.id} · {check.title}
-                    </li>
-                  ))}
-                </ul>
-              </Alert>
-            )}
-            {exceptionalChecks.length > 0 && (
-              <Alert role="note" className="notice">
-                <p>
-                  以下项目原始验证未通过。确认交付表示你仍同意这些项目，无需填写理由；原始结果保持不变。
-                </p>
-                <ul>
-                  {exceptionalChecks.map((check) => (
-                    <li key={check.id}>
-                      {check.id} · {check.title} <Status value={check.status} />
-                    </li>
-                  ))}
-                </ul>
-              </Alert>
-            )}
-            {report.scopeType !== "full" && (
-              <Alert role="note" className="notice">
-                {report.scopeType === "partial"
-                  ? "本轮为局部验证"
-                  : "本轮范围未知"}
-                ，交付仅代表本轮范围，不能代表需求整体通过。
-              </Alert>
-            )}
-            <p className="muted">
-              已通过项保留当前判断。本轮交付后仍可逐项改判或撤回。
-            </p>
-            {deliveryError && (
-              <Alert variant="destructive" role="alert">
-                {deliveryError}
-              </Alert>
-            )}
-            {busy && <p role="status">正在交付…</p>}
-            <div className="actions">
-              <Button
-                variant="default"
-                disabled={
-                  busy || run.status === "void" || run.status === "accepted"
-                }
-                onClick={() => void acceptAll()}
-              >
-                确认交付
-              </Button>
-            </div>
-          </>
-        </DialogContent>
-      </Dialog>
+        error={deliveryError}
+        trigger={deliveryTrigger}
+        onOpenChange={setDeliveryOpen}
+        onConfirm={acceptAll}
+      />
     </RunNavigationProvider>
   );
 }

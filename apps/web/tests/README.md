@@ -1,5 +1,13 @@
 # Run 定位浏览器验证
 
+## 正式交付与离线业务说明
+
+`delivery-real.mjs` 导出 `seed(base)` 和 `run(page, base, output, fixture)`，连接真实 Go API 与当前生产 Web，使用专用 Playwright context。调用前设置 `ACCEPTANCES_TEST_ISOLATED=1`，在 `127.0.0.1` 随机端口启动带全新临时数据目录的服务。seed 要求项目列表为空并拒绝日常端口 8765，创建的合成项目可被删除。
+
+场景包含独立冻结确认、异常项理由、HTML 生成及独立版本、sandbox 预览、改判失效、来源删除保留、窄屏归档与断网离线图片。产出 JSON 回执、截图和下载 HTML；失败抛错，调用方须在 finally 关闭 browser。使用机器已有 Playwright，不安装新依赖。它只证明平台合成流程，不代表业务需求验证通过。
+
+## 既有定位回归
+
 `run-target-navigation.mjs` 导出 `run(page, base, scenario)`，接收外部 Playwright 的真实 Page；不引入新测试依赖。`base` 默认 `http://127.0.0.1:15173`，需先在隔离端口启动 Vite。测试会拦截该 browser context 中所有 `/api/` 请求，使用内存中的 Project、Campaign、两个 Run 和 Feedback Response。它验证浏览器行为，不证明 Go 服务或日常数据的行为。
 
 有外部 Playwright 驱动时，导入此文件，然后对专用 Page 分别调用 `run(page, base, "invalid")` 和 `run(page, base, "repeat")`。测试结束由调用者关闭专用 context。

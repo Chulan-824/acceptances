@@ -2,6 +2,8 @@ package api
 
 import "net/http"
 
+const bulkAcceptanceBody = "一键交付：人工确认本轮全部检查项通过。"
+
 // acceptAll records the user's explicit bulk judgment, preserving item history.
 // Unlike individual acceptance, this action does not require a written reason.
 func (s *Server) acceptAll(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +30,7 @@ func (s *Server) acceptAll(w http.ResponseWriter, r *http.Request) {
 		}
 		added = append(added, Review{
 			ID: id(), RunID: v.ID, CheckID: judgment.CheckID,
-			Kind: "accepted", Body: "一键交付：人工确认本轮全部检查项通过。", CreatedAt: createdAt,
+			Kind: "accepted", Body: bulkAcceptanceBody, CreatedAt: createdAt,
 		})
 	}
 	if len(added) == 0 {

@@ -1,6 +1,9 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 	"mime"
 	"net/http"
 	"os"
@@ -26,7 +29,19 @@ func (s *Server) evidence(w http.ResponseWriter, r *http.Request) {
 		fail(w, 404, "EVIDENCE_NOT_FOUND")
 		return
 	}
-	root, e := os.OpenRoot(filepath.Join(s.dir, "evidence", v.ID))
+	serveEvidenceFile(w, r, filepath.Join(s.dir, "evidence", v.ID), name)
+}
+
+func serveEvidenceFile(w http.ResponseWriter, r *http.Request, directory, name string) {
+	serveVerifiedEvidence(w, r, directory, name, nil)
+}
+
+func serveVerifiedEvidence(w http.ResponseWriter, r *http.Request, directory, name string, expected *ArchivedFile) {
+	if !validName(name) {
+		fail(w, 404, "EVIDENCE_NOT_FOUND")
+		return
+	}
+	root, e := os.OpenRoot(directory)
 	if e != nil {
 		fail(w, 404, "EVIDENCE_NOT_FOUND")
 		return
@@ -42,6 +57,18 @@ func (s *Server) evidence(w http.ResponseWriter, r *http.Request) {
 	if e != nil || !info.Mode().IsRegular() {
 		fail(w, 404, "EVIDENCE_NOT_FOUND")
 		return
+	}
+	if expected != nil {
+		hash := sha256.New()
+		size, err := io.Copy(hash, file)
+		if err != nil || size != expected.Size || hex.EncodeToString(hash.Sum(nil)) != expected.SHA256 {
+			fail(w, 409, "EVIDENCE_INTEGRITY_FAILED")
+			return
+		}
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			fail(w, 500, "READ_FAILED")
+			return
+		}
 	}
 	kind := "application/octet-stream"
 	disposition := "attachment"

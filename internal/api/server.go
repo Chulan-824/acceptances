@@ -37,6 +37,11 @@ func Open(dir string) (*Server, error) {
 	if err := os.MkdirAll(filepath.Join(dir, "evidence"), 0700); err != nil {
 		return nil, err
 	}
+	for _, name := range []string{"deliveries", "documents"} {
+		if err := os.MkdirAll(filepath.Join(dir, name), 0700); err != nil {
+			return nil, err
+		}
+	}
 	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
 	if err != nil {
 		return nil, err
@@ -52,9 +57,9 @@ func Open(dir string) (*Server, error) {
 		db.Close()
 		return nil, err
 	}
-	if version > 2 {
+	if version > 3 {
 		db.Close()
-		return nil, fmt.Errorf("database schema version %d is newer than supported version 2", version)
+		return nil, fmt.Errorf("database schema version %d is newer than supported version 3", version)
 	}
 	if version == 0 {
 		if _, err = db.Exec(`BEGIN;
@@ -70,6 +75,10 @@ func Open(dir string) (*Server, error) {
 		}
 	}
 	if err = s.migrateCheckReviews(version == 1); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err = s.migrateDeliveries(version != 0); err != nil {
 		db.Close()
 		return nil, err
 	}
@@ -165,6 +174,7 @@ func (s *Server) Register(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/runs/{id}/reviews", s.review)
 	m.HandleFunc("POST /api/v1/runs/{id}/accept-all", s.acceptAll)
 	m.HandleFunc("POST /api/v1/runs/{id}/void", s.voidRun)
+	s.registerDeliveries(m)
 	for _, kind := range []string{"projects", "campaigns", "runs"} {
 		m.HandleFunc("GET /api/v1/"+kind+"/{id}/delete-preview", func(w http.ResponseWriter, r *http.Request) { s.deleteScope(w, r, kind, false) })
 		m.HandleFunc("DELETE /api/v1/"+kind+"/{id}", func(w http.ResponseWriter, r *http.Request) { s.deleteScope(w, r, kind, true) })

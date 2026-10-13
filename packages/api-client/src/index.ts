@@ -95,7 +95,11 @@ export interface DeletePreview {
   runs: number;
   evidence: number;
   reviews: number;
+  retainedDeliveries?: number;
+  retainedDocuments?: number;
 }
+
+export type * from "./delivery";
 /** The last HTTP phase reached, independent of whether a write committed. */
 export class RequestError extends Error {
   readonly phase: "network" | "response" | "body";

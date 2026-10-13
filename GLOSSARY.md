@@ -30,3 +30,16 @@ _Avoid_：Round，不将需求交付与一次验证混称。
 **Feedback Response**：外部执行者在新 Run 中对来源 Run 的某条人工反馈给出的处理说明及复验检查项关联，不等于该反馈已经获得新的人工接受。
 
 **Void**：因报告整体有误而将 Run 标记为作废，保留原报告及作废原因。作废记录不能接受，作废不同于删除。
+
+以下术语用于正式交付与业务说明。具体材料规则见[交付材料](skills/acceptances-v1/references/delivery.md)，决策与对齐历史见[规划记录](.scratch/delivery-snapshot-business-doc/spec.md)。
+
+**Verification Map**：列出某版需求的业务功能及其必验检查项的范围地图，是核对一次交付验证是否覆盖约定范围的依据。
+
+**Delivery Snapshot**：人明确确认的一份不可变交付内容记录，绑定指定最终 Run、确认时的人工审核结论、交付版本、范围地图与证据。交付当前效力另行表达，后续变化不改变冻结时的事实。
+_Avoid_：本轮交付，不将当前人工通过结论与冻结记录混称。
+
+**Documentation Materials**：项目侧 Agent 随交付准备的结构化业务说明素材，描述功能、操作步骤、角色前提、限制及对应截图的来源。
+
+**Business Document**：关联某份 Delivery Snapshot 的独立版本业务说明，以 Documentation Materials 和已审核证据为依据。业务说明的版本变化不改变原交付记录或验证事实。
+
+**Delivery Effect**：一份交付当前是否有效的结论，包括有效、失效、主动撤销和已被替代。后续改判可以改变当前效力，冻结内容与效力变化的历史分别保留。

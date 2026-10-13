@@ -52,6 +52,12 @@ export function Status({ value }: { value: string }) {
     blocked: "阻塞",
     skipped: "未执行",
     comment: "评论",
+    valid: "有效交付",
+    invalidated: "已失效",
+    revoked: "已撤销",
+    superseded: "已被替代",
+    generating: "生成中",
+    succeeded: "生成成功",
   };
   return <Badge className={`badge ${value}`}>{labels[value] || value}</Badge>;
 }
@@ -169,6 +175,13 @@ export function DeleteButton({
                 个需求、
                 {preview.runs} 次验证、{preview.evidence} 个附件和{" "}
                 {preview.reviews} 条反馈。无法恢复。
+                {(preview.retainedDeliveries ?? 0) > 0 && (
+                  <span className="block">
+                    保留 {preview.retainedDeliveries} 份交付快照及{" "}
+                    {preview.retainedDocuments ?? 0} 份业务说明。
+                    对应交付将失效，仍可从交付归档查看历史及复制证据。
+                  </span>
+                )}
               </AlertDialogDescription>
               {error && <Alert variant="destructive">{error}</Alert>}
               <div className="actions">

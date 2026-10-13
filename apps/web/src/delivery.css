@@ -1,0 +1,73 @@
+@reference "./style.css";
+
+.campaign-delivery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.campaign-delivery p {
+  margin: 6px 0 0;
+}
+
+div.business-preview[data-slot="dialog-content"][role="dialog"] {
+  width: min(1100px, calc(100% - 32px));
+  max-width: none;
+}
+
+@layer components {
+  .delivery-page {
+    @apply w-full max-w-280 px-4 py-8 sm:px-6;
+  }
+  .delivery-home-entry {
+    @apply max-w-280 mx-auto justify-end px-4 pt-5 sm:px-6;
+  }
+  .delivery-list {
+    @apply grid grid-cols-1 gap-4;
+  }
+  .delivery-card {
+    @apply p-5;
+  }
+  .delivery-confirmation {
+    @apply border-0 m-0 p-0;
+  }
+  .delivery-confirmation .disclosure-trigger,
+  .delivery-page > .disclosure > .disclosure-trigger {
+    @apply mt-6 mb-3;
+  }
+  .delivery-confirmation figure {
+    @apply mx-0 my-5;
+  }
+  .delivery-confirmation img {
+    @apply max-w-full h-auto border border-border rounded-md;
+  }
+  .delivery-checkbox {
+    @apply flex items-start gap-3 my-4 text-sm;
+  }
+  .delivery-checkbox input {
+    @apply mt-1 shrink-0;
+  }
+  .delivery-reason {
+    @apply block my-4;
+  }
+  .business-documents {
+    @apply my-8 py-6 border-y border-border;
+  }
+  .document-versions {
+    @apply list-none p-0;
+  }
+  .document-versions > li {
+    @apply py-4 border-b border-border;
+  }
+  .business-preview iframe {
+    @apply w-full h-[70dvh] min-h-80 border border-border rounded-md bg-white;
+  }
+  .delivery-page code {
+    @apply break-all;
+  }
+}
