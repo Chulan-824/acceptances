@@ -12,15 +12,9 @@ import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { Label } from "./components/ui/label";
 import { useEffect, useRef, useState } from "react";
-import type { ReviewInput, Run as RunData } from "@acceptances/api-client";
-import {
-  useResource,
-  request,
-  message,
-  Status,
-  Load,
-  DeleteButton,
-} from "./client";
+import type { ReviewInput } from "@acceptances/api-client";
+import { Status, Load, DeleteButton } from "./client";
+import { useCampaignRun } from "./campaign-run";
 import { Evidence } from "./evidence";
 import { Checklist } from "./checklist";
 import { CheckCounts } from "./check-counts";
@@ -35,23 +29,17 @@ import {
 export function Run({
   id,
   isLatest,
-  onChanged,
-  onDeleted,
+  campaignPath,
   runPath,
   navigate,
 }: RunNavigation & {
   id: string;
   isLatest: boolean;
-  onChanged: () => void;
-  onDeleted: () => void;
+  campaignPath: string;
 }) {
-  const [revision, setRevision] = useState(0);
-  const { data: run, error } = useResource<RunData>(
-    `/runs/${id}`,
-    revision,
-    true,
-  );
-  const [busy, setBusy] = useState(false);
+  const { view, actions } = useCampaignRun();
+  const { data: run, error } = view.run;
+  const busy = view.writeLocked;
   const [actionError, setActionError] = useState("");
   const [reason, setReason] = useState("");
   const [deliveryOpen, setDeliveryOpen] = useState(false);
@@ -70,7 +58,6 @@ export function Run({
     targetNotice,
   } = useRunNavigation(run);
   const deliveryTrigger = useRef<HTMLButtonElement>(null);
-  const mutationInFlight = useRef(false);
   const reviewBar = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const bar = reviewBar.current;
@@ -89,42 +76,51 @@ export function Run({
       workspace.style.removeProperty("--review-bar-height");
     };
   }, [run?.id]);
-  async function saveAction(path: string, payload: unknown) {
-    if (mutationInFlight.current) throw new Error("正在保存，请稍后再试。");
-    mutationInFlight.current = true;
-    setBusy(true);
-    try {
-      await request(`/runs/${id}/${path}`, "POST", payload);
-      setRevision((r) => r + 1);
-      onChanged();
-    } finally {
-      mutationInFlight.current = false;
-      setBusy(false);
-    }
-  }
   async function saveReview(input: ReviewInput) {
-    await saveAction("reviews", input);
-    setDeliveryOpen(false);
+    const result = await actions.review(input);
+    if (result.kind === "committed") setDeliveryOpen(false);
+    return result;
   }
-  async function mutate(path: string, payload: unknown) {
+  async function mutate() {
     setActionError("");
-    try {
-      await saveAction(path, payload);
-      setReason("");
-    } catch (error) {
-      setActionError(message(error));
-    }
+    const result = await actions.voidRun(reason);
+    if (result.kind === "committed") setReason("");
+    else setActionError(result.message);
   }
   async function acceptAll() {
     setDeliveryError("");
-    try {
-      await saveAction("accept-all", {});
-      setDeliveryOpen(false);
-    } catch (error) {
-      setDeliveryError(message(error));
-    }
+    const result = await actions.acceptAll();
+    if (result.kind === "committed") setDeliveryOpen(false);
+    else setDeliveryError(result.message);
   }
-  if (!run) return <Load error={error} />;
+  if (view.run.status === "missing")
+    return (
+      <Alert role="alert">
+        该验证记录已删除。
+        {view.operation?.result?.kind === "unknown" && (
+          <p>此前提交结果未确认；当前记录已不存在。</p>
+        )}
+        <Button
+          onClick={() => {
+            void actions.recoverCampaign();
+            navigate(campaignPath);
+          }}
+        >
+          返回需求
+        </Button>
+      </Alert>
+    );
+  if (!run)
+    return view.operation?.phase === "submitting" ? (
+      <p role="status">正在保存此验证记录，请等待结果。</p>
+    ) : (
+      <section>
+        <Load error={error} />
+        {error && (
+          <Button onClick={() => void actions.refresh()}>重试刷新</Button>
+        )}
+      </section>
+    );
   const report = run.report;
   const rejectedIDs = new Set(
     run.checkReviews
@@ -139,6 +135,29 @@ export function Run({
   );
   return (
     <RunNavigationProvider value={{ runPath, navigate }}>
+      {view.operation?.result?.kind === "unknown" && (
+        <Alert role="alert">
+          提交结果未知，请核对当前记录和评审历史后再决定是否重试。
+          {view.operation.result.message}
+        </Alert>
+      )}
+      {error && (
+        <Alert role="alert">
+          {view.operation?.result?.kind === "committed"
+            ? "已保存，状态刷新失败"
+            : "状态刷新失败"}
+          ：{error}
+          <Button onClick={() => void actions.refresh()}>重试刷新</Button>
+        </Alert>
+      )}
+      {view.operation?.phase === "checking" && !error && (
+        <p role="status">
+          {view.operation.result?.kind === "committed"
+            ? "已保存，正在刷新状态…"
+            : "正在核对当前状态…"}
+        </p>
+      )}
+
       <div className="report-version-line" ref={reportTop}>
         {report.versions?.map((version, index) => (
           <span key={index} title={`${version.repository} · ${version.commit}`}>
@@ -185,7 +204,11 @@ export function Run({
             <DeleteButton
               path={`/runs/${id}`}
               label="验证记录"
-              onDeleted={onDeleted}
+              disabled={busy}
+              commands={{
+                preview: actions.previewDeleteRun,
+                remove: actions.deleteRun,
+              }}
             />
           </div>
           <p>
@@ -449,7 +472,7 @@ export function Run({
                 <Button
                   variant="destructive"
                   disabled={busy || !reason.trim()}
-                  onClick={() => void mutate("void", { reason })}
+                  onClick={() => void mutate()}
                 >
                   确认作废
                 </Button>

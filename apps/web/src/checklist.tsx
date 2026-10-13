@@ -1,3 +1,4 @@
+import type { WriteResult } from "./campaign-run-controller";
 import { Alert } from "./components/ui/alert";
 import { Disclosure } from "./components/disclosure";
 import { Input } from "./components/ui/input";
@@ -36,7 +37,7 @@ export function Checklist({
 }: {
   run: RunData;
   disabled: boolean;
-  onReview: (input: ReviewInput) => Promise<void>;
+  onReview: (input: ReviewInput) => Promise<WriteResult>;
   query: string;
   status: string;
   onQueryChange: (value: string) => void;
@@ -148,7 +149,7 @@ function CheckItem({
   responses: RunData["feedbackResponses"];
   isVoid: boolean;
   disabled: boolean;
-  onReview: (input: ReviewInput) => Promise<void>;
+  onReview: (input: ReviewInput) => Promise<WriteResult>;
 }) {
   const [expanded, setExpanded] = useState(humanStatus !== "accepted");
   return (

@@ -1,3 +1,4 @@
+import type { WriteResult } from "./campaign-run-controller";
 import { Card } from "./components/ui/card";
 import { Alert } from "./components/ui/alert";
 import { Button } from "./components/ui/button";
@@ -44,7 +45,7 @@ export function ReviewForm({
   check?: Report["checks"][number];
   isVoid: boolean;
   disabled?: boolean;
-  onSubmit: (input: ReviewInput) => Promise<void>;
+  onSubmit: (input: ReviewInput) => Promise<WriteResult>;
 }) {
   const [body, setBody] = useState("");
   const [editing, setEditing] = useState<Review["kind"]>();
@@ -57,9 +58,20 @@ export function ReviewForm({
     setBusy(true);
     setError("");
     try {
-      await onSubmit({ checkId: check?.id, kind, body: body.trim() });
-      setBody("");
-      setEditing(undefined);
+      const result = await onSubmit({
+        checkId: check?.id,
+        kind,
+        body: body.trim(),
+      });
+      if (result.kind === "committed") {
+        setBody("");
+        setEditing(undefined);
+      } else
+        setError(
+          result.kind === "unknown"
+            ? `提交结果未知，请核对历史。${result.message}`
+            : result.message,
+        );
     } catch (error) {
       setError(message(error));
     } finally {
