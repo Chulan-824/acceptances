@@ -30,6 +30,7 @@ export const scenarios = [
   "B13-runs",
   "B13-campaigns",
   "B14",
+  "B15-parent-missing-retry",
 ];
 const createdAt = "2026-10-13T00:00:00Z";
 const project = {
@@ -116,6 +117,7 @@ export async function run(page, base, scenario = "B02") {
   let failRun = false;
   let deleted = false;
   let peripheralFailure = "";
+  let parentFailure;
   if (scenario === "B14") {
     first.report.checks[1].status = "failed";
     first.checkReviews = [
@@ -251,6 +253,13 @@ export async function run(page, base, scenario = "B02") {
         status: 500,
         json: { code: "READ_FAILED", message: "读取测试失败" },
       });
+    if (parentFailure && endpoint === `/projects/${project.id}/campaigns`) {
+      if (parentFailure === "network") return route.abort("failed");
+      return route.fulfill({
+        status: parentFailure,
+        json: { code: "READ_FAILED", message: "父级读取失败" },
+      });
+    }
     const failPath = {
       campaign: `/campaigns/${campaign.id}`,
       runs: `/campaigns/${campaign.id}/runs`,
@@ -290,6 +299,46 @@ export async function run(page, base, scenario = "B02") {
         ? ""
         : "/runs/first"),
   );
+  if (scenario === "B15-parent-missing-retry") {
+    await page.getByText("first 报告", { exact: true }).first().waitFor();
+    parentFailure = 404;
+    await refresh();
+    await page.getByText("该项目已不存在。", { exact: false }).waitFor();
+    for (const failure of [500, "network"]) {
+      parentFailure = failure;
+      const response = page.waitForEvent(
+        failure === "network" ? "requestfailed" : "response",
+        (event) => event.url().endsWith(`/projects/${project.id}/campaigns`),
+      );
+      await page.getByRole("button", { name: "重试列表", exact: true }).click();
+      await response;
+      await page.getByText("需求列表刷新失败：", { exact: false }).waitFor();
+      assert.equal(
+        await page.getByText("该项目已不存在。", { exact: false }).count(),
+        1,
+      );
+      assert.equal(
+        await page
+          .getByRole("main", { name: "需求与验证报告" })
+          .getByText("first 报告", { exact: true })
+          .count(),
+        0,
+      );
+      assert.equal(
+        await page.getByRole("form", { name: "整轮评论" }).count(),
+        0,
+      );
+    }
+    parentFailure = undefined;
+    await page.getByRole("button", { name: "重试列表", exact: true }).click();
+    await page.getByText("first 报告", { exact: true }).first().waitFor();
+    assert.equal(
+      await page.locator('[aria-label="整轮评论"] textarea').isEnabled(),
+      true,
+    );
+    assert.equal(writes.length, 0);
+    return { scenario, status: "passed", writes, requests };
+  }
   if (scenario.startsWith("B07-")) {
     await page
       .getByRole("heading", { name: activeCampaign.title, exact: true })

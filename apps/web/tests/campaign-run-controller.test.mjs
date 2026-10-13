@@ -453,3 +453,56 @@ test("M12 confirmed deleted Run is excluded from stale list snapshots during rec
   await actions.refresh();
   assert.deepEqual(f.controller.getSnapshot().runs.data.items, []);
 });
+
+for (const parent of ["campaign", "campaigns"]) {
+  test(`confirmed missing ${parent} survives failed retries until its own GET succeeds`, async () => {
+    const f = fixture();
+    const actions = await ready(f);
+    const successfulRead = f.adapter[parent];
+    for (const status of [404, 500, undefined]) {
+      f.adapter[parent] = async () => {
+        throw Object.assign(Error("parent unavailable"), { status });
+      };
+      await actions.refresh();
+      assert.equal(f.controller.getSnapshot()[parent].status, "missing");
+      assert.equal(f.controller.getSnapshot().run.status, "ready");
+      assert.equal(f.controller.getSnapshot().writeLocked, true);
+      for (const result of [
+        await actions.review({ kind: "comment", body: "must not submit" }),
+        await actions.acceptAll(),
+        await actions.voidRun("must not submit"),
+        await actions.deleteRun(),
+      ])
+        assert.equal(result.kind, "rejected");
+    }
+    f.adapter[parent] = successfulRead;
+    await actions.refresh();
+    assert.equal(f.controller.getSnapshot()[parent].status, "ready");
+    assert.equal(f.controller.getSnapshot().writeLocked, false);
+    assert.equal(
+      (await actions.review({ kind: "comment", body: "recovered" })).kind,
+      "committed",
+    );
+    await tick();
+  });
+}
+
+test("confirmed missing Run stays deleted during retries and read failures until GET succeeds", async () => {
+  const f = fixture();
+  const actions = await ready(f);
+  for (const status of [404, 500, undefined]) {
+    const read = deferred();
+    f.adapter.run = () => read.promise;
+    const retry = actions.refresh();
+    if (status !== 404)
+      assert.equal(f.controller.getSnapshot().run.status, "missing");
+    read.reject(Object.assign(Error("run unavailable"), { status }));
+    await retry;
+    assert.equal(f.controller.getSnapshot().run.status, "missing");
+    assert.equal(f.controller.getSnapshot().writeLocked, true);
+  }
+  f.adapter.run = async () => run();
+  await actions.refresh();
+  assert.equal(f.controller.getSnapshot().run.status, "ready");
+  assert.equal(f.controller.getSnapshot().writeLocked, false);
+});
