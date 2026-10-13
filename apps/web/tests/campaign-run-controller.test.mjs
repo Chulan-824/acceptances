@@ -207,7 +207,6 @@ test("M11 first visit chooses latest then holds selection when latest changes", 
   f.adapter.campaign = async () => campaign("b");
   await f.controller.actions().refresh();
   assert.equal(f.controller.getSnapshot().selectedRunId, "a");
-  assert.equal(f.controller.getSnapshot().hasNewRun, true);
   assert.equal(f.controller.getSnapshot().isLatest, false);
   f.controller.select({ ...scope, runId: "b" });
   await tick();

@@ -35,9 +35,9 @@ const screenshots = [
   "/landing/screenshot-2026-09-17T06-36-27-194Z.webp",
 ];
 const captions = [
-  "图 1: 工作台三栏视图 —— 左侧交付列表、中间证据清单展开与右侧多轮历史",
-  "图 2: 抽屉用例全景 —— 4 项测试用例细化展开与底部可折叠详情说明",
-  "图 3: 研发验收中枢总控 —— 交付特性看板、通过率统计与实时本地监听",
+  "图 1: 三栏式工作台 —— 左侧需求交付列表，中间证据与检查项展开，右侧完整复验历史",
+  "图 2: 检查项详情抽屉 —— 单项结果与预期对照，内嵌高清截图证据与上下文详情",
+  "图 3: 交付全局看板 —— 汇总各需求交付状态、单轮通过率统计与本地实时状态",
 ];
 function Landing() {
   const [showcaseTab, setShowcaseTab] = useState("0");
@@ -78,12 +78,12 @@ function Landing() {
               </div>
               <span>Acceptances</span>
               <span className="text-xs text-muted font-normal border-l border-border pl-2.5 hidden sm:inline">
-                研发验收中枢
+                交付验证系统
               </span>
             </a>
             <Badge className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-subtle border border-border text-xs text-muted font-mono">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-              <span>.acceptances/ 实时监听 (PID 43812)</span>
+              <span>本地服务运行中 (PID 43812)</span>
             </Badge>
           </div>
 
@@ -110,7 +110,7 @@ function Landing() {
               href="#specification"
               className="text-muted hover:text-fg transition-colors hidden md:inline-block"
             >
-              原位规范
+              规范体系
             </a>
             <Separator
               orientation="vertical"
@@ -120,17 +120,17 @@ function Landing() {
               variant="ghost"
               onClick={openTheme}
               className="px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-surface-subtle text-fg transition-all text-xs shadow-subtle flex items-center gap-1.5"
-              title="查看 Modern Slate 主题配置规范与 MCP 初始化清单"
+              title="查看 Modern Slate 主题设计规范与 MCP 清单"
             >
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-              <span>主题规范 (MCP)</span>
+              <span>设计规范 (MCP)</span>
             </Button>
             <Button asChild variant="ghost">
               <a
                 href="index.html"
                 className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-subtle flex items-center gap-1.5"
               >
-                <span>进入中枢</span>
+                <span>进入工作台</span>
                 <span className="text-xs">→</span>
               </a>
             </Button>
@@ -145,19 +145,18 @@ function Landing() {
         <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
           <Badge className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-subtle border border-border text-xs text-fg-secondary font-mono mb-6 shadow-subtle">
             <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
-            <span>LOCAL-FIRST · 研发交付与多轮验收中枢</span>
+            <span>LOCAL-FIRST · 研发交付与多轮验证系统</span>
           </Badge>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-fg leading-[1.15] mb-6">
-            代码原位存证
+            保存验证事实与证据
             <br className="hidden sm:inline" />
-            <span className="text-muted font-bold">重塑软件交付与验收闭环</span>
+            <span className="text-muted font-bold">
+              构建清晰确凿的人工判断闭环
+            </span>
           </h1>
           <p className="text-lg text-muted max-w-2xl leading-relaxed mb-8">
-            Acceptances 直接读取代码库根目录的
-            <code className="px-1.5 py-0.5 rounded bg-surface-subtle border border-border font-mono text-fg text-sm">
-              {".acceptances/"}
-            </code>
-            ，无缝呈现自动化回归结果、真实截图证据链与多轮修复历史，将口头交付转变为可追溯、防篡改的工程资产。
+            Acceptances
+            聚合真实运行结果、多模态证据与代码版本，让执行事实与人工裁决清晰分离。无需外部云端依赖，在本地即可构建完整、可追溯的需求验收与复验闭环。
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3.5">
             <Button asChild variant="ghost">
@@ -165,13 +164,13 @@ function Landing() {
                 href="index.html"
                 className="px-5 py-2.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-card flex items-center gap-2"
               >
-                <span>打开研发验收中枢</span>
+                <span>打开交付验收工作台</span>
                 <span>→</span>
               </a>
             </Button>
             <Button
               variant="ghost"
-              aria-label="复制安装命令"
+              aria-label="复制启动命令"
               className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface border border-border text-xs font-mono text-muted cursor-pointer hover:border-border-dark transition-all shadow-subtle group text-left whitespace-normal border-0"
               onClick={() => void copyCommand("npx acceptances open")}
               title="点击复制命令"
@@ -203,7 +202,7 @@ function Landing() {
                   <span className="w-3 h-3 rounded-full bg-warning"></span>
                   <span className="w-3 h-3 rounded-full bg-accent"></span>
                   <span className="ml-2 text-xs font-mono text-muted">
-                    acceptances · 本地优先验收工坊
+                    acceptances · 本地优先交付与验证工作台
                   </span>
                 </div>
 
@@ -227,7 +226,7 @@ function Landing() {
                     value="2"
                     className="w-tab px-3 py-1 rounded-md transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-subtle h-auto flex-none text-xs"
                   >
-                    3. 研发中枢看板
+                    3. 交付总控看板
                   </TabsTrigger>
                 </TabsList>
 
@@ -262,7 +261,7 @@ function Landing() {
                   >
                     <img
                       src="/landing/CleanShot-2026-09-17-at-14.06.10.webp"
-                      alt="工作台三栏真实界面"
+                      alt="三栏式工作台实测界面"
                       className="w-full h-auto block"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
@@ -282,7 +281,7 @@ function Landing() {
                   >
                     <img
                       src="/landing/CleanShot-2026-09-17-at-14.06.27.webp"
-                      alt="抽屉用例全景真实界面"
+                      alt="检查项详情与证据抽屉实测界面"
                       className="w-full h-auto block"
                     />
                   </Button>
@@ -297,7 +296,7 @@ function Landing() {
                   >
                     <img
                       src="/landing/screenshot-2026-09-17T06-36-27-194Z.webp"
-                      alt="研发中枢看板总控"
+                      alt="交付总控看板实测界面"
                       className="w-full h-auto block"
                     />
                   </Button>
@@ -314,15 +313,15 @@ function Landing() {
                 <div className="flex items-center gap-3 font-mono text-muted">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-accent"></span>
-                    双层结论隔离
+                    执行与评审双层解耦
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-accent"></span>
-                    原位 .acceptances/ 读取
+                    本地原位证据归档
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-accent"></span>
-                    reviews.json 签名
+                    结构化审计决策记录
                   </span>
                 </div>
               </div>
@@ -335,11 +334,10 @@ function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg mb-3">
-              为现代高品质工程团队量身打造
+              为高标准软件交付打造的确定性护栏
             </h2>
             <p className="text-muted text-sm leading-relaxed">
-              告别散落于 IM
-              群聊的零碎截图与口头担保，让每一次功能发布都基于严密的工程事实。
+              告别散落各处的零碎截图与口头确认，让每一次需求交付与验收都立足于客观完整的工程事实。
             </p>
           </div>
 
@@ -358,18 +356,14 @@ function Landing() {
                 </svg>
               </div>
               <h3 className="text-base font-semibold text-fg mb-2">
-                代码库原位存证 (In-situ)
+                本地优先与原位存证 (Local-First)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
-                零云端外部数据库依赖，验收用例、结果与证据原生保存在工作区
-                <code className="font-mono text-fg bg-surface-subtle px-1 py-0.5 rounded">
-                  {".acceptances/"}
-                </code>
-                目录，随 Git 分支版本化共进退。
+                零外部云端与数据库依赖，验收用例、结果与证据原生保存在本地工作区，保障核心业务数据隐私，并随代码版本持续演进。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
-                ✓ git branch 分离隔离
-                <br />✓ 随 PR 审查一同合入
+                ✓ 本地独立运行，无网络泄露风险
+                <br />✓ 完整保留代码提交版本上下文
               </div>
             </Card>
 
@@ -389,15 +383,14 @@ function Landing() {
                 </svg>
               </div>
               <h3 className="text-base font-semibold text-fg mb-2">
-                确定性证据优先 (Evidence-First)
+                多模态确定性证据链 (Evidence-First)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
-                测试不仅是单一的 Pass/Fail 计数，更内嵌高分辨率实测截图、网络
-                HAR 抓包与控制台日志，杜绝“在我机器上是好的”口头扯皮。
+                测试不再只是抽象的通过统计，更完整内嵌高分辨率实测截图、网络抓包与控制台日志，杜绝无据可查的环境偏差与主观臆测。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
-                ✓ 自动化高分截图留底
-                <br />✓ HAR 链路与异常日志追踪
+                ✓ 像素级高清截图与录像留存
+                <br />✓ 运行时网络请求与异常追踪
               </div>
             </Card>
 
@@ -415,22 +408,14 @@ function Landing() {
                 </svg>
               </div>
               <h3 className="text-base font-semibold text-fg mb-2">
-                双层核验与责任签署
+                执行事实与人工裁决解耦 (Dual-Tier)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
-                机器验证客观事实写入
-                <code className="font-mono text-fg bg-surface-subtle px-1 py-0.5 rounded">
-                  {"result.json"}
-                </code>
-                ；人工业务审阅写入
-                <code className="font-mono text-fg bg-surface-subtle px-1 py-0.5 rounded">
-                  {"reviews.json"}
-                </code>
-                ，分权明确、责任闭环。
+                客观执行事实忠实归档，不替用户预设接受决定；支持逐项人工审阅与整轮一键交付，权属清晰，形成严密复验闭环。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
-                ✓ 机器归机器，人工归人工
-                <br />✓ 签署时间戳与责任人存证
+                ✓ 客观检验与主观判断权属分明
+                <br />✓ 逐项精准反馈驱动下轮修复
               </div>
             </Card>
           </div>
@@ -445,10 +430,11 @@ function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg mb-3">
-              三步完成可审计的交付闭环
+              三步构建高效可靠的交付闭环
             </h2>
             <p className="text-muted text-sm">
-              简单直接的命令行操作与直观的本地可视化，契合开发者日常编码节奏。
+              轻量顺畅的 CLI
+              指令结合直观的可视化工作台，自然融入开发者的日常研发节奏。
             </p>
           </div>
 
@@ -458,11 +444,11 @@ function Landing() {
                 1
               </div>
               <h4 className="text-base font-semibold text-fg">
-                自动化执行与证据捕获
+                环境执行与证据捕获
               </h4>
               <p className="text-xs text-muted leading-relaxed">
-                开发者完成特性编码后，运行自动化验收脚本。脚本驱动真实本地服务，产出用例检查数据与高清截图存入对应特性
-                Round 目录。
+                Agent
+                或开发者在真实业务环境中运行验收用例，系统自动收集检查状态、运行日志与多模态证据并完整归档。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
                 <span className="text-accent-border">$</span>
@@ -475,11 +461,11 @@ function Landing() {
                 2
               </div>
               <h4 className="text-base font-semibold text-fg">
-                启动查看器可视化核验
+                一键启动本地可视化核验
               </h4>
               <p className="text-xs text-muted leading-relaxed">
-                运行一行 CLI 快速调起本地优先的 Acceptances
-                查看器。三栏式直观对照用例预期、观察事实与截图证据，或在研发中枢全局巡检。
+                通过轻量 CLI
+                快速调起本地工作台，在清晰的三栏视图中对照预期与实测表现，多维度审查证据与上下文细节。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
                 <span className="text-accent-border">$</span>
@@ -492,15 +478,11 @@ function Landing() {
                 3
               </div>
               <h4 className="text-base font-semibold text-fg">
-                人工验收签署并入库封存
+                逐项评审决策与闭环归档
               </h4>
               <p className="text-xs text-muted leading-relaxed">
-                QA
-                或研发负责人在界面中一键签署「交付接受」，签署人姓名与意见实时落盘至
-                <code className="font-mono text-accent-dark">
-                  {"reviews.json"}
-                </code>
-                ，随代码一同 Commit。
+                审阅者对检查项进行独立判定或整轮一键交付，结构化记录决策意见；未通过项可直接交由
+                Agent 针对性修复并开启复验。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
                 <span className="text-accent-border">$</span>
@@ -519,38 +501,38 @@ function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg mb-3">
-              透明开放的原位目录规范
+              开放透明的数据规范与契约
             </h2>
             <p className="text-muted text-sm">
-              完全基于文件系统约定，没有任何私有二进制黑盒，随处可读、永久归档。
+              完全基于结构化标准约定，没有任何私有二进制黑盒，随处可读、便于扩展与长期留存。
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
-                <span>.acceptances/ 目录结构</span>
+                <span>.acceptances/ 组织规范</span>
                 <span className="text-xs text-accent font-semibold">
-                  Git Tracked
+                  Structured &amp; Versioned
                 </span>
               </div>
               <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-lg bg-surface-subtle">
                 {
-                  "\n.acceptances/\n└── character-library/          # 交付特性主题 (Subject)\n    ├── round-1/                # 修复与验收轮次\n    │   ├── result.json         # 机器跑测客观结果\n    │   ├── reviews.json        # 人工验收签名与放行决策\n    │   └── assets/             # 真实证据沉淀\n    │       ├── c1-login.png    # 测试截图证据 1\n    │       ├── c1-table.png    # 测试截图证据 2\n    │       └── c1-trace.har    # 抓包记录\n    └── round-0/                # 历史未通过或修复前轮次"
+                  "\n.acceptances/\n└── character-library/          # 需求交付主题 (Campaign)\n    ├── round-1/                # 验证与复验轮次 (Run)\n    │   ├── result.json         # 客观检验结果与事实清单\n    │   ├── reviews.json        # 人工审阅意见与交付裁决\n    │   └── assets/             # 多模态真实证据归档\n    │       ├── c1-login.png    # 实测截图证据 1\n    │       ├── c1-table.png    # 实测截图证据 2\n    │       └── c1-trace.har    # 网络请求与日志轨迹\n    └── round-0/                # 历史复验追溯轮次"
                 }
               </pre>
             </Card>
 
             <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
-                <span>reviews.json (人工签署真值)</span>
+                <span>reviews.json (人工审阅决策契约)</span>
                 <span className="text-xs text-accent font-semibold">
                   Dual-Tier Verification
                 </span>
               </div>
               <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-lg bg-surface-subtle">
                 {
-                  '\n{\n  "status": "accepted",\n  "reviewer": "chulan",\n  "signed_at": "2026-08-31T21:24:00+08:00",\n  "commit": "24a65675",\n  "branch": "feature/character-library",\n  "summary": "4 项核心用例全部实测通过，截图与网络包一致，准予合并。",\n  "feedback": "同意交付，无阻断缺陷"\n}'
+                  '\n{\n  "status": "accepted",\n  "reviewer": "chulan",\n  "signed_at": "2026-08-31T21:24:00+08:00",\n  "commit": "24a65675",\n  "branch": "feature/character-library",\n  "summary": "4 项核心用例实测通过，截图与关键日志核验一致，准予交付。",\n  "feedback": "同意交付，核心功能完整且验证证据充分"\n}'
                 }
               </pre>
             </Card>
@@ -569,7 +551,7 @@ function Landing() {
               为什么选择 Acceptances？
             </h2>
             <p className="text-muted text-sm">
-              对比传统口头交付与重型云端测试管理系统。
+              对比传统口头交接与臃肿庞杂的云端测试管理平台。
             </p>
           </div>
 
@@ -579,7 +561,7 @@ function Landing() {
                 <TableRow className="bg-canvas border-b border-border text-muted font-mono">
                   <TableHead className="p-3.5 font-medium">评估维度</TableHead>
                   <TableHead className="p-3.5 font-medium text-danger-dark">
-                    传统群聊 / 口头交付
+                    即时通讯 / 口头交接
                   </TableHead>
                   <TableHead className="p-3.5 font-medium text-accent-dark bg-accent-soft/40">
                     Acceptances (本地优先)
@@ -592,43 +574,43 @@ function Landing() {
                     证据沉淀
                   </TableCell>
                   <TableCell className="p-3.5 text-muted">
-                    群聊聊天记录易过期丢失
+                    截图与聊天记录零散割裂，极易过期清理或遗漏
                   </TableCell>
                   <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
-                    代码库同源版本化管理，永久留存
+                    与需求交付深度绑定，多模态证据完整固化、持久可查
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="p-3.5 font-medium text-fg">
-                    多轮历史
+                    复验演进
                   </TableCell>
                   <TableCell className="p-3.5 text-muted">
-                    改动后难以与上一轮截图对比
+                    多次改动后难以对照历史轮次的证据差异
                   </TableCell>
                   <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
-                    Round 历史清晰可回溯，Diff 一目了然
+                    多轮验证与复验轨迹完整追溯，前后对比直观确凿
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="p-3.5 font-medium text-fg">
-                    责任确认
+                    决策归属
                   </TableCell>
                   <TableCell className="p-3.5 text-muted">
-                    缺乏正式签名，出了问题互相推诿
+                    缺乏明确审阅依据，验收边界模糊
                   </TableCell>
                   <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
-                    reviews.json 责任人签字盖章存证
+                    逐项审阅与裁决意见清晰存证，人机协同责任明确
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="p-3.5 font-medium text-fg">
-                    环境成本
+                    使用成本
                   </TableCell>
                   <TableCell className="p-3.5 text-muted">
-                    搭建重型云端系统，网络卡顿繁琐
+                    需搭建重型云服务与配置账号权限，维护成本高
                   </TableCell>
                   <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
-                    0 依赖极速启动，开箱即用
+                    零外部依赖，极速本地启动，开箱即用且保护隐私
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -643,7 +625,8 @@ function Landing() {
             立即在您的项目中启用 Acceptances
           </h2>
           <p className="text-muted text-sm max-w-xl leading-relaxed mb-8">
-            为团队建立可信赖的质量防护网，让每一次迭代与发布都充满确定性。
+            为 Agent
+            驱动的软件工程构筑坚固的交付底座，让每一次迭代与发布都有据可依。
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button asChild variant="ghost">
@@ -651,7 +634,7 @@ function Landing() {
                 href="index.html"
                 className="px-6 py-3 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-card"
               >
-                进入研发验收中枢 →
+                进入交付验收工作台 →
               </a>
             </Button>
           </div>
@@ -663,7 +646,7 @@ function Landing() {
           <div className="flex items-center gap-3">
             <span className="font-semibold text-fg">Acceptances</span>
             <span>·</span>
-            <span>Local-First Regression&amp;Round Sign-off System</span>
+            <span>本地优先的研发交付与多轮验收系统</span>
           </div>
           <div className="flex items-center gap-4 font-mono text-xs">
             <span>branch: feature/character-library</span>
@@ -673,11 +656,11 @@ function Landing() {
               onClick={openTheme}
               className="hover:text-fg transition-colors"
             >
-              主题与 MCP 规范
+              设计规范 (MCP)
             </Button>
             <span>·</span>
             <a href="index.html" className="hover:text-fg transition-colors">
-              中枢
+              工作台
             </a>
           </div>
         </div>

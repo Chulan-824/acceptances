@@ -21,8 +21,8 @@ const tabs = [
   { value: "tokens", label: "视觉令牌清单" },
   { value: "tailwind", label: "Tailwind 配置" },
   { value: "css", label: "CSS 变量" },
-  { value: "json", label: "标准 JSON" },
-  { value: "mcp", label: "MCP 初始化" },
+  { value: "json", label: "结构化 JSON" },
+  { value: "mcp", label: "MCP 自动化集成" },
 ];
 
 export function ThemeModal({
@@ -99,7 +99,7 @@ export function ThemeModal({
         <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-3 bg-surface-subtle/50">
           <div>
             <DialogTitle className="text-base">
-              Modern Slate 主题配置规范与 MCP 清单
+              Modern Slate 主题设计规范与 MCP 清单
             </DialogTitle>
             <DialogDescription className="text-xs mt-1">
               {THEME.tagline}
@@ -132,7 +132,7 @@ export function ThemeModal({
               <Card className="p-4 flex items-start justify-between gap-4">
                 <div>
                   <h4 className="font-bold text-sm">
-                    Modern Slate 设计哲学与色彩层级
+                    Modern Slate 设计哲学与色彩体系
                   </h4>
                   <p className="text-muted mt-1">{THEME.desc}</p>
                 </div>
@@ -141,7 +141,7 @@ export function ThemeModal({
                   size="sm"
                   onClick={() => void copy(THEME.prompt)}
                 >
-                  复制主题 Prompt
+                  复制设计 Prompt
                 </Button>
               </Card>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -167,17 +167,19 @@ export function ThemeModal({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="p-4">
-                  <h5 className="font-semibold mb-2">字体阶梯 (Typography)</h5>
+                  <h5 className="font-semibold mb-2">字体梯队 (Typography)</h5>
                   <p>Sans: PingFang SC, Segoe UI, Roboto, -apple-system</p>
                   <p className="font-mono">
                     Mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas
                   </p>
                 </Card>
                 <Card className="p-4">
-                  <h5 className="font-semibold mb-2">空间与圆角 (Radii)</h5>
-                  <p>徽章/小组件: 4px</p>
-                  <p>标准按钮/输入框: 6px / 8px</p>
-                  <p>卡片/弹窗容器: 12px</p>
+                  <h5 className="font-semibold mb-2">
+                    空间与圆角 (Spacing &amp; Radii)
+                  </h5>
+                  <p>徽章与小标签: 4px</p>
+                  <p>标准按钮与输入框: 6px / 8px</p>
+                  <p>卡片容器与弹窗: 12px</p>
                 </Card>
               </div>
             </TabsContent>
@@ -202,15 +204,15 @@ export function ThemeModal({
               <Card className="p-4">
                 <Badge variant="passed">MCP</Badge>
                 <h4 className="font-bold text-sm">
-                  下游项目自动化连接与初始化
+                  下游工程自动化集成与配置注入
                 </h4>
                 <p>
-                  通过 MCP 协议，接入该 MCP Server 的 Agent
-                  可将主题配置注入目标工程。
+                  通过标准 MCP 协议，接入该 Server 的 AI Agent
+                  可直接将设计规范与主题令牌自动写入目标工程代码库。
                 </p>
               </Card>
               {code(
-                "方式 1: MCP Tool 结构化调用",
+                "方式 1: MCP Tool 结构化调用 (Payload)",
                 THEME.mcpPayload,
                 "复制 Payload",
               )}
@@ -225,7 +227,7 @@ export function ThemeModal({
         </Tabs>
         <div className="px-6 py-3 border-t border-border flex items-center justify-between gap-3 text-muted">
           <span>
-            项目原位文件: <code>assets/theme.json</code>
+            项目源文件: <code>assets/theme.json</code>
           </span>
           <Button variant="link" size="sm" onClick={() => void copy(json)}>
             复制完整 JSON 契约

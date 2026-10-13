@@ -42,7 +42,6 @@ export interface CampaignRunView {
   run: ReadState<Run>;
   selectedRunId?: string;
   isLatest: boolean;
-  hasNewRun: boolean;
   writeLocked: boolean;
   operation?: Operation;
   navigationIntent?: CampaignRunScope & { runId: string; token: number };
@@ -82,7 +81,6 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     runs: { status: "idle" },
     run: { status: "idle" },
     isLatest: false,
-    hasNewRun: false,
     writeLocked: true,
   };
   const listeners = new Set<() => void>();
@@ -104,10 +102,6 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
       isLatest:
         !!view.selectedRunId &&
         view.selectedRunId === view.campaign.data?.latestRunId,
-      hasNewRun:
-        !!view.selectedRunId &&
-        !!view.campaign.data?.latestRunId &&
-        view.selectedRunId !== view.campaign.data.latestRunId,
       writeLocked:
         view.campaigns.status === "missing" ||
         view.campaign.status === "missing" ||

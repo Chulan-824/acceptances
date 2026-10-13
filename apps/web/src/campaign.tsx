@@ -88,18 +88,6 @@ export function Campaign({
                 <Button onClick={refresh}>重试刷新</Button>
               </Alert>
             )}
-            {view.hasNewRun && (
-              <Alert role="status">
-                有新的验证记录
-                <Button
-                  onClick={() =>
-                    navigate(`${base}/runs/${campaign.data!.latestRunId}`)
-                  }
-                >
-                  查看最新验证
-                </Button>
-              </Alert>
-            )}
             {selectedRun ? (
               <Run
                 key={selectedRun}

@@ -556,10 +556,25 @@ export async function run(page, base, scenario = "B02") {
     activeCampaign.latestRunId = "second";
     runs = [second, first];
     await refresh();
-    await page.getByRole("button", { name: "查看最新验证" }).waitFor();
+    const latestRun = page
+      .locator(".run-list-item")
+      .filter({ hasText: "second 报告" });
+    await latestRun.waitFor();
+    assert.equal(
+      await page.getByText("有新的验证记录", { exact: false }).count(),
+      0,
+    );
+    assert.equal(
+      await page
+        .getByText("这是历史报告，对它的决定不会改变需求当前状态。", {
+          exact: true,
+        })
+        .count(),
+      0,
+    );
     assert.equal(await two.getByRole("textbox").inputValue(), "另一项保留草稿");
     assert.ok(page.url().endsWith("/runs/first"));
-    await page.getByRole("button", { name: "查看最新验证" }).click();
+    await latestRun.click();
     await page.getByText("second 报告", { exact: true }).first().waitFor();
     await page.getByRole("tab", { name: "检查清单" }).click();
     await two.getByRole("button", { name: "添加检查项评论" }).click();

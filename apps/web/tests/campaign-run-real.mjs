@@ -214,7 +214,22 @@ export async function run(page, base, apiBase = base) {
     .getByRole("menuitem", { name: "刷新报告", exact: true })
     .first()
     .click();
-  await page.getByText("有新的验证记录", { exact: false }).waitFor();
+  const latestRun = page
+    .locator(".run-list-item")
+    .filter({ hasText: incoming.report.title });
+  await latestRun.waitFor();
+  assert(
+    (await page.getByText("有新的验证记录", { exact: false }).count()) === 0,
+    "historical Run shows new verification notice",
+  );
+  assert(
+    (await page
+      .getByText("这是历史报告，对它的决定不会改变需求当前状态。", {
+        exact: true,
+      })
+      .count()) === 0,
+    "historical Run shows decision notice",
+  );
   assert(
     await page
       .locator(".report-name")
@@ -222,7 +237,7 @@ export async function run(page, base, apiBase = base) {
       .isVisible(),
     "refresh switched selected Run",
   );
-  await page.getByRole("button", { name: /查看最新验证/ }).click();
+  await latestRun.click();
   await page
     .locator(".report-name")
     .filter({ hasText: incoming.report.title })

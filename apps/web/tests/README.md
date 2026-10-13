@@ -87,7 +87,7 @@ for (const scenario of scenarios) {
 | B03  | `B03`                                                                                  | 提交响应丢失，草稿与未知结果提示保留，GET 后恢复操作                                          |
 | B04  | `B04`                                                                                  | Review、评论、交付、Void、删除共锁；Tab/折叠可用；外围慢不延长锁                              |
 | B05  | `B05`                                                                                  | Tab、折叠和同 Run 草稿在刷新后保留                                                            |
-| B06  | `B06`                                                                                  | latest 变化仅提示，主动切换后新 Run 不继承草稿                                                |
+| B06  | `B06`                                                                                  | latest 变化保留当前报告且不展示历史提示，从运行记录切换后新 Run 不继承草稿                    |
 | B07  | `B07-empty`、`B07-latest`、`B07-history`、`B07-explicit`、`B07-loading`、`B07-failure` | 首次选择、空态、显式缺失、列表加载/失败及重试                                                 |
 | B08  | `B08`                                                                                  | 提交中跨 Run、首页、其他 Project 返回仍锁定，旧回调不影响新页面                               |
 | B09  | `B09-empty-default`、`B09-history`、`B09-latest`                                       | 影响预览与删除确认；默认地址、历史与 latest 恢复                                              |

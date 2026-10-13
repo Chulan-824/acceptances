@@ -285,11 +285,6 @@ export function Run({
           )}
         </div>
       </Disclosure>
-      {!isLatest && (
-        <Alert role="note" className="report-notice notice">
-          这是历史报告，对它的决定不会改变需求当前状态。
-        </Alert>
-      )}
       {run.status === "void" && (
         <Alert role="note" className="report-notice notice">
           本轮已作废：{run.voidReason}
@@ -445,11 +440,6 @@ export function Run({
               <h2>整轮评论与历史决定</h2>
               <Status value={run.status} />
             </div>
-            {!isLatest && (
-              <Alert role="note" className="notice">
-                这是历史报告，对它的决定不会改变需求当前状态。
-              </Alert>
-            )}
             <ReviewHistory
               reviews={(run.reviews || []).filter((review) => !review.checkId)}
               responses={run.feedbackResponses}
@@ -566,11 +556,6 @@ export function Run({
             <p>
               人工状态 <Status value={run.status} />
             </p>
-            {!isLatest && (
-              <Alert role="note" className="notice">
-                这是历史报告，对它的决定不会改变需求当前状态。
-              </Alert>
-            )}
             {run.status === "void" && (
               <Alert role="note" className="notice">
                 此 Run 已作废，仅可添加补充说明。作废原因：{run.voidReason}
