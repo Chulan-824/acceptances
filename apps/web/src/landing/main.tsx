@@ -26,8 +26,9 @@ import {
   DialogDescription,
 } from "../components/ui/dialog";
 import { Toaster } from "../components/ui/sonner";
-import { ThemeModal } from "./theme-modal";
 import "./landing.css";
+
+const startupCommand = "docker compose -f deploy/compose.yaml up --build -d";
 
 const screenshots = [
   "/landing/CleanShot-2026-09-17-at-14.06.10.webp",
@@ -35,21 +36,15 @@ const screenshots = [
   "/landing/screenshot-2026-09-17T06-36-27-194Z.webp",
 ];
 const captions = [
-  "图 1: 三栏式工作台 —— 左侧需求交付列表，中间证据与检查项展开，右侧完整复验历史",
-  "图 2: 检查项详情抽屉 —— 单项结果与预期对照，内嵌高清截图证据与上下文详情",
-  "图 3: 交付全局看板 —— 汇总各需求交付状态、单轮通过率统计与本地实时状态",
+  "图 1: 历史工作台界面，展示需求列表、检查项与运行记录",
+  "图 2: 历史详情界面，展示预期、实际结果与截图证据",
+  "图 3: 历史报告界面，展示需求说明与本轮验证记录",
 ];
 function Landing() {
   const [showcaseTab, setShowcaseTab] = useState("0");
-  const [themeOpen, setThemeOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [copyTip, setCopyTip] = useState("点击复制");
-  const themeTrigger = useRef<HTMLElement | null>(null);
   const lightboxTrigger = useRef<HTMLElement | null>(null);
-  function openTheme() {
-    themeTrigger.current = document.activeElement as HTMLElement;
-    setThemeOpen(true);
-  }
   function openActiveLightbox() {
     lightboxTrigger.current = document.activeElement as HTMLElement;
     setLightboxOpen(true);
@@ -58,7 +53,7 @@ function Landing() {
     try {
       await navigator.clipboard.writeText(command);
       setCopyTip("已复制到剪贴板");
-      toast.success("已复制安装命令");
+      toast.success("已复制启动命令");
     } catch {
       setCopyTip("复制失败，请手动复制");
       toast.error("复制失败，请手动复制命令");
@@ -82,8 +77,7 @@ function Landing() {
               </span>
             </a>
             <Badge className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-subtle border border-border text-xs text-muted font-mono">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-              <span>本地服务运行中 (PID 43812)</span>
+              <span>个人本机使用</span>
             </Badge>
           </div>
 
@@ -116,15 +110,6 @@ function Landing() {
               orientation="vertical"
               className="h-4 w-px bg-border hidden sm:block"
             ></Separator>
-            <Button
-              variant="ghost"
-              onClick={openTheme}
-              className="px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-surface-subtle text-fg transition-all text-xs shadow-subtle flex items-center gap-1.5"
-              title="查看 Modern Slate 主题设计规范与 MCP 清单"
-            >
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-              <span>设计规范 (MCP)</span>
-            </Button>
             <Button asChild variant="ghost">
               <a
                 href="index.html"
@@ -171,12 +156,12 @@ function Landing() {
             <Button
               variant="ghost"
               aria-label="复制启动命令"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface border border-border text-xs font-mono text-muted cursor-pointer hover:border-border-dark transition-all shadow-subtle group text-left whitespace-normal border-0"
-              onClick={() => void copyCommand("npx acceptances open")}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface border border-border text-xs font-mono text-muted cursor-pointer hover:border-border-dark transition-all shadow-subtle group text-left whitespace-normal border-0 max-w-full h-auto"
+              onClick={() => void copyCommand(startupCommand)}
               title="点击复制命令"
             >
               <span className="text-accent font-bold">$</span>
-              <code className="text-fg">{"npx acceptances open"}</code>
+              <code className="text-fg break-words">{startupCommand}</code>
               <span
                 className="text-xs text-muted pl-1 border-l border-border group-hover:text-fg transition-colors"
                 id="copyTip"
@@ -185,6 +170,11 @@ function Landing() {
               </span>
             </Button>
           </div>
+          <p className="mt-4 text-xs text-muted leading-relaxed">
+            在 Acceptances 源码目录执行启动命令，然后访问
+            http://127.0.0.1:8765。 开发时使用 make dev，访问
+            http://127.0.0.1:5173。
+          </p>
         </div>
       </section>
 
@@ -214,19 +204,19 @@ function Landing() {
                     value="0"
                     className="w-tab px-3 py-1 rounded-md transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-subtle h-auto flex-none text-xs"
                   >
-                    1. 工作台三栏
+                    1. 历史工作台
                   </TabsTrigger>
                   <TabsTrigger
                     value="1"
                     className="w-tab px-3 py-1 rounded-md transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-subtle h-auto flex-none text-xs"
                   >
-                    2. 抽屉用例全景
+                    2. 历史详情
                   </TabsTrigger>
                   <TabsTrigger
                     value="2"
                     className="w-tab px-3 py-1 rounded-md transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-subtle h-auto flex-none text-xs"
                   >
-                    3. 交付总控看板
+                    3. 历史报告
                   </TabsTrigger>
                 </TabsList>
 
@@ -261,12 +251,12 @@ function Landing() {
                   >
                     <img
                       src="/landing/CleanShot-2026-09-17-at-14.06.10.webp"
-                      alt="三栏式工作台实测界面"
+                      alt="历史三栏工作台界面"
                       className="w-full h-auto block"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
                       <span className="px-3 py-1.5 rounded-md bg-brand/90 text-brand-fg text-xs font-mono border border-brand-fg/10 backdrop-blur-sm">
-                        点击放大查看实测截图
+                        点击放大查看历史截图
                       </span>
                     </div>
                   </Button>
@@ -281,7 +271,7 @@ function Landing() {
                   >
                     <img
                       src="/landing/CleanShot-2026-09-17-at-14.06.27.webp"
-                      alt="检查项详情与证据抽屉实测界面"
+                      alt="历史检查项详情与证据界面"
                       className="w-full h-auto block"
                     />
                   </Button>
@@ -296,7 +286,7 @@ function Landing() {
                   >
                     <img
                       src="/landing/screenshot-2026-09-17T06-36-27-194Z.webp"
-                      alt="交付总控看板实测界面"
+                      alt="历史报告界面"
                       className="w-full h-auto block"
                     />
                   </Button>
@@ -308,7 +298,12 @@ function Landing() {
                   className="font-mono text-fg-secondary flex items-center gap-2"
                   id="showcaseCaption"
                 >
-                  {captions[Number(showcaseTab)]}
+                  <div>
+                    <p>{captions[Number(showcaseTab)]}</p>
+                    <p className="mt-1 text-muted">
+                      截图为历史界面示意，以当前工作台为准。当前报告在加载、手动刷新或评审操作后更新。
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 font-mono text-muted">
                   <span className="flex items-center gap-1.5">
@@ -317,7 +312,7 @@ function Landing() {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-accent"></span>
-                    本地原位证据归档
+                    本机服务持久归档
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-accent"></span>
@@ -356,14 +351,15 @@ function Landing() {
                 </svg>
               </div>
               <h3 className="text-base font-semibold text-fg mb-2">
-                本地优先与原位存证 (Local-First)
+                本地优先与持久归档 (Local-First)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
-                零外部云端与数据库依赖，验收用例、结果与证据原生保存在本地工作区，保障核心业务数据隐私，并随代码版本持续演进。
+                无需外部数据库或云端服务。报告与人工评审保存在本机
+                SQLite，附件保存在服务端数据目录，正式部署使用持久数据卷。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
-                ✓ 本地独立运行，无网络泄露风险
-                <br />✓ 完整保留代码提交版本上下文
+                ✓ 默认仅通过本机地址访问
+                <br />✓ 记录代码来源、提交版本与未提交改动标记
               </div>
             </Card>
 
@@ -433,8 +429,8 @@ function Landing() {
               三步构建高效可靠的交付闭环
             </h2>
             <p className="text-muted text-sm">
-              轻量顺畅的 CLI
-              指令结合直观的可视化工作台，自然融入开发者的日常研发节奏。
+              Agent 在业务环境完成验证，通过 CLI
+              提交报告；用户在工作台查看证据并作出判断。
             </p>
           </div>
 
@@ -444,15 +440,16 @@ function Landing() {
                 1
               </div>
               <h4 className="text-base font-semibold text-fg">
-                环境执行与证据捕获
+                启动服务并关联项目
               </h4>
               <p className="text-xs text-muted leading-relaxed">
-                Agent
-                或开发者在真实业务环境中运行验收用例，系统自动收集检查状态、运行日志与多模态证据并完整归档。
+                启动服务后在 Web 创建项目。首次接入时，在 Acceptances
+                源码目录执行 make build 和 make install-skill，安装 CLI 与
+                acceptances-v1 skill，再到业务目录关联项目。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
                 <span className="text-accent-border">$</span>
-                npm run accept:check
+                acceptances link --project "项目名称"
               </div>
             </div>
 
@@ -461,15 +458,16 @@ function Landing() {
                 2
               </div>
               <h4 className="text-base font-semibold text-fg">
-                一键启动本地可视化核验
+                执行验证并提交报告
               </h4>
               <p className="text-xs text-muted leading-relaxed">
-                通过轻量 CLI
-                快速调起本地工作台，在清晰的三栏视图中对照预期与实测表现，多维度审查证据与上下文细节。
+                Agent 先创建或选择需求，在真实业务环境执行检查，准备 report.json
+                和截图、录像、日志等附件，再通过 CLI
+                整包归档。每次实际验证形成独立 Run。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
                 <span className="text-accent-border">$</span>
-                npx acceptances open
+                acceptances publish --bundle ./bundle --campaign "需求名称"
               </div>
             </div>
 
@@ -481,12 +479,13 @@ function Landing() {
                 逐项评审决策与闭环归档
               </h4>
               <p className="text-xs text-muted leading-relaxed">
-                审阅者对检查项进行独立判定或整轮一键交付，结构化记录决策意见；未通过项可直接交由
-                Agent 针对性修复并开启复验。
+                用户在 Web
+                逐项评审或确认本轮一键交付，决定与评论保存到服务端。需要复验时，在业务聊天中授权
+                Agent 读取反馈、处理问题，并在同一需求下提交新 Run。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
                 <span className="text-accent-border">$</span>
-                git add .acceptances & & git commit
+                acceptances feedback --campaign "需求名称"
               </div>
             </div>
           </div>
@@ -504,37 +503,43 @@ function Landing() {
               开放透明的数据规范与契约
             </h2>
             <p className="text-muted text-sm">
-              完全基于结构化标准约定，没有任何私有二进制黑盒，随处可读、便于扩展与长期留存。
+              Project 组织需求交付 Campaign，每次实际验证保存为独立
+              Run。报告与附件保存后不可原地修改，人工评审追加历史。
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
-                <span>.acceptances/ 组织规范</span>
+                <span>上传包与服务端归档</span>
                 <span className="text-xs text-accent font-semibold">
                   Structured &amp; Versioned
                 </span>
               </div>
               <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-lg bg-surface-subtle">
                 {
-                  "\n.acceptances/\n└── character-library/          # 需求交付主题 (Campaign)\n    ├── round-1/                # 验证与复验轮次 (Run)\n    │   ├── result.json         # 客观检验结果与事实清单\n    │   ├── reviews.json        # 人工审阅意见与交付裁决\n    │   └── assets/             # 多模态真实证据归档\n    │       ├── c1-login.png    # 实测截图证据 1\n    │       ├── c1-table.png    # 实测截图证据 2\n    │       └── c1-trace.har    # 网络请求与日志轨迹\n    └── round-0/                # 历史复验追溯轮次"
+                  "上传包（业务目录自选）\nbundle/\n├── report.json          # 验证事实与附件清单\n├── .submission-id       # CLI 自动生成，上传重试复用\n├── login.png            # 清单声明的附件\n└── browser.log\n\n归档位置（服务端数据目录）\n├── archive.db           # 项目、需求、报告与人工评审\n└── evidence/<Run ID>/   # 本轮附件"
                 }
               </pre>
             </Card>
 
             <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
-                <span>reviews.json (人工审阅决策契约)</span>
+                <span>逐项人工评审请求示例</span>
                 <span className="text-xs text-accent font-semibold">
                   Dual-Tier Verification
                 </span>
               </div>
               <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-lg bg-surface-subtle">
                 {
-                  '\n{\n  "status": "accepted",\n  "reviewer": "chulan",\n  "signed_at": "2026-08-31T21:24:00+08:00",\n  "commit": "24a65675",\n  "branch": "feature/character-library",\n  "summary": "4 项核心用例实测通过，截图与关键日志核验一致，准予交付。",\n  "feedback": "同意交付，核心功能完整且验证证据充分"\n}'
+                  'POST /api/v1/runs/<Run ID>/reviews\n\n{\n  "checkId": "c1",\n  "kind": "accepted",\n  "body": "已核对本项预期、实际结果与证据。"\n}'
                 }
               </pre>
+              <p className="mt-3 text-xs text-muted leading-relaxed">
+                用户在 Web
+                提交人工判断，接口将其追加为评审记录。全部检查项人工通过才本轮通过；只有最新完整范围
+                Run 全部人工通过，需求才整体通过。新 Run 重新等待评审。
+              </p>
             </Card>
           </div>
         </div>
@@ -610,7 +615,7 @@ function Landing() {
                     需搭建重型云服务与配置账号权限，维护成本高
                   </TableCell>
                   <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
-                    零外部依赖，极速本地启动，开箱即用且保护隐私
+                    本机部署，无需账号、外部数据库或云端服务
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -649,16 +654,6 @@ function Landing() {
             <span>本地优先的研发交付与多轮验收系统</span>
           </div>
           <div className="flex items-center gap-4 font-mono text-xs">
-            <span>branch: feature/character-library</span>
-            <span>·</span>
-            <Button
-              variant="ghost"
-              onClick={openTheme}
-              className="hover:text-fg transition-colors"
-            >
-              设计规范 (MCP)
-            </Button>
-            <span>·</span>
             <a href="index.html" className="hover:text-fg transition-colors">
               工作台
             </a>
@@ -666,11 +661,6 @@ function Landing() {
         </div>
       </footer>
 
-      <ThemeModal
-        open={themeOpen}
-        onOpenChange={setThemeOpen}
-        returnFocus={() => themeTrigger.current?.focus()}
-      />
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent
           onCloseAutoFocus={(event) => {

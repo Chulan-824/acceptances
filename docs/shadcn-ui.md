@@ -13,7 +13,6 @@
 | 检查清单、筛选与逐项评审                              | `checklist.tsx`、`review.tsx`         | Collapsible、Select、Input、Textarea、Label、Button、Card、Badge、Alert                               |
 | 图片、视频、文本附件                                  | `evidence.tsx`、`text-evidence.tsx`   | Button、Dialog、Collapsible、Alert                                                                    |
 | 产品介绍 `/landing.html`                              | `landing/main.tsx`                    | Button、Badge、Card、Tabs、Table、Separator、Dialog、Sonner                                           |
-| 主题规范五个页签、复制与下载                          | `landing/theme-modal.tsx`             | Dialog、Tabs、Button、Card、Badge、Sonner                                                             |
 | 状态、数量与删除共用交互                              | `client.tsx`、`check-counts.tsx`      | Badge、Alert、Button、AlertDialog、DropdownMenuItem                                                   |
 
 保留原生表单提交、链接、标题、段落、报告定义列表、代码和媒体元素。这些元素表达业务内容或浏览器文件/媒体能力，没有对应的 shadcn 替换交互。三栏业务导航仍由真实项目、需求和 Run 数据驱动，未引入演示导航模型。`components/ui/` 之外不再直接实现 button、input、select、textarea、details、summary、dialog 或 table 控件，也没有手写弹窗焦点圈定和菜单全局监听器。

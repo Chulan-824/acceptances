@@ -73,15 +73,15 @@
 2026-10-11 通过 OpenDesign MCP 的 `get_artifact` 读取同一项目的 `landing.html`，同时取得 `assets/tailwind-theme.js`、`assets/theme-modal.js`、`assets/landing.js`；通过 `get_file` 补充读取弹窗使用的 `assets/theme.json`。MCP 不返回图片二进制，三张展示图从 MCP 确认的本地项目目录复制，未重绘或压缩。
 
 - 页面入口：`apps/web/landing.html`，开发和生产 URL 均为 `/landing.html`。现有项目首页增加“产品介绍”入口。
-- 页面交互：`apps/web/src/landing/main.tsx` 和 `theme-modal.tsx`，包括三张截图切换、图片放大、命令复制、主题弹窗五个页签及 JSON 下载；shadcn Dialog 负责焦点圈定、Esc 关闭，组件显式恢复触发控件焦点。
-- 本地资源：`apps/web/public/landing/`，保留原始截图及主题 JSON。
+- 页面交互：`apps/web/src/landing/main.tsx`，包括三张截图切换、图片放大和启动命令复制；shadcn Dialog 负责焦点圈定、Esc 关闭，组件显式恢复触发控件焦点。
+- 本地资源：`apps/web/public/landing/`，保留原始截图；设计规范入口、主题弹窗及其专用 JSON 已于 2026-10-13 移除，页面继续使用共享主题样式。
 - 样式：`apps/web/src/landing/landing.css` 加载必要的 `landing-base.css` 浏览器重置、共享主题和组件样式。旧 `landing-design.css` CSSOM 快照已移除，工具类由 Tailwind 4 生成。Vite 单独打包此入口，不加载工作台样式，不使用运行时 CDN，不增加 Tailwind 3 依赖。
 
 2026-10-12 用户要求所有页面使用现有 Tailwind 主题及 shadcn/ui。Landing Page 的 `landing.css` 使用精简的 base 层，并加载共享 `theme.css` 与 `ui.css`。圆角统一使用当前 Tailwind 4 的 8px/12px 令牌；不引入工作台的全局 section、header 规则。原稿的 Tailwind 3 圆角属于此前版本记录。
 
 导航、首屏、产品全景、核心特性、交付流程、目录规范、对比表、底部行动区与页脚均保留稿内布局及文案。按本次用户要求，中枢和查看器链接保留稿内固定地址，并通过 `data-pending-link` 阻止跳转；页内锚点照常工作，目标路由待用户逐一确认。原稿中的 PID、文件读取与签署机制、命令和示例数据属于设计内容，不代表当前产品新增了相应能力，产品事实继续以 PRODUCT.md 与 ADR-0001 为准。
 
-更新设计时应重新获取完整落地页资产，在浏览器打开原稿并触发所有展示页签、主题页签和复制提示，再将所需变更同步到 React 页面与共享主题，格式化并对比截图。主题与组件迁移后仍需核对实际截图与交互，构建成功不能替代页面验证。验证截图及测量报告保存于本地 `artifacts/landing/` 和 `.impeccable/review/landing/`，不进入 Git。
+更新设计时应重新获取完整落地页资产，在浏览器打开原稿并触发所有展示页签和复制提示，再将所需变更同步到 React 页面与共享主题，格式化并对比截图。主题与组件迁移后仍需核对实际截图与交互，构建成功不能替代页面验证。验证截图及测量报告保存于本地 `artifacts/landing/` 和 `.impeccable/review/landing/`，不进入 Git。
 
 ## Tailwind 桌面样式迁移
 

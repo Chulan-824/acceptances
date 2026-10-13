@@ -272,23 +272,23 @@ Acceptances 的现有视觉系统是克制、清晰、偏紧凑的验收工作�
 
 ### Hierarchy
 
-| frontmatter 角色 | 实际上下文                          |
-| ---------------- | ----------------------------------- |
-| `home-title`     | 首页主标题 (h1)                     |
-| `headline`       | 通用应用标题                        |
-| `title`          | 工作台报告与需求章节标题、首页章节标题 |
-| `project-title`  | 首页项目卡片标题 (项目名称)         |
-| `sidebar-title`  | 需求导航与运行历史标题              |
-| `home-body`      | 首页正文与页面描述                  |
-| `subtitle`       | 工作台三级标题                      |
-| `check-title`    | 检查项标题                          |
-| `body`           | 页面正文与普通控件                  |
-| `prose`          | 工作台报告正文，最大阅读宽度为 75ch |
-| `muted`          | 辅助说明与元数据                    |
+| frontmatter 角色 | 实际上下文                                 |
+| ---------------- | ------------------------------------------ |
+| `home-title`     | 首页主标题 (h1)                            |
+| `headline`       | 通用应用标题                               |
+| `title`          | 工作台报告与需求章节标题、首页章节标题     |
+| `project-title`  | 首页项目卡片标题 (项目名称)                |
+| `sidebar-title`  | 需求导航与运行历史标题                     |
+| `home-body`      | 首页正文与页面描述                         |
+| `subtitle`       | 工作台三级标题                             |
+| `check-title`    | 检查项标题                                 |
+| `body`           | 页面正文与普通控件                         |
+| `prose`          | 工作台报告正文，最大阅读宽度为 75ch        |
+| `muted`          | 辅助说明与元数据                           |
 | `label`          | 导航、搜索标签、表单标签、评审栏及普通徽章 |
-| `caption`        | 筛选控件、计数徽章及次级导航说明    |
-| `eyebrow`        | 顶部英文产品标识                    |
-| `mono`           | 文本证据，版本标识仅复用其字体栈    |
+| `caption`        | 筛选控件、计数徽章及次级导航说明           |
+| `eyebrow`        | 顶部英文产品标识                           |
+| `mono`           | 文本证据，版本标识仅复用其字体栈           |
 
 `body` 的字号与常规字重于 2026-10-10 经首页计算样式核对；全局未显式设定正文行高，保留浏览器 `normal`。`prose` 与 `muted` 有显式行高；表格式说明和检查项摘要使用各自的 1.6 行高，不将它们归成统一正文行高。首页字阶已登记回 frontmatter：首页主标题 `home-title` 为 28px（字重 600、行高 1.4），项目卡片标题 `project-title` 为 18px（字重 600、行高 1.5），首页正文 `home-body` 为 15px（字重 400、行高 1.7）；首页章节标题复用 `title` (20px，字重 600)，表单标签复用 `label` (13px)。全项目对齐非标 11px 字阶，最小标准字阶为 12px (`caption` / `mono` / `eyebrow`，对应 Tailwind `text-xs`)。当前层级不构成固定比例的字号尺度。
 
@@ -403,7 +403,7 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 
 首页项目卡片使用 Card，创建表单使用 Collapsible、Input、Textarea、Label、Button 和 Spinner。工作台使用 Select、DropdownMenu、Popover、Tabs、Badge、Alert、Dialog、AlertDialog、Tooltip 和 Resizable；侧栏默认 300px/340px，中栏至少 480px，页面最小宽度仍为 1120px。检查项、评审历史、文本证据和摘要使用 Collapsible，深链接展开后再滚动到目标。删除确认使用 AlertDialog，图片与交付确认使用 Dialog，关闭时恢复触发按钮焦点。
 
-Landing Page 入口改为 `src/landing/main.tsx` 和 `theme-modal.tsx`。截图切换与主题页签使用 Tabs，截图放大与主题规范使用 Dialog，卡片、表格、分隔线、按钮和复制提示分别使用 Card、Table、Separator、Button 与 Sonner。旧样式快照已移除，`landing-base.css` 仅保留当前页面所需的浏览器重置；组件与主题由共享 Tailwind 4 输出。原型文案、静态图片及固定链接边界继续沿用现有内容，不作为新增产品能力。
+Landing Page 入口为 `src/landing/main.tsx`。截图切换使用 Tabs，截图放大使用 Dialog；设计规范入口、主题弹窗及其专用资源已于 2026-10-13 移除。卡片、表格、分隔线、按钮和复制提示分别使用 Card、Table、Separator、Button 与 Sonner。旧样式快照已移除，`landing-base.css` 仅保留当前页面所需的浏览器重置；组件与主题由共享 Tailwind 4 输出。原型文案、静态图片及固定链接边界继续沿用现有内容，不作为新增产品能力。
 
 逐页替换清单与组件维护约定见 [shadcn/ui 页面覆盖](docs/shadcn-ui.md)。历史验证段落仍记录其对应版本，不代表本次迁移后的运行结果。
 
