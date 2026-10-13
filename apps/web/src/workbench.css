@@ -31,7 +31,7 @@
   .acceptance-workbench .workspace-main .campaign-heading {
     @apply pb-0 border-0;
   }
-  .acceptance-workbench .campaign-heading h2 {
+  .acceptance-workbench .campaign-heading :is(h1, h2) {
     @apply text-[20px] mb-0;
   }
   .acceptance-workbench .campaign-heading .prose {
@@ -56,7 +56,14 @@
     @apply flex items-center gap-2 text-[14px];
   }
   .icon-button {
-    @apply grid place-items-center shrink-0 w-8 h-8 p-0 border-0 rounded-default bg-transparent text-muted;
+    @apply relative grid place-items-center shrink-0 w-8 h-8 p-0 border-0 rounded-default bg-transparent text-muted;
+  }
+  .icon-button::after {
+    content: "";
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-11 min-h-11 w-full h-full pointer-events-auto;
+  }
+  .icon-button:disabled::after {
+    display: none;
   }
   .icon-button:hover {
     @apply bg-surface-subtle text-fg;
@@ -176,8 +183,11 @@
   .report-summary-body {
     @apply py-4 border-t border-border;
   }
-  .report-summary-body h3 {
+  .report-summary-body :is(h2, h3) {
     @apply m-0;
+  }
+  .report-summary-body h2 {
+    @apply text-[16px] font-semibold;
   }
   .report-summary-body dl {
     @apply grid-cols-[120px_minmax(0,_1fr)] text-[13px];

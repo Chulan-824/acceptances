@@ -5,7 +5,7 @@
     @apply min-h-[100svh] text-[15px] leading-[1.7] antialiased;
   }
   .home-container {
-    @apply w-full max-w-280 mx-auto px-8;
+    @apply w-full max-w-280 mx-auto px-4 sm:px-6 md:px-8;
   }
   .home-header {
     @apply block m-0 bg-surface border-b border-border;
@@ -31,7 +31,7 @@
     @apply w-[17px] h-[17px];
   }
   .home-brand-context {
-    @apply ml-1 [padding-left:12px] border-l border-border text-[12px] font-normal text-fg-secondary;
+    @apply ml-1 [padding-left:12px] border-l border-border text-[12px] font-normal text-fg-secondary hidden sm:inline;
   }
   .home-intro {
     @apply min-h-11 pt-2 pr-[10px] pb-2 pl-[10px] rounded-default text-[13px] text-fg-secondary whitespace-nowrap;
@@ -43,19 +43,19 @@
     @apply w-4 h-4;
   }
   .home-content {
-    @apply py-[36px_32px];
+    @apply py-6 sm:py-[36px_32px];
   }
   .home-title {
-    @apply mb-[30px];
+    @apply mb-6 sm:mb-[30px];
   }
   .home-title h1 {
-    @apply mt-0 mr-0 mb-[7px] ml-0 text-[28px] font-semibold leading-[1.4];
+    @apply mt-0 mr-0 mb-[7px] ml-0 text-[22px] sm:text-[28px] font-semibold leading-[1.4];
   }
   .home-title p {
     @apply m-0 text-[14px] text-fg-secondary leading-[1.8];
   }
   .home-layout {
-    @apply grid grid-cols-[minmax(0,_1fr)_320px] gap-8 items-start;
+    @apply grid grid-cols-1 lg:grid-cols-[minmax(0,_1fr)_320px] gap-8 items-start;
   }
   .home-layout > section {
     @apply min-w-0 m-0 p-0 border-0 rounded-none bg-transparent shadow-none;
@@ -76,7 +76,7 @@
     @apply min-w-0;
   }
   .home-project-card {
-    @apply grid grid-cols-[44px_minmax(0,_1fr)_24px] items-start gap-4 min-h-[142px] p-6 bg-surface border border-border rounded-lg shadow-subtle no-underline;
+    @apply grid grid-cols-[44px_minmax(0,_1fr)_24px] items-start gap-4 min-h-[142px] p-5 sm:p-6 bg-surface border border-border rounded-lg shadow-subtle no-underline;
   }
   .home-project-card:hover {
     @apply bg-surface-subtle border-border-dark;
@@ -209,12 +209,6 @@
   @keyframes home-spin {
     to {
       transform: rotate(360deg);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .home-loading-spinner {
-      @apply animate-none;
     }
   }
 }

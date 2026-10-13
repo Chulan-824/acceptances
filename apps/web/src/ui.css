@@ -38,7 +38,14 @@
     @apply px-6 py-3;
   }
   .ui-button-icon {
-    @apply w-8 h-8 p-0 shrink-0;
+    @apply relative w-8 h-8 p-0 shrink-0;
+  }
+  .ui-button-icon::after {
+    content: "";
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-11 min-h-11 w-full h-full pointer-events-auto;
+  }
+  .ui-button-icon:disabled::after {
+    display: none;
   }
   .ui-input,
   .ui-textarea,
@@ -121,10 +128,133 @@
   [data-slot="tabs-content"][hidden] {
     display: none;
   }
+  /* 模态弹窗与遮罩动画关键帧 */
+  @keyframes dialog-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes dialog-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes dialog-zoom-in {
+    from {
+      opacity: 0;
+      scale: 0.96;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes dialog-zoom-out {
+    from {
+      opacity: 1;
+      scale: 1;
+    }
+    to {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+
+  /* Spinner 低动效状态感知：柔和呼吸脉冲（温和无眩晕，状态持续在线） */
+  @keyframes spinner-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  /* 弹窗遮罩层与浮层基础动画 */
+  [data-slot="dialog-overlay"][data-state="open"],
+  [data-slot="alert-dialog-overlay"][data-state="open"] {
+    animation: dialog-fade-in 150ms ease-out forwards;
+  }
+  [data-slot="dialog-overlay"][data-state="closed"],
+  [data-slot="alert-dialog-overlay"][data-state="closed"] {
+    animation: dialog-fade-out 100ms ease-in forwards;
+  }
+
+  [data-slot="dialog-content"][data-state="open"],
+  [data-slot="alert-dialog-content"][data-state="open"] {
+    animation: dialog-zoom-in 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  [data-slot="dialog-content"][data-state="closed"],
+  [data-slot="alert-dialog-content"][data-state="closed"] {
+    animation: dialog-zoom-out 100ms ease-in forwards;
+  }
+
+  [data-slot="select-content"][data-state="open"],
+  [data-slot="dropdown-menu-content"][data-state="open"],
+  [data-slot="popover-content"][data-state="open"],
+  [data-slot="tooltip-content"][data-state="delayed-open"],
+  [data-slot="tooltip-content"][data-state="instant-open"] {
+    animation: dialog-fade-in 120ms ease-out forwards;
+  }
+  [data-slot="select-content"][data-state="closed"],
+  [data-slot="dropdown-menu-content"][data-state="closed"],
+  [data-slot="popover-content"][data-state="closed"],
+  [data-slot="tooltip-content"][data-state="closed"] {
+    animation: dialog-fade-out 80ms ease-in forwards;
+  }
+
+  /* prefers-reduced-motion 重构与有意义的状态感知降级 */
   @media (prefers-reduced-motion: reduce) {
-    [data-slot] {
-      animation: none !important;
-      transition: none !important;
+    /* 1. Spinner 与加载旋转：降级为透明度呼吸脉冲，杜绝静止卡死错觉 */
+    .animate-spin,
+    [data-slot="spinner"],
+    .home-loading-spinner {
+      animation: spinner-pulse 1.5s ease-in-out infinite !important;
+      transform: none !important;
+    }
+
+    /* 2. 弹窗主体：消除 scale 缩放形变，降级为温和纯透明度淡入淡出，保留进退场状态感知 */
+    [data-slot="dialog-content"][data-state="open"],
+    [data-slot="alert-dialog-content"][data-state="open"] {
+      animation: dialog-fade-in 120ms ease-out forwards !important;
+      scale: 1 !important;
+    }
+    [data-slot="dialog-content"][data-state="closed"],
+    [data-slot="alert-dialog-content"][data-state="closed"] {
+      animation: dialog-fade-out 90ms ease-in forwards !important;
+      scale: 1 !important;
+    }
+
+    /* 3. 遮罩层与浮层：平缓纯透明度进出场 */
+    [data-slot="dialog-overlay"][data-state="open"],
+    [data-slot="alert-dialog-overlay"][data-state="open"],
+    [data-slot="select-content"][data-state="open"],
+    [data-slot="dropdown-menu-content"][data-state="open"],
+    [data-slot="popover-content"][data-state="open"],
+    [data-slot="tooltip-content"][data-state="delayed-open"],
+    [data-slot="tooltip-content"][data-state="instant-open"] {
+      animation: dialog-fade-in 120ms ease-out forwards !important;
+    }
+    [data-slot="dialog-overlay"][data-state="closed"],
+    [data-slot="alert-dialog-overlay"][data-state="closed"],
+    [data-slot="select-content"][data-state="closed"],
+    [data-slot="dropdown-menu-content"][data-state="closed"],
+    [data-slot="popover-content"][data-state="closed"],
+    [data-slot="tooltip-content"][data-state="closed"] {
+      animation: dialog-fade-out 90ms ease-in forwards !important;
+    }
+
+    *,
+    ::before,
+    ::after {
+      scroll-behavior: auto !important;
     }
   }
   .ui-alert {

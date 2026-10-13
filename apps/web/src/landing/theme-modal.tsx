@@ -151,7 +151,7 @@ export function ThemeModal({
                     className="p-3 flex items-start gap-3"
                   >
                     <div
-                      className="w-10 h-10 rounded-md shrink-0 border border-black/10"
+                      className="w-10 h-10 rounded-md shrink-0 border border-border"
                       style={{ backgroundColor: color.hex }}
                     />
                     <div className="min-w-0">

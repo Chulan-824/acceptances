@@ -237,14 +237,14 @@ export function Project({
         ) : (
           <section>
             <div className="section-heading">
-              <h2>{project.data.name}</h2>
+              <h1>{project.data.name}</h1>
               <div className="actions">
                 <Button onClick={refresh}>刷新项目</Button>
                 <DeleteButton path={base} label="项目" onDeleted={onDeleted} />
               </div>
             </div>
             <p className="prose">{project.data.description}</p>
-            <h3>关联代码来源</h3>
+            <h2>关联代码来源</h2>
             {!repositories.data ? (
               <Load error={repositories.error} />
             ) : repositories.data.items.length ? (

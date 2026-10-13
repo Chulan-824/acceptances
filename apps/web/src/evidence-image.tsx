@@ -1,7 +1,14 @@
-import { useRef, useState } from "react";
-import { Dialog } from "radix-ui";
+import { useEffect, useRef, useState } from "react";
 import { RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "./components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "./components/ui/dialog";
 
 export function EvidenceImage({
   url,
@@ -17,8 +24,8 @@ export function EvidenceImage({
   const [open, setOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button className="image-preview" aria-label={label}>
           <img
             loading={eager ? "eager" : "lazy"}
@@ -32,9 +39,9 @@ export function EvidenceImage({
             </span>
           )}
         </Button>
-      </Dialog.Trigger>
+      </DialogTrigger>
       {open && <ImageViewer url={url} description={description} />}
-    </Dialog.Root>
+    </Dialog>
   );
 }
 
@@ -57,8 +64,23 @@ function ImageViewer({
     limitX: number;
     limitY: number;
   } | null>(null);
+  const rafId = useRef<number | null>(null);
+  const pendingTransform = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+      }
+    };
+  }, []);
 
   function zoom(factor: number) {
+    if (rafId.current !== null) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
+    pendingTransform.current = null;
     drag.current = null;
     setDragging(false);
     setTransform((current) => {
@@ -68,125 +90,157 @@ function ImageViewer({
   }
 
   return (
-    <Dialog.Portal>
-      <Dialog.Overlay className="image-viewer-overlay" />
-      <Dialog.Content className="image-viewer">
-        <Dialog.Title className="sr-only">图片预览</Dialog.Title>
-        <Dialog.Description className="sr-only">
-          使用缩放按钮查看细节，放大后可拖动图片。按 Esc 或点击空白处关闭。
-        </Dialog.Description>
-        <Dialog.Close asChild>
-          <button
-            type="button"
-            className="image-viewer-backdrop"
-            aria-label="关闭图片预览"
-            tabIndex={-1}
-          />
-        </Dialog.Close>
-        <div className="image-viewer-stage">
-          {imageError ? (
-            <p className="image-viewer-error" role="alert">
-              图片加载失败，请关闭预览后重试。
-            </p>
-          ) : (
-            <img
-              className="image-viewer-image"
-              src={url}
-              alt={description}
-              draggable={false}
-              data-zoomed={transform.scale > 1}
-              data-dragging={dragging}
-              style={{
-                transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-              }}
-              onError={() => setImageError(true)}
-              onPointerDown={(event) => {
-                if (event.button !== 0 || transform.scale <= 1) return;
-                const bounds = event.currentTarget.getBoundingClientRect();
-                event.currentTarget.setPointerCapture(event.pointerId);
-                drag.current = {
-                  pointerId: event.pointerId,
-                  startX: event.clientX,
-                  startY: event.clientY,
-                  x: transform.x,
-                  y: transform.y,
-                  limitX: Math.max(0, (bounds.width - window.innerWidth) / 2),
-                  limitY: Math.max(0, (bounds.height - window.innerHeight) / 2),
-                };
-                setDragging(true);
-              }}
-              onPointerMove={(event) => {
-                const current = drag.current;
-                if (!current || current.pointerId !== event.pointerId) return;
-                const x = current.x + event.clientX - current.startX;
-                const y = current.y + event.clientY - current.startY;
+    <DialogContent
+      overlayClassName="image-viewer-overlay bg-brand/90"
+      className="image-viewer top-0 left-0 translate-x-0 translate-y-0 w-screen max-w-none h-screen rounded-none border-0 bg-transparent p-0 shadow-none"
+      showCloseButton={false}
+    >
+      <DialogTitle className="sr-only">图片预览</DialogTitle>
+      <DialogDescription className="sr-only">
+        使用缩放按钮查看细节，放大后可拖动图片。按 Esc 或点击空白处关闭。
+      </DialogDescription>
+      <DialogClose asChild>
+        <button
+          type="button"
+          className="image-viewer-backdrop"
+          aria-label="关闭图片预览"
+          tabIndex={-1}
+        />
+      </DialogClose>
+      <div className="image-viewer-stage">
+        {imageError ? (
+          <p className="image-viewer-error" role="alert">
+            图片加载失败，请关闭预览后重试。
+          </p>
+        ) : (
+          <img
+            className="image-viewer-image"
+            src={url}
+            alt={description}
+            draggable={false}
+            data-zoomed={transform.scale > 1}
+            data-dragging={dragging}
+            style={{
+              transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+            }}
+            onError={() => setImageError(true)}
+            onPointerDown={(event) => {
+              if (event.button !== 0 || transform.scale <= 1) return;
+              const bounds = event.currentTarget.getBoundingClientRect();
+              event.currentTarget.setPointerCapture(event.pointerId);
+              if (rafId.current !== null) {
+                cancelAnimationFrame(rafId.current);
+                rafId.current = null;
+              }
+              pendingTransform.current = null;
+              drag.current = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                x: transform.x,
+                y: transform.y,
+                limitX: Math.max(0, (bounds.width - window.innerWidth) / 2),
+                limitY: Math.max(0, (bounds.height - window.innerHeight) / 2),
+              };
+              setDragging(true);
+            }}
+            onPointerMove={(event) => {
+              const current = drag.current;
+              if (!current || current.pointerId !== event.pointerId) return;
+              const x = current.x + event.clientX - current.startX;
+              const y = current.y + event.clientY - current.startY;
+              const nextX = Math.min(
+                current.limitX,
+                Math.max(-current.limitX, x),
+              );
+              const nextY = Math.min(
+                current.limitY,
+                Math.max(-current.limitY, y),
+              );
+              pendingTransform.current = { x: nextX, y: nextY };
+
+              if (rafId.current === null) {
+                rafId.current = requestAnimationFrame(() => {
+                  rafId.current = null;
+                  if (pendingTransform.current) {
+                    const { x: targetX, y: targetY } = pendingTransform.current;
+                    pendingTransform.current = null;
+                    setTransform((previous) => ({
+                      ...previous,
+                      x: targetX,
+                      y: targetY,
+                    }));
+                  }
+                });
+              }
+            }}
+            onLostPointerCapture={() => {
+              if (rafId.current !== null) {
+                cancelAnimationFrame(rafId.current);
+                rafId.current = null;
+              }
+              if (pendingTransform.current) {
+                const { x: targetX, y: targetY } = pendingTransform.current;
+                pendingTransform.current = null;
                 setTransform((previous) => ({
                   ...previous,
-                  x: Math.min(current.limitX, Math.max(-current.limitX, x)),
-                  y: Math.min(current.limitY, Math.max(-current.limitY, y)),
+                  x: targetX,
+                  y: targetY,
                 }));
-              }}
-              onLostPointerCapture={() => {
-                drag.current = null;
-                setDragging(false);
-              }}
-              onPointerUp={(event) => {
-                if (event.currentTarget.hasPointerCapture(event.pointerId))
-                  event.currentTarget.releasePointerCapture(event.pointerId);
-              }}
-            />
-          )}
-        </div>
-        <Dialog.Close asChild>
-          <Button
-            className="image-viewer-close image-viewer-control"
-            aria-label="关闭预览"
-            title="关闭预览（Esc）"
-            size="icon"
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </Dialog.Close>
-        <div
-          className="image-viewer-controls"
-          role="group"
-          aria-label="图片缩放"
+              }
+              drag.current = null;
+              setDragging(false);
+            }}
+            onPointerUp={(event) => {
+              if (event.currentTarget.hasPointerCapture(event.pointerId))
+                event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+          />
+        )}
+      </div>
+      <DialogClose asChild>
+        <Button
+          className="image-viewer-close image-viewer-control"
+          aria-label="关闭预览"
+          title="关闭预览（Esc）"
+          size="icon"
         >
-          <Button
-            className="image-viewer-control"
-            aria-label="缩小图片"
-            title="缩小图片"
-            size="icon"
-            disabled={imageError || transform.scale <= 1}
-            onClick={() => zoom(1 / 1.5)}
-          >
-            <ZoomOut aria-hidden="true" />
-          </Button>
-          <output aria-live="polite">
-            {Math.round(transform.scale * 100)}%
-          </output>
-          <Button
-            className="image-viewer-control"
-            aria-label="放大图片"
-            title="放大图片"
-            size="icon"
-            disabled={imageError || transform.scale >= 5}
-            onClick={() => zoom(1.5)}
-          >
-            <ZoomIn aria-hidden="true" />
-          </Button>
-          <Button
-            className="image-viewer-control"
-            aria-label="重置缩放"
-            title="重置缩放"
-            size="icon"
-            disabled={imageError || transform.scale === 1}
-            onClick={() => zoom(0)}
-          >
-            <RotateCcw aria-hidden="true" />
-          </Button>
-        </div>
-      </Dialog.Content>
-    </Dialog.Portal>
+          <X aria-hidden="true" />
+        </Button>
+      </DialogClose>
+      <div className="image-viewer-controls" role="group" aria-label="图片缩放">
+        <Button
+          className="image-viewer-control"
+          aria-label="缩小图片"
+          title="缩小图片"
+          size="icon"
+          disabled={imageError || transform.scale <= 1}
+          onClick={() => zoom(1 / 1.5)}
+        >
+          <ZoomOut aria-hidden="true" />
+        </Button>
+        <output aria-live="polite">{Math.round(transform.scale * 100)}%</output>
+        <Button
+          className="image-viewer-control"
+          aria-label="放大图片"
+          title="放大图片"
+          size="icon"
+          disabled={imageError || transform.scale >= 5}
+          onClick={() => zoom(1.5)}
+        >
+          <ZoomIn aria-hidden="true" />
+        </Button>
+        <Button
+          className="image-viewer-control"
+          aria-label="重置缩放"
+          title="重置缩放"
+          size="icon"
+          disabled={imageError || transform.scale === 1}
+          onClick={() => zoom(0)}
+        >
+          <RotateCcw aria-hidden="true" />
+        </Button>
+      </div>
+    </DialogContent>
   );
 }
