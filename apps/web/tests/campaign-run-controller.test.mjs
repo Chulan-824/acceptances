@@ -446,3 +446,10 @@ test("missing Project locks even when the stale Campaign and Run still return da
   await actions.refresh();
   assert.equal(f.controller.getSnapshot().writeLocked, true);
 });
+test("M12 confirmed deleted Run is excluded from stale list snapshots during recovery", async () => {
+  const f = fixture();
+  const actions = await ready(f);
+  await actions.deleteRun();
+  await actions.refresh();
+  assert.deepEqual(f.controller.getSnapshot().runs.data.items, []);
+});

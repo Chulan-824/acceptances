@@ -116,13 +116,15 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         (!!operation && operation.phase !== "settled"),
     };
     snapshot = { ...view };
-    if (view.run.data && view.runs.data)
+    if (view.runs.data)
       snapshot.runs = {
         ...view.runs,
         data: {
-          items: view.runs.data.items.map((item) =>
-            item.id === view.run.data?.id ? view.run.data : item,
-          ),
+          items: view.runs.data.items
+            .filter((item) => !operations.get(item.id)?.deleted)
+            .map((item) =>
+              item.id === view.run.data?.id ? view.run.data : item,
+            ),
         },
       };
     if (view.campaign.data && view.campaigns.data)
@@ -195,7 +197,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     const id =
       view.campaign.data.latestRunId ||
       (view.runs.status === "ready" ? view.runs.data?.items[0]?.id : undefined);
-    if (id) {
+    if (id && !operations.get(id)?.deleted) {
       view.selectedRunId = id;
       publish();
       void readRun(id);
