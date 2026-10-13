@@ -5,7 +5,7 @@
   box-sizing: border-box;
   border-width: 0;
   border-style: solid;
-  border-color: rgb(229, 231, 235);
+  border-color: var(--color-border);
 }
 html {
   line-height: 1.5;

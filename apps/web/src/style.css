@@ -28,13 +28,13 @@
     @apply no-underline text-inherit;
   }
   h1 {
-    @apply text-[32px] mt-2 mr-0 mb-2 ml-0;
+    @apply text-[22px] mt-2 mr-0 mb-2 ml-0;
   }
   h2 {
-    @apply text-[22px] mt-0 mr-0 mb-[18px] ml-0;
+    @apply text-[20px] mt-0 mr-0 mb-[18px] ml-0;
   }
   h3 {
-    @apply text-[17px];
+    @apply text-[15px];
   }
   nav,
   .actions,
@@ -109,10 +109,10 @@
 
 @layer components {
   .app-shell {
-    @apply w-full min-w-[1120px];
+    @apply w-full;
   }
   .workspace {
-    @apply relative h-[100dvh] overflow-hidden bg-surface;
+    @apply relative h-[100dvh] min-w-[1120px] overflow-hidden bg-surface;
     --workspace-left-width: 256px;
     --workspace-right-width: 288px;
   }
@@ -137,7 +137,14 @@
     @apply inline-flex items-center gap-2 text-[14px] font-semibold no-underline whitespace-nowrap;
   }
   .workspace-home button {
-    @apply shrink-0 pt-[6px] pr-2 pb-[6px] pl-2 text-[12px] min-h-8;
+    @apply relative shrink-0 pt-[6px] pr-2 pb-[6px] pl-2 text-[12px] min-h-8;
+  }
+  .workspace-home button::after {
+    content: "";
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-11 min-h-11 w-full h-full pointer-events-auto;
+  }
+  .workspace-home button:disabled::after {
+    display: none;
   }
   .workspace-brand {
     @apply grid [place-items:center] w-6 h-6 rounded-default bg-brand text-brand-fg text-[13px];
@@ -166,8 +173,11 @@
   .workspace-main section {
     @apply my-0 pt-6 pr-0 pb-6 pl-0 border-0 border-b border-border rounded-none shadow-none;
   }
+  .workspace-main h1 {
+    @apply text-[20px] font-bold wrap-anywhere;
+  }
   .workspace-main h2 {
-    @apply text-[20px] wrap-anywhere;
+    @apply text-[16px] font-semibold wrap-anywhere;
   }
   .workspace-main h3 {
     @apply text-[15px];
@@ -256,7 +266,7 @@
     @apply fixed inset-0 z-50 bg-brand/90;
   }
   .image-viewer {
-    @apply fixed inset-0 z-50 overflow-clip outline-none text-brand-fg;
+    @apply fixed inset-0 top-0 left-0 translate-x-0 translate-y-0 w-screen max-w-none h-screen rounded-none border-0 bg-transparent p-0 shadow-none overflow-clip outline-none text-brand-fg;
   }
   .image-viewer-backdrop {
     @apply absolute inset-0 w-full h-full border-0 bg-transparent cursor-pointer;
@@ -312,9 +322,17 @@
       transform: scale(1);
     }
   }
+  @keyframes image-viewer-enter-reduced {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .image-viewer-stage {
-      animation: none;
+      animation: image-viewer-enter-reduced 120ms ease-out;
     }
   }
   ::selection {

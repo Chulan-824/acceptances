@@ -30,9 +30,9 @@ import { ThemeModal } from "./theme-modal";
 import "./landing.css";
 
 const screenshots = [
-  "/landing/CleanShot-2026-09-17-at-14.06.10.png",
-  "/landing/CleanShot-2026-09-17-at-14.06.27.png",
-  "/landing/screenshot-2026-09-17T06-36-27-194Z.png",
+  "/landing/CleanShot-2026-09-17-at-14.06.10.webp",
+  "/landing/CleanShot-2026-09-17-at-14.06.27.webp",
+  "/landing/screenshot-2026-09-17T06-36-27-194Z.webp",
 ];
 const captions = [
   "图 1: 工作台三栏视图 —— 左侧交付列表、中间证据清单展开与右侧多轮历史",
@@ -73,7 +73,7 @@ function Landing() {
               href="landing.html"
               className="flex items-center gap-2.5 font-semibold text-base tracking-tight hover:opacity-90"
             >
-              <div className="w-7 h-7 rounded-md bg-brand text-white flex items-center justify-center font-bold text-sm shadow-subtle">
+              <div className="w-7 h-7 rounded-md bg-brand text-brand-fg flex items-center justify-center font-bold text-sm shadow-subtle">
                 A
               </div>
               <span>Acceptances</span>
@@ -127,20 +127,8 @@ function Landing() {
             </Button>
             <Button asChild variant="ghost">
               <a
-                href="acceptances-viewer.html"
-                data-pending-link=""
-                className="px-3.5 py-1.5 rounded-lg border border-border bg-surface hover:bg-surface-subtle text-fg transition-all text-xs shadow-subtle"
-                onClick={(event) => event.preventDefault()}
-              >
-                交付查看器
-              </a>
-            </Button>
-            <Button asChild variant="ghost">
-              <a
                 href="index.html"
-                data-pending-link=""
-                className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white transition-all text-xs font-medium shadow-subtle flex items-center gap-1.5"
-                onClick={(event) => event.preventDefault()}
+                className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-subtle flex items-center gap-1.5"
               >
                 <span>进入中枢</span>
                 <span className="text-xs">→</span>
@@ -175,22 +163,10 @@ function Landing() {
             <Button asChild variant="ghost">
               <a
                 href="index.html"
-                data-pending-link=""
-                className="px-5 py-2.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-medium text-sm transition-all shadow-card flex items-center gap-2"
-                onClick={(event) => event.preventDefault()}
+                className="px-5 py-2.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-card flex items-center gap-2"
               >
                 <span>打开研发验收中枢</span>
                 <span>→</span>
-              </a>
-            </Button>
-            <Button asChild variant="ghost">
-              <a
-                href="acceptances-viewer.html"
-                data-pending-link=""
-                className="px-5 py-2.5 rounded-lg bg-surface hover:bg-surface-subtle border border-border text-fg font-medium text-sm transition-all shadow-subtle"
-                onClick={(event) => event.preventDefault()}
-              >
-                体验交付查看器
               </a>
             </Button>
             <Button
@@ -203,7 +179,7 @@ function Landing() {
               <span className="text-accent font-bold">$</span>
               <code className="text-fg">{"npx acceptances open"}</code>
               <span
-                className="text-[11px] text-muted pl-1 border-l border-border group-hover:text-fg transition-colors"
+                className="text-xs text-muted pl-1 border-l border-border group-hover:text-fg transition-colors"
                 id="copyTip"
               >
                 {copyTip}
@@ -223,9 +199,9 @@ function Landing() {
             <Card className="bg-surface border border-border rounded-2xl shadow-window overflow-hidden">
               <div className="h-11 px-4 bg-surface-subtle/80 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-rose-400"></span>
-                  <span className="w-3 h-3 rounded-full bg-amber-400"></span>
-                  <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
+                  <span className="w-3 h-3 rounded-full bg-danger"></span>
+                  <span className="w-3 h-3 rounded-full bg-warning"></span>
+                  <span className="w-3 h-3 rounded-full bg-accent"></span>
                   <span className="ml-2 text-xs font-mono text-muted">
                     acceptances · 本地优先验收工坊
                   </span>
@@ -276,7 +252,7 @@ function Landing() {
                 </div>
               </div>
 
-              <div className="relative bg-slate-900 group cursor-zoom-in">
+              <div className="relative bg-brand group cursor-zoom-in">
                 <TabsContent value="0" className="showcase-pane relative mt-0">
                   <Button
                     variant="ghost"
@@ -285,12 +261,12 @@ function Landing() {
                     onClick={openActiveLightbox}
                   >
                     <img
-                      src="/landing/CleanShot-2026-09-17-at-14.06.10.png"
+                      src="/landing/CleanShot-2026-09-17-at-14.06.10.webp"
                       alt="工作台三栏真实界面"
                       className="w-full h-auto block"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                      <span className="px-3 py-1.5 rounded-md bg-slate-900/90 text-white text-xs font-mono border border-white/10 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                      <span className="px-3 py-1.5 rounded-md bg-brand/90 text-brand-fg text-xs font-mono border border-brand-fg/10 backdrop-blur-sm">
                         点击放大查看实测截图
                       </span>
                     </div>
@@ -305,7 +281,7 @@ function Landing() {
                     onClick={openActiveLightbox}
                   >
                     <img
-                      src="/landing/CleanShot-2026-09-17-at-14.06.27.png"
+                      src="/landing/CleanShot-2026-09-17-at-14.06.27.webp"
                       alt="抽屉用例全景真实界面"
                       className="w-full h-auto block"
                     />
@@ -320,7 +296,7 @@ function Landing() {
                     onClick={openActiveLightbox}
                   >
                     <img
-                      src="/landing/screenshot-2026-09-17T06-36-27-194Z.png"
+                      src="/landing/screenshot-2026-09-17T06-36-27-194Z.webp"
                       alt="研发中枢看板总控"
                       className="w-full h-auto block"
                     />
@@ -391,7 +367,7 @@ function Landing() {
                 </code>
                 目录，随 Git 分支版本化共进退。
               </p>
-              <div className="text-[11px] font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
+              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
                 ✓ git branch 分离隔离
                 <br />✓ 随 PR 审查一同合入
               </div>
@@ -419,7 +395,7 @@ function Landing() {
                 测试不仅是单一的 Pass/Fail 计数，更内嵌高分辨率实测截图、网络
                 HAR 抓包与控制台日志，杜绝“在我机器上是好的”口头扯皮。
               </p>
-              <div className="text-[11px] font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
+              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
                 ✓ 自动化高分截图留底
                 <br />✓ HAR 链路与异常日志追踪
               </div>
@@ -452,7 +428,7 @@ function Landing() {
                 </code>
                 ，分权明确、责任闭环。
               </p>
-              <div className="text-[11px] font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
+              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
                 ✓ 机器归机器，人工归人工
                 <br />✓ 签署时间戳与责任人存证
               </div>
@@ -478,7 +454,7 @@ function Landing() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             <div className="flex flex-col gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand text-white font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
+              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
                 1
               </div>
               <h4 className="text-base font-semibold text-fg">
@@ -488,14 +464,14 @@ function Landing() {
                 开发者完成特性编码后，运行自动化验收脚本。脚本驱动真实本地服务，产出用例检查数据与高清截图存入对应特性
                 Round 目录。
               </p>
-              <div className="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
-                <span className="text-emerald-400">$</span>
+              <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
+                <span className="text-accent-border">$</span>
                 npm run accept:check
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand text-white font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
+              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
                 2
               </div>
               <h4 className="text-base font-semibold text-fg">
@@ -505,14 +481,14 @@ function Landing() {
                 运行一行 CLI 快速调起本地优先的 Acceptances
                 查看器。三栏式直观对照用例预期、观察事实与截图证据，或在研发中枢全局巡检。
               </p>
-              <div className="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
-                <span className="text-emerald-400">$</span>
+              <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
+                <span className="text-accent-border">$</span>
                 npx acceptances open
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand text-white font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
+              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
                 3
               </div>
               <h4 className="text-base font-semibold text-fg">
@@ -521,11 +497,13 @@ function Landing() {
               <p className="text-xs text-muted leading-relaxed">
                 QA
                 或研发负责人在界面中一键签署「交付接受」，签署人姓名与意见实时落盘至
-                <code className="text-emerald-400">{"reviews.json"}</code>
+                <code className="font-mono text-accent-dark">
+                  {"reviews.json"}
+                </code>
                 ，随代码一同 Commit。
               </p>
-              <div className="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
-                <span className="text-emerald-400">$</span>
+              <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
+                <span className="text-accent-border">$</span>
                 git add .acceptances & & git commit
               </div>
             </div>
@@ -552,7 +530,7 @@ function Landing() {
             <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
                 <span>.acceptances/ 目录结构</span>
-                <span className="text-[11px] text-accent font-semibold">
+                <span className="text-xs text-accent font-semibold">
                   Git Tracked
                 </span>
               </div>
@@ -566,7 +544,7 @@ function Landing() {
             <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
                 <span>reviews.json (人工签署真值)</span>
-                <span className="text-[11px] text-accent font-semibold">
+                <span className="text-xs text-accent font-semibold">
                   Dual-Tier Verification
                 </span>
               </div>
@@ -600,7 +578,7 @@ function Landing() {
               <TableHeader>
                 <TableRow className="bg-canvas border-b border-border text-muted font-mono">
                   <TableHead className="p-3.5 font-medium">评估维度</TableHead>
-                  <TableHead className="p-3.5 font-medium text-rose-600">
+                  <TableHead className="p-3.5 font-medium text-danger-dark">
                     传统群聊 / 口头交付
                   </TableHead>
                   <TableHead className="p-3.5 font-medium text-accent-dark bg-accent-soft/40">
@@ -671,21 +649,9 @@ function Landing() {
             <Button asChild variant="ghost">
               <a
                 href="index.html"
-                data-pending-link=""
-                className="px-6 py-3 rounded-lg bg-brand hover:bg-brand-hover text-white font-medium text-sm transition-all shadow-card"
-                onClick={(event) => event.preventDefault()}
+                className="px-6 py-3 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-card"
               >
                 进入研发验收中枢 →
-              </a>
-            </Button>
-            <Button asChild variant="ghost">
-              <a
-                href="acceptances-viewer.html"
-                data-pending-link=""
-                className="px-6 py-3 rounded-lg bg-surface hover:bg-surface-subtle border border-border text-fg font-medium text-sm transition-all shadow-subtle"
-                onClick={(event) => event.preventDefault()}
-              >
-                查看交付验收报告
               </a>
             </Button>
           </div>
@@ -699,7 +665,7 @@ function Landing() {
             <span>·</span>
             <span>Local-First Regression&amp;Round Sign-off System</span>
           </div>
-          <div className="flex items-center gap-4 font-mono text-[11px]">
+          <div className="flex items-center gap-4 font-mono text-xs">
             <span>branch: feature/character-library</span>
             <span>·</span>
             <Button
@@ -710,21 +676,8 @@ function Landing() {
               主题与 MCP 规范
             </Button>
             <span>·</span>
-            <a
-              href="index.html"
-              data-pending-link=""
-              className="hover:text-fg transition-colors"
-              onClick={(event) => event.preventDefault()}
-            >
+            <a href="index.html" className="hover:text-fg transition-colors">
               中枢
-            </a>
-            <a
-              href="acceptances-viewer.html"
-              data-pending-link=""
-              className="hover:text-fg transition-colors"
-              onClick={(event) => event.preventDefault()}
-            >
-              查看器
             </a>
           </div>
         </div>
@@ -759,7 +712,7 @@ function Landing() {
           <img
             src={screenshots[Number(showcaseTab)]}
             alt="当前产品截图放大预览"
-            className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-window border border-white/10"
+            className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-window border border-brand-fg/10"
           />
         </DialogContent>
       </Dialog>

@@ -15,13 +15,22 @@ colors:
   brand-hover: "#1e293b"
   brand-fg: "#ffffff"
   accent-soft: "#ecfdf5"
+  accent-border: "#a7f3d0"
   accent-dark: "#047857"
   warning-soft: "#fffbeb"
+  warning-border: "#fde68a"
   warning-dark: "#b45309"
   danger-soft: "#fff1f2"
   danger-border: "#fecdd3"
   danger-dark: "#be123c"
 typography:
+  home-title:
+    fontFamily:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft
+      YaHei", sans-serif
+    fontSize: 28px
+    fontWeight: 600
+    lineHeight: 1.4
   headline:
     fontFamily:
       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft
@@ -34,12 +43,26 @@ typography:
       YaHei", sans-serif
     fontSize: 20px
     fontWeight: 700
+  project-title:
+    fontFamily:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft
+      YaHei", sans-serif
+    fontSize: 18px
+    fontWeight: 600
+    lineHeight: 1.5
   sidebar-title:
     fontFamily:
       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft
       YaHei", sans-serif
     fontSize: 16px
     fontWeight: 700
+  home-body:
+    fontFamily:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft
+      YaHei", sans-serif
+    fontSize: 15px
+    fontWeight: 400
+    lineHeight: 1.7
   subtitle:
     fontFamily:
       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft
@@ -170,6 +193,7 @@ components:
     textColor: "{colors.fg-secondary}"
     rounded: "{rounded.lg}"
     padding: 24px
+    typography: "{typography.project-title}"
   navigation-item:
     backgroundColor: transparent
     textColor: "{colors.fg-secondary}"
@@ -250,20 +274,23 @@ Acceptances 的现有视觉系统是克制、清晰、偏紧凑的验收工作�
 
 | frontmatter 角色 | 实际上下文                          |
 | ---------------- | ----------------------------------- |
-| `headline`       | 通用应用标题；首页使用下述局部字号  |
-| `title`          | 工作台报告与需求章节标题            |
+| `home-title`     | 首页主标题 (h1)                     |
+| `headline`       | 通用应用标题                        |
+| `title`          | 工作台报告与需求章节标题、首页章节标题 |
+| `project-title`  | 首页项目卡片标题 (项目名称)         |
 | `sidebar-title`  | 需求导航与运行历史标题              |
+| `home-body`      | 首页正文与页面描述                  |
 | `subtitle`       | 工作台三级标题                      |
 | `check-title`    | 检查项标题                          |
 | `body`           | 页面正文与普通控件                  |
 | `prose`          | 工作台报告正文，最大阅读宽度为 75ch |
 | `muted`          | 辅助说明与元数据                    |
-| `label`          | 导航、搜索标签、评审栏及普通徽章    |
+| `label`          | 导航、搜索标签、表单标签、评审栏及普通徽章 |
 | `caption`        | 筛选控件、计数徽章及次级导航说明    |
 | `eyebrow`        | 顶部英文产品标识                    |
 | `mono`           | 文本证据，版本标识仅复用其字体栈    |
 
-`body` 的字号与常规字重于 2026-10-10 经首页计算样式核对；全局未显式设定正文行高，保留浏览器 `normal`。`prose` 与 `muted` 有显式行高；表格式说明和检查项摘要使用各自的 1.6 行高，不将它们归成统一正文行高。首页正文使用 15px 与 1.7 行高，表单标签使用 13px。首页 h1 为 28px、项目章节标题为 20px、项目名称为 18px，字重均为 600。这些值只作用于首页，不新增全局字号令牌。当前层级不构成固定比例的字号尺度。
+`body` 的字号与常规字重于 2026-10-10 经首页计算样式核对；全局未显式设定正文行高，保留浏览器 `normal`。`prose` 与 `muted` 有显式行高；表格式说明和检查项摘要使用各自的 1.6 行高，不将它们归成统一正文行高。首页字阶已登记回 frontmatter：首页主标题 `home-title` 为 28px（字重 600、行高 1.4），项目卡片标题 `project-title` 为 18px（字重 600、行高 1.5），首页正文 `home-body` 为 15px（字重 400、行高 1.7）；首页章节标题复用 `title` (20px，字重 600)，表单标签复用 `label` (13px)。全项目对齐非标 11px 字阶，最小标准字阶为 12px (`caption` / `mono` / `eyebrow`，对应 Tailwind `text-xs`)。当前层级不构成固定比例的字号尺度。
 
 **The Contextual Type Rule.** 字号按实际上下文记录。应用标题与首页章节标题不同于工作台章节标题，不将通用 h1 的旧默认值套到当前入口。
 
@@ -344,7 +371,7 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 
 普通 dialog 宽度为 `min(520px, calc(100% - 48px))`；评审 dialog 为 `min(640px, calc(100% - 32px))`，图片 dialog 为 `min(1100px, calc(100% - 32px))`。评审和图片 dialog 最大高度为 `calc(100dvh - 32px)`，内容可滚动。关闭入口明确可见。
 
-首页列表加载及创建中使用旋转指示器，周期 0.8s、线性循环；`prefers-reduced-motion: reduce` 时停止动画。这是首页局部加载反馈，不新增全局运动令牌。
+首页列表加载及创建中使用旋转指示器，周期 0.8s、线性循环；`prefers-reduced-motion: reduce` 时优雅降级为 1.5s 透明度呼吸脉冲（spinner-pulse），避免前庭不适同时恢复加载状态感知。弹窗与遮罩层默认带有微缩放与淡入淡出（150ms/100ms），低动效模式下降级为纯透明度淡入淡出（120ms/90ms，无 scale 缩放），消除视觉跳变并完整保留进出场状态感知。
 
 ## Do's and Don'ts
 
@@ -379,3 +406,11 @@ frontmatter 的 `spacing` 来自重复使用的间距字面量，组件间距已
 Landing Page 入口改为 `src/landing/main.tsx` 和 `theme-modal.tsx`。截图切换与主题页签使用 Tabs，截图放大与主题规范使用 Dialog，卡片、表格、分隔线、按钮和复制提示分别使用 Card、Table、Separator、Button 与 Sonner。旧样式快照已移除，`landing-base.css` 仅保留当前页面所需的浏览器重置；组件与主题由共享 Tailwind 4 输出。原型文案、静态图片及固定链接边界继续沿用现有内容，不作为新增产品能力。
 
 逐页替换清单与组件维护约定见 [shadcn/ui 页面覆盖](docs/shadcn-ui.md)。历史验证段落仍记录其对应版本，不代表本次迁移后的运行结果。
+
+## 响应式视口适配与触控热区扩展
+
+2026-10-12 按用户要求解除 `.app-shell` 对首页及非三栏页面强制施加的 `min-w-[1120px]`，将其仅作用于三栏工作台 `.workspace`。首页容器通过 `px-4 sm:px-6 md:px-8` 适配各级屏幕，小屏视口下布局自动转为单列纵向排列（`grid-cols-1 lg:grid-cols-[minmax(0,_1fr)_320px]`），标题自适应，无横向滚动溢出。同时对 32px 交互控件（`.ui-button-icon`、`.icon-button`、`.workspace-home button`、弹窗关闭按钮）通过 `::after` 伪元素扩展触控热区至 44x44px，满足触控交互无障碍规范，禁用态自动清除热区。
+
+## 排版字阶对齐与首页规范登记
+
+2026-10-13 对齐 apps/web 全站非标 11px 字阶至规范的 12px（`caption` / `mono` / `text-xs`），消除视觉跳变。同时将首页 28px（`home-title`，字重 600、行高 1.4）、18px（`project-title`，字重 600、行高 1.5）与 15px（`home-body`，字重 400、行高 1.7）等首页字阶登记回 DESIGN.md frontmatter，并在 `components.project-card` 中关联 `project-title`。

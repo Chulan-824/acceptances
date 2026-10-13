@@ -272,17 +272,29 @@
       }
     },
     "typographyMeta": {
+      "home-title": {
+        "displayName": "home-title",
+        "purpose": "首页主标题 (28px)"
+      },
       "headline": {
         "displayName": "headline",
-        "purpose": "通用应用标题；首页使用局部字号"
+        "purpose": "通用应用标题"
       },
       "title": {
         "displayName": "title",
-        "purpose": "工作台章节标题"
+        "purpose": "工作台章节标题与首页章节标题"
+      },
+      "project-title": {
+        "displayName": "project-title",
+        "purpose": "首页项目卡片标题 (18px)"
       },
       "sidebar-title": {
         "displayName": "sidebar-title",
         "purpose": "侧栏标题"
+      },
+      "home-body": {
+        "displayName": "home-body",
+        "purpose": "首页正文 (15px)"
       },
       "subtitle": {
         "displayName": "subtitle",

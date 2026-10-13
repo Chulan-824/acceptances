@@ -181,7 +181,7 @@ export function Run({
       >
         <div className="report-summary-body">
           <div className="section-heading">
-            <h3>{report.title}</h3>
+            <h2>{report.title}</h2>
             <DeleteButton
               path={`/runs/${id}`}
               label="验证记录"

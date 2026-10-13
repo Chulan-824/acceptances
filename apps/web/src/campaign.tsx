@@ -60,7 +60,7 @@ export function Campaign({
           <>
             <section className="campaign-heading">
               <div className="section-heading">
-                <h2>{campaign.data.title}</h2>
+                <h1>{campaign.data.title}</h1>
                 <ActionMenu label="需求操作" icon="more">
                   <div className="menu-content">
                     <DropdownMenuItem asChild>

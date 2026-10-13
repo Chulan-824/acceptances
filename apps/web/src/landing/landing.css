@@ -7,10 +7,10 @@
 
 @layer components {
   .landing-lightbox {
-    @apply w-[min(1024px,calc(100%-32px))] max-w-none max-h-[90dvh] bg-transparent border-0 p-0 text-white shadow-none;
+    @apply w-[min(1024px,calc(100%-32px))] max-w-none max-h-[90dvh] bg-transparent border-0 p-0 text-brand-fg shadow-none;
   }
   .lightbox-close {
-    @apply absolute -top-10 right-0 p-0 text-white/80 text-xs hover:text-white hover:bg-transparent;
+    @apply absolute -top-10 right-0 p-0 text-brand-fg/80 text-xs hover:text-brand-fg hover:bg-transparent;
   }
   .theme-dialog {
     @apply w-[min(896px,calc(100%-32px))] max-w-none max-h-[90dvh] p-0 overflow-auto text-xs text-fg;
