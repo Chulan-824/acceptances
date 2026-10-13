@@ -166,3 +166,18 @@ export async function request<T>(
 export function evidenceURL(run: string, path: string) {
   return `/api/v1/runs/${encodeURIComponent(run)}/evidence/${encodeURIComponent(path)}`;
 }
+
+export interface DashboardItem extends Campaign {
+  projectName: string;
+  latestRun: {
+    id: string;
+    status: Run["status"];
+    createdAt: string;
+    verifiedAt: string;
+    scopeType: "full" | "partial" | "unknown";
+    versions: Report["versions"];
+    counts: Record<Report["checks"][number]["status"], number>;
+    evidenceCount: number;
+    checks: Pick<Report["checks"][number], "id" | "title" | "status">[];
+  } | null;
+}

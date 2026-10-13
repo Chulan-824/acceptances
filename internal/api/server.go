@@ -151,6 +151,7 @@ func (s *Server) Guard(next http.Handler) http.Handler {
 func (s *Server) Register(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/projects", s.createProject)
 	m.HandleFunc("GET /api/v1/projects", s.listProjects)
+	m.HandleFunc("GET /api/v1/dashboard", s.dashboard)
 	m.HandleFunc("GET /api/v1/projects/{id}", s.getProject)
 	m.HandleFunc("GET /api/v1/projects/{id}/repositories", s.repositories)
 	m.HandleFunc("POST /api/v1/projects/{id}/repositories", s.repositories)

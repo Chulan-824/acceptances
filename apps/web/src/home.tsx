@@ -1,40 +1,46 @@
-import { Spinner } from "./components/ui/spinner";
-import { Card } from "./components/ui/card";
-import { Alert } from "./components/ui/alert";
-import { Disclosure } from "./components/disclosure";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  ArrowRight,
+  Folder,
+  LayoutGrid,
+  List,
+  Search,
+  RefreshCw,
+  Layers,
+  Clock3,
+  CircleCheck,
+  CircleX,
+} from "lucide-react";
+import type {
+  DashboardItem,
+  Project,
+  ReviewStatus,
+} from "@acceptances/api-client";
+import { useResource, Status } from "./client";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
-import { Textarea } from "./components/ui/textarea";
-import { Label } from "./components/ui/label";
-import { useRef, useState } from "react";
-import type { Project } from "@acceptances/api-client";
-import { message, request } from "./client";
+import { Alert } from "./components/ui/alert";
+import { ChoiceSelect } from "./components/choice-select";
+import { SelectItem } from "./components/ui/select";
+import { HomeCreate } from "./home-create";
 
-function Icon({ name }: { name: "check" | "folder" | "arrow" | "toggle" }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {name === "check" && <path d="m5 12 4 4L19 6" />}
-      {name === "folder" && (
-        <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
-      )}
-      {name === "arrow" && <path d="M5 12h14m-5-5 5 5-5 5" />}
-      {name === "toggle" && (
-        <>
-          <path d="M5 12h14" />
-          <path className="home-toggle-vertical" d="M12 5v14" />
-        </>
-      )}
-    </svg>
-  );
-}
+const filters = [
+  { value: "all", label: "全部", icon: Layers },
+  { value: "pending", label: "待审", icon: Clock3 },
+  { value: "accepted", label: "已通过", icon: CircleCheck },
+  { value: "rejected", label: "不通过", icon: CircleX },
+] as const;
+const resultLabels = {
+  passed: "通过",
+  failed: "失败",
+  blocked: "阻塞",
+  skipped: "未执行",
+};
+const scopeLabels = {
+  full: "完整验证",
+  partial: "局部验证",
+  unknown: "范围未知",
+};
 
 export function Home({
   projects,
@@ -49,67 +55,93 @@ export function Home({
   navigate: (path: string) => void;
   onCreated: (project: Project) => void;
 }) {
-  const [open, setOpen] = useState(true);
-  const [name, setName] = useState("");
-  const [nameError, setNameError] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const nameInput = useRef<HTMLInputElement>(null);
-  const toggle = useRef<HTMLButtonElement>(null);
-  const submitting = useRef(false);
-
-  function showCreate() {
-    setOpen(true);
-    nameInput.current?.focus();
-  }
-
-  async function create(form: HTMLFormElement) {
-    if (submitting.current) return;
-    setError("");
-    const invalid = !name.trim()
-      ? "请输入项目名称。"
-      : name.length > 200
-        ? "项目名称不能超过 200 个字符。"
-        : "";
-    setNameError(invalid);
-    if (invalid) {
-      nameInput.current?.focus();
+  const [createOpen, setCreateOpen] = useState(true);
+  const [revision, setRevision] = useState(0);
+  const dashboard = useResource<{ items: DashboardItem[] }>(
+    "/dashboard",
+    revision,
+  );
+  const [projectId, setProjectId] = useState("all");
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<"all" | ReviewStatus>("all");
+  const [compact, setCompact] = useState(false);
+  const searchInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    function keydown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInput.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", keydown);
+    return () => window.removeEventListener("keydown", keydown);
+  }, []);
+  const scoped = (dashboard.data?.items || []).filter(
+    (item) => projectId === "all" || item.projectId === projectId,
+  );
+  const counts = { all: scoped.length, pending: 0, accepted: 0, rejected: 0 };
+  for (const item of scoped) counts[item.status]++;
+  const term = query.trim().toLocaleLowerCase();
+  const visible = scoped.filter(
+    (item) =>
+      (status === "all" || item.status === status) &&
+      [
+        item.title,
+        item.description,
+        item.projectName,
+        ...(item.latestRun?.versions.flatMap((v) => [v.repository, v.commit]) ||
+          []),
+      ]
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(term),
+  );
+  function follow(event: MouseEvent<HTMLAnchorElement>, path: string) {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
       return;
-    }
-    const values = new FormData(form);
-    submitting.current = true;
-    setBusy(true);
-    try {
-      const item = await request<Project>("/projects", "POST", {
-        name: values.get("name"),
-        description: values.get("description"),
-      });
-      onCreated(item);
-    } catch (error) {
-      setError(message(error));
-    } finally {
-      submitting.current = false;
-      setBusy(false);
-    }
+    event.preventDefault();
+    navigate(path);
   }
-
+  function refresh() {
+    setRevision((v) => v + 1);
+    onRetry();
+  }
   return (
     <div className="home-page">
       <a className="home-skip" href="#home-content">
-        跳到项目列表
+        跳转至看板内容
       </a>
       <header className="home-header">
         <div className="home-container home-header-inner">
           <a className="home-brand" href="/">
-            <span className="home-brand-mark">
-              <Icon name="check" />
-            </span>
-            <span>Acceptances</span>
-            <span className="home-brand-context">本机验收工具</span>
+            <span className="home-brand-mark">A</span>Acceptances
+            <span className="home-brand-context">交付看板</span>
           </a>
-          <a className="home-intro" href="/landing.html">
-            产品介绍 <Icon name="arrow" />
-          </a>
+          <div className="home-header-actions">
+            <a className="home-intro" href="/landing.html">
+              产品介绍 <ArrowRight size={14} />
+            </a>
+            <Button
+              variant="default"
+              onClick={() => {
+                setCreateOpen(true);
+                requestAnimationFrame(() => {
+                  document
+                    .getElementById("home-name")
+                    ?.scrollIntoView({ block: "center" });
+                  document.getElementById("home-name")?.focus();
+                });
+              }}
+            >
+              创建项目 <ArrowRight size={14} />
+            </Button>
+          </div>
         </div>
       </header>
       <main
@@ -117,210 +149,308 @@ export function Home({
         id="home-content"
         tabIndex={-1}
       >
-        <div className="home-title">
-          <h1>交付验证</h1>
-          <p>保存验证事实，查看证据，作出人工判断。</p>
+        <h1 className="sr-only">交付验证看板</h1>
+        <div className="home-stats" aria-label="需求状态统计">
+          {filters.map(({ value, label, icon: MetricIcon }) => (
+            <div className={`home-stat ${value}`} key={value}>
+              <div className="home-stat-label">
+                <span>
+                  {value === "all" ? "需求交付" : label}
+                  <span className="sr-only">数量</span>
+                </span>
+                <MetricIcon size={15} />
+              </div>
+              <strong>{dashboard.data ? counts[value] : "—"}</strong>
+              <p>
+                {value === "all"
+                  ? "按最新验证记录与人工评审汇总状态"
+                  : value === "accepted"
+                    ? "最新完整验证已通过全部人工评审"
+                    : value === "pending"
+                      ? "待完成全部人工评审或补充完整验证"
+                      : "存在未通过的人工评审判断"}
+              </p>
+            </div>
+          ))}
         </div>
         <div className="home-layout">
-          <section
-            className="home-projects"
-            aria-labelledby="home-projects-title"
-          >
-            <div className="home-section-title">
-              <h2 id="home-projects-title">项目</h2>
-              <p>选择项目，查看其需求与验证记录。</p>
-            </div>
-            {!projects ? (
-              <Card className="home-state" aria-busy={!loadError}>
-                {loadError ? (
-                  <>
-                    <h3>项目列表加载失败</h3>
-                    <Alert variant="destructive" role="alert">
-                      {loadError}
-                    </Alert>
-                    <Button type="button" onClick={onRetry}>
-                      重新加载
+          <section className="home-board" aria-label="需求交付看板">
+            <div className="home-toolbar">
+              <div className="home-toolbar-title">
+                <h2>需求交付看板</h2>
+                <span>{dashboard.data ? scoped.length : "—"} 个需求</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="刷新看板"
+                  onClick={refresh}
+                >
+                  <RefreshCw size={14} />
+                </Button>
+              </div>
+              <div className="home-tools">
+                <label className="home-search">
+                  <Search size={14} />
+                  <Input
+                    ref={searchInput}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    aria-label="搜索需求"
+                    placeholder="搜索需求、代码仓库或提交哈希 (⌘K)"
+                  />
+                </label>
+                <div
+                  className="home-filters"
+                  role="group"
+                  aria-label="需求状态筛选"
+                >
+                  {filters.map((f) => (
+                    <Button
+                      key={f.value}
+                      variant="ghost"
+                      aria-pressed={status === f.value}
+                      onClick={() => setStatus(f.value)}
+                    >
+                      {f.label} {dashboard.data ? counts[f.value] : "—"}
                     </Button>
-                  </>
-                ) : (
-                  <p className="home-loading" role="status">
-                    <Spinner
-                      className="home-loading-spinner"
-                      aria-hidden="true"
-                    />
-                    正在加载项目…
-                  </p>
+                  ))}
+                </div>
+                <div className="home-view" role="group" aria-label="视图模式">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="卡片视图"
+                    aria-pressed={!compact}
+                    onClick={() => setCompact(false)}
+                  >
+                    <LayoutGrid size={14} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="紧凑列表"
+                    aria-pressed={compact}
+                    onClick={() => setCompact(true)}
+                  >
+                    <List size={14} />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <p className="home-result-count" role="status">
+              {dashboard.data
+                ? `显示 ${visible.length} / ${scoped.length} 个需求 · 统计范围：${projectId === "all" ? "全部项目" : "当前项目"}`
+                : dashboard.error
+                  ? "看板加载失败"
+                  : "正在加载看板…"}
+            </p>
+            {dashboard.error && (
+              <Alert variant="destructive">
+                {dashboard.error}
+                <Button onClick={() => setRevision((v) => v + 1)}>
+                  重试看板
+                </Button>
+              </Alert>
+            )}
+            {dashboard.data && !visible.length && (
+              <div className="home-state">
+                <Folder size={24} />
+                <h3>
+                  {scoped.length ? "未找到匹配的需求交付" : "暂无需求交付记录"}
+                </h3>
+                <p>
+                  {scoped.length
+                    ? "请尝试调整搜索关键词或状态筛选条件。"
+                    : "创建项目后，在本地业务代码目录执行验证并归档报告，相关需求交付将呈现在此。"}
+                </p>
+                {scoped.length > 0 && (
+                  <Button
+                    onClick={() => {
+                      setQuery("");
+                      setStatus("all");
+                    }}
+                  >
+                    重置搜索与筛选条件
+                  </Button>
                 )}
-              </Card>
-            ) : projects.length ? (
-              <ul className="home-project-list" aria-label="项目列表">
-                {projects.map((project) => (
-                  <li key={project.id}>
-                    <Card asChild>
-                      <a
-                        className="home-project-card"
-                        href={`/projects/${project.id}`}
-                        onClick={(event) => {
-                          if (
-                            event.button !== 0 ||
-                            event.metaKey ||
-                            event.ctrlKey ||
-                            event.shiftKey ||
-                            event.altKey
-                          )
-                            return;
-                          event.preventDefault();
-                          navigate(`/projects/${project.id}`);
-                        }}
-                      >
-                        <span className="home-project-icon">
-                          <Icon name="folder" />
-                        </span>
-                        <span className="home-project-copy">
-                          <strong className="home-project-name">
-                            {project.name}
-                          </strong>
-                          <span className="home-project-description">
-                            {project.description || "暂无说明"}
-                          </span>
-                          <span className="home-project-action">进入项目</span>
-                        </span>
-                        <Icon name="arrow" />
-                      </a>
-                    </Card>
+              </div>
+            )}
+            <div className={`home-deliverables ${compact ? "is-compact" : ""}`}>
+              {visible.map((item) => (
+                <DeliveryCard
+                  key={item.id}
+                  item={item}
+                  compact={compact}
+                  follow={follow}
+                />
+              ))}
+            </div>
+          </section>
+          <aside className="home-sidebar" aria-label="项目管理与接入">
+            <div className="home-side-card">
+              <h2>项目</h2>
+              <label className="home-project-filter">
+                项目范围
+                <ChoiceSelect
+                  value={projectId}
+                  onValueChange={setProjectId}
+                  disabled={!projects}
+                >
+                  <SelectItem value="all">全部项目</SelectItem>
+                  {projects?.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </ChoiceSelect>
+              </label>
+              {loadError && (
+                <Alert variant="destructive">
+                  {loadError}
+                  <Button onClick={onRetry}>重试项目列表</Button>
+                </Alert>
+              )}
+              {!projects && !loadError && <p role="status">正在加载项目…</p>}
+              {projects?.length === 0 && <p>暂无项目，请先在下方创建项目。</p>}
+              <ul className="home-project-list">
+                {projects?.map((p) => (
+                  <li key={p.id}>
+                    <a
+                      href={`/projects/${p.id}`}
+                      onClick={(e) => follow(e, `/projects/${p.id}`)}
+                    >
+                      <Folder size={16} />
+                      <span>{p.name}</span>
+                      <ArrowRight size={14} />
+                    </a>
                   </li>
                 ))}
               </ul>
-            ) : (
-              <Card className="home-state">
-                <span className="home-project-icon">
-                  <Icon name="folder" />
-                </span>
-                <h3>还没有项目</h3>
-                <p>
-                  创建第一个项目，然后在业务目录使用 skill 关联项目并提交验证。
-                </p>
-                <Button type="button" onClick={showCreate}>
-                  填写项目名称 <Icon name="arrow" />
-                </Button>
-              </Card>
-            )}
-          </section>
-          <section className="home-create" aria-label="创建项目">
-            <Disclosure
-              className="home-create-panel"
-              disabled={busy}
-              triggerRef={toggle}
-              open={open}
-              onOpenChange={setOpen}
-              onKeyDown={(event) => {
-                if (event.key === "Escape" && open && !busy) {
-                  event.preventDefault();
-                  setOpen(false);
-                  toggle.current?.focus();
-                }
-              }}
-              title={
-                <>
-                  <span>
-                    <span className="home-create-title">创建项目</span>
-                    <span className="home-create-description">
-                      添加一个待验收的产品或系统
-                    </span>
-                  </span>
-                  <Icon name="toggle" />
-                </>
-              }
-            >
-              <div className="home-create-body">
-                <form
-                  noValidate
-                  aria-busy={busy}
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void create(event.currentTarget);
-                  }}
-                >
-                  <fieldset disabled={busy}>
-                    <Label htmlFor="home-name">
-                      项目名称<span>必填</span>
-                    </Label>
-                    <Input
-                      id="home-name"
-                      name="name"
-                      ref={nameInput}
-                      value={name}
-                      required
-                      maxLength={200}
-                      autoComplete="off"
-                      placeholder="输入项目名称"
-                      aria-invalid={nameError ? true : undefined}
-                      aria-describedby={
-                        nameError
-                          ? "home-name-hint home-name-error"
-                          : "home-name-hint"
-                      }
-                      onChange={(event) => {
-                        setName(event.target.value);
-                        setNameError("");
-                        setError("");
-                      }}
-                    />
-                    <div className="home-field-meta" id="home-name-hint">
-                      <span>最多 200 个字符</span>
-                      <span>{name.length} / 200</span>
-                    </div>
-                    {nameError && (
-                      <Alert
-                        variant="destructive"
-                        className="home-field-error"
-                        role="alert"
-                        id="home-name-error"
-                      >
-                        {nameError}
-                      </Alert>
-                    )}
-                    <Label htmlFor="home-description">
-                      项目说明<span>选填</span>
-                    </Label>
-                    <Textarea
-                      id="home-description"
-                      name="description"
-                      placeholder="简要说明项目用途"
-                    />
-                    <Button
-                      variant="default"
-                      className="home-create-submit"
-                      type="submit"
-                    >
-                      {busy && (
-                        <Spinner
-                          className="home-loading-spinner"
-                          aria-hidden="true"
-                        />
-                      )}
-                      {busy ? "正在创建…" : "创建项目"}
-                    </Button>
-                  </fieldset>
-                  {error && (
-                    <Alert
-                      variant="destructive"
-                      className="home-create-error"
-                      role="alert"
-                    >
-                      {error}
-                    </Alert>
-                  )}
-                </form>
-              </div>
-            </Disclosure>
-          </section>
+            </div>
+            <HomeCreate
+              onCreated={onCreated}
+              open={createOpen}
+              setOpen={setCreateOpen}
+            />
+            <div className="home-side-card home-guide">
+              <h2>开始验收</h2>
+              <ol>
+                <li>在下方创建项目，关联本地业务代码目录。</li>
+                <li>
+                  在业务目录使用 Agent 运行 <code>acceptances-v1</code>{" "}
+                  执行验证并归档报告。
+                </li>
+                <li>打开需求详情，核对多模态证据并逐项记录人工评审结论。</li>
+              </ol>
+              <p>
+                实际验证结果与人工判断相互独立；局部验证通过不代表需求整体通过。
+              </p>
+            </div>
+          </aside>
         </div>
         <footer className="home-footer">
           <span>Acceptances · 本机验收工具</span>
-          <span>交付验证</span>
+          <span>保存验证事实，查看证据，作出人工判断。</span>
         </footer>
       </main>
     </div>
+  );
+}
+function DeliveryCard({
+  item,
+  compact,
+  follow,
+}: {
+  item: DashboardItem;
+  compact: boolean;
+  follow: (event: MouseEvent<HTMLAnchorElement>, path: string) => void;
+}) {
+  const run = item.latestRun;
+  const path = `/projects/${item.projectId}/campaigns/${item.id}${run ? `/runs/${run.id}` : ""}`;
+  return (
+    <article className="home-delivery">
+      <div className="home-delivery-top">
+        <div className="home-delivery-state">
+          <span>需求</span>
+          <Status value={item.status} />
+          <span className="home-project-tag">{item.projectName}</span>
+        </div>
+        {run && (
+          <span className="home-evidence-count">
+            {run.evidenceCount} 份证据
+          </span>
+        )}
+      </div>
+      <h3>
+        <a href={path} onClick={(e) => follow(e, path)}>
+          {item.title}
+          <ArrowRight size={15} />
+        </a>
+      </h3>
+      {!compact && (
+        <p className="home-delivery-description">
+          {item.description || "暂无需求说明"}
+        </p>
+      )}
+      {run ? (
+        <>
+          <div className="home-run-meta">
+            <span>最新验证</span>
+            <Status value={run.status} />
+            <span>{scopeLabels[run.scopeType]}</span>
+            <time dateTime={run.verifiedAt}>
+              {new Date(run.verifiedAt).toLocaleString("zh-CN", {
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </time>
+          </div>
+          <div className="home-check-counts" aria-label="各状态检查项数量统计">
+            {Object.entries(resultLabels).map(([key, label]) => (
+              <span key={key} className={key}>
+                {run.counts[key as keyof typeof resultLabels]} {label}
+              </span>
+            ))}
+          </div>
+          {!compact && (
+            <ul className="home-mini-checks">
+              {run.checks.map((check) => (
+                <li key={check.id}>
+                  <span className={check.status}>
+                    {resultLabels[check.status]}
+                  </span>
+                  <span title={check.title}>{check.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <p className="home-run-meta">等待首次验证归档</p>
+      )}
+      <div className="home-delivery-footer">
+        <div className="home-versions">
+          {run?.versions.map((v, i) => (
+            <span key={i} title={`${v.repository} · ${v.commit}`}>
+              <span>{v.repository}</span>
+              <code>
+                {v.commit === "unknown" ? "版本未知" : v.commit.slice(0, 8)}
+              </code>
+              <span>
+                {v.dirty === null ? "改动未知" : v.dirty ? "含未提交改动" : ""}
+              </span>
+            </span>
+          ))}
+        </div>
+        <Button asChild size="sm" variant="default">
+          <a href={path} onClick={(e) => follow(e, path)}>
+            {run ? "查看报告" : "查看需求"}
+            <ArrowRight size={13} />
+          </a>
+        </Button>
+      </div>
+    </article>
   );
 }
