@@ -22,7 +22,8 @@
   .report-summary,
   .report-version-line,
   .report-tabs,
-  .report-notice {
+  .report-notice,
+  .campaign-delivery {
     @apply w-full max-w-224 mx-auto;
   }
   .acceptance-workbench .workspace-main section {
