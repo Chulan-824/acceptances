@@ -6,6 +6,7 @@
 
 | 方法与路径                               | 输入或结果                                                                                        |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| GET /campaigns/{id}/delivery             | 需求级概览：最新报告准备条件、当前有效交付、最近交付及其最近说明版本，独立于选中的历史报告        |
 | GET /runs/{id}/delivery-preparation      | eligible、token、issues、Project/Campaign/Run、manifest/map/materials、附件摘要及可沿用的异常理由 |
 | POST /runs/{id}/deliveries               | requestId、token、mapConfirmed、materialsConfirmed、sensitiveInfoReviewed、exceptionReasons       |
 | GET /deliveries                          | 返回摘要 items，可按 projectId/campaignId/runId 查询，包括来源删除后的归档                        |
@@ -14,7 +15,7 @@
 | GET /deliveries/{id}/evidence/{filename} | 读取独立证据副本，download=1 强制下载                                                             |
 | POST /deliveries/{id}/revoke             | reason 必填，撤销但不删除原快照                                                                   |
 
-准备 GET 只诊断，不改变人审或产生快照。issues 含 code/message；异常理由可在确认中补填，原一键接受文字不算具体理由。
+准备 GET 只诊断，不改变人审或产生快照。issues 含 code/message；异常理由可在确认中补填，原批量人工通过文字不算具体理由。
 
 冻结要求当前 latest、full、非 void、全项人工接受；源码完整提交、dirty=false，构建/素材与附件摘要一致，最终 Run 覆盖地图所有必验项且预期一致。用户须明确确认范围、说明内容、敏感信息审核及异常接受理由。
 
@@ -51,3 +52,9 @@ HTML 由固定模板和转义后的纯文本生成，只内嵌实际栅格图片
 数据库版本增至 3，既有当前版本 2 人审保持不变。迁移前以 VACUUM INTO 保存 archive.before-v3.*.db 一致备份。旧版逐项人审迁移规则仍单独适用，不将历史整轮决定推断为新冻结交付。
 
 交付副本位于 deliveries/<id>/evidence，说明成品位于 documents/<id>/business.html。交付表不依赖来源记录的级联删除；数据库触发器保护冻结内容、事件及成功说明状态。数据库决定可见性，启动清理无归属目录及中断临时产物。
+
+## Web 入口与状态
+
+需求顶部展示交付准备、阻塞原因及下一步。完整范围评审、本轮人工验收、交付版本和业务说明分别表达；本轮批量操作使用“全部人工通过”，完成后显示“本轮已验收”。“查看交付准备”允许未满足条件的报告进入审阅，最终“确认交付并保存快照”仍须满足全部既有门槛。
+
+需求级概览复用冻结准备校验，只读取 campaign.latest_run_id，不回退历史报告。人工评审、作废、删除和刷新报告后并行回读概览；概览读取失败单独提示，不映射为尚未交付，也不延长本轮审核锁。概览同时保留当前有效交付与最新报告的独立进度；最新说明始终关联所展示的交付版本。无最新报告时 preparation=null，已冻结历史继续可读。

@@ -3,6 +3,7 @@ import type {
   Run,
   ReviewInput,
   DeletePreview,
+  CampaignDeliveryOverview,
 } from "@acceptances/api-client";
 
 export type WriteResult =
@@ -21,6 +22,7 @@ export interface ReadState<T> {
 export interface CampaignRunAdapter {
   campaigns(projectId: string): Promise<{ items: Campaign[] }>;
   campaign(campaignId: string): Promise<Campaign>;
+  delivery(campaignId: string): Promise<CampaignDeliveryOverview>;
   runs(campaignId: string): Promise<{ items: Run[] }>;
   run(runId: string): Promise<Run>;
   review(runId: string, input: ReviewInput): Promise<unknown>;
@@ -38,6 +40,7 @@ export interface CampaignRunView {
   scope: CampaignRunScope;
   campaigns: ReadState<{ items: Campaign[] }>;
   campaign: ReadState<Campaign>;
+  delivery: ReadState<CampaignDeliveryOverview>;
   runs: ReadState<{ items: Run[] }>;
   run: ReadState<Run>;
   selectedRunId?: string;
@@ -78,6 +81,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     scope: {},
     campaigns: { status: "idle" },
     campaign: { status: "idle" },
+    delivery: { status: "idle" },
     runs: { status: "idle" },
     run: { status: "idle" },
     isLatest: false,
@@ -89,7 +93,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
   let navigationSequence = 0;
   let reading: Promise<void> | undefined;
   const peripheralReads: Partial<
-    Record<"campaigns" | "campaign" | "runs", Promise<void>>
+    Record<"campaigns" | "campaign" | "runs" | "delivery", Promise<void>>
   > = {};
   let snapshot = view;
   const publish = () => {
@@ -138,6 +142,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     delete peripheralReads.campaign;
     delete peripheralReads.campaigns;
     delete peripheralReads.runs;
+    delete peripheralReads.delivery;
   }
   function readRun(id: string): Promise<void> {
     if (operations.get(id)?.deleted) {
@@ -203,7 +208,9 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
       void readRun(id);
     }
   }
-  function readPeripheral<K extends "campaigns" | "campaign" | "runs">(
+  function readPeripheral<
+    K extends "campaigns" | "campaign" | "runs" | "delivery",
+  >(
     key: K,
     fetch: () => Promise<NonNullable<CampaignRunView[K]["data"]>>,
   ): Promise<void> {
@@ -266,6 +273,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
       tasks.push(
         readPeripheral("campaign", () => adapter.campaign(campaignId)),
         readPeripheral("runs", () => adapter.runs(campaignId)),
+        readPeripheral("delivery", () => adapter.delivery(campaignId)),
       );
     }
     if (includeRun && view.selectedRunId)
@@ -364,6 +372,10 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         campaign:
           scope.campaignId === view.scope.campaignId
             ? view.campaign
+            : { status: "idle" },
+        delivery:
+          scope.campaignId === view.scope.campaignId
+            ? view.delivery
             : { status: "idle" },
         runs:
           scope.campaignId === view.scope.campaignId

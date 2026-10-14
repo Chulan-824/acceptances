@@ -31,7 +31,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
   return (
     <main className="delivery-page">
       <div className="section-heading">
-        <h1>交付归档</h1>
+        <h1>交付版本</h1>
         <div className="actions">
           <Button variant="outline" onClick={() => navigate("/")}>
             返回首页
@@ -67,7 +67,9 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
           ))}
         </div>
       ) : (
-        <p>还没有正式冻结的交付。完成本轮人工审核后，可从验证记录进入冻结。</p>
+        <p>
+          暂无已确认的交付版本。请从需求顶部查看交付准备，条件满足后确认需求交付。
+        </p>
       )}
     </main>
   );

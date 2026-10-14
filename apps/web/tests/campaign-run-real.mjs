@@ -123,9 +123,13 @@ export async function run(page, base, apiBase = base) {
     );
   };
   const bulk = async (item) => {
-    await page.getByRole("button", { name: "一键交付", exact: true }).click();
+    await page
+      .getByRole("button", { name: "全部人工通过", exact: true })
+      .click();
     return action(item.id, "accept-all", () =>
-      page.getByRole("button", { name: "确认交付", exact: true }).click(),
+      page
+        .getByRole("button", { name: "确认全部人工通过", exact: true })
+        .click(),
     );
   };
   const remove = async (item) => {
@@ -174,7 +178,7 @@ export async function run(page, base, apiBase = base) {
     JSON.stringify(state.report) === original && state.reviews.length === 8,
     "immutable report or review history changed",
   );
-  await page.getByRole("button", { name: "本轮已交付", exact: true }).waitFor();
+  await page.getByRole("button", { name: "本轮已验收", exact: true }).waitFor();
   evidence.push({
     id: "H01",
     status: "passed",

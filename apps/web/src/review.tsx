@@ -107,7 +107,7 @@ export function ReviewForm({
               disabled={locked}
               onChange={(event) => setBody(event.target.value)}
               placeholder={
-                check ? "填写判断依据或检查项问题" : "对整次交付说点什么…"
+                check ? "填写判断依据或检查项问题" : "对本轮验证说点什么…"
               }
             />
           </Label>

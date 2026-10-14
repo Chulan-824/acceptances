@@ -58,7 +58,7 @@ function App() {
           <>
             <nav className="delivery-home-entry" aria-label="交付档案导航">
               <Button variant="outline" onClick={() => navigate("/deliveries")}>
-                交付归档
+                交付版本
               </Button>
             </nav>
             <Home

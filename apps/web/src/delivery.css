@@ -1,10 +1,6 @@
 @reference "./style.css";
 
 .campaign-delivery {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
   gap: 12px;
   width: 100%;
   max-width: 56rem;
@@ -15,6 +11,43 @@
 }
 .campaign-delivery p {
   margin: 6px 0 0;
+}
+.delivery-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.delivery-progress li {
+  border-top: 2px solid var(--border);
+  padding-top: 8px;
+  min-width: 0;
+}
+.delivery-progress p {
+  color: var(--color-fg-muted);
+  font-size: 13px;
+}
+.delivery-readiness,
+.delivery-notice {
+  background: var(--color-warning-soft);
+  border: 1px solid var(--color-warning-border);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 12px 0;
+}
+.delivery-readiness ul {
+  padding-left: 20px;
+  margin: 8px 0 0;
+}
+.delivery-readiness li + li {
+  margin-top: 10px;
+}
+@media (max-width: 640px) {
+  .delivery-progress {
+    grid-template-columns: 1fr;
+  }
 }
 
 div.business-preview[data-slot="dialog-content"][role="dialog"] {

@@ -193,6 +193,13 @@ export async function run(
       [`/projects/${project.id}/campaigns`]: { items: [campaign] },
       [`/projects/${project.id}/repositories`]: { items: [] },
       [`/campaigns/${campaign.id}`]: campaign,
+      [`/campaigns/${campaign.id}/delivery`]: {
+        campaignId: campaign.id,
+        preparation: null,
+        currentDelivery: null,
+        latestDelivery: null,
+        latestDocument: null,
+      },
       [`/campaigns/${campaign.id}/runs`]: { items: [second, first] },
       "/runs/first": first,
       "/runs/second": second,

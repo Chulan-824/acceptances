@@ -111,7 +111,7 @@ func (s *Server) prepareDelivery(runID string) (DeliveryPreparation, error) {
 			}
 			for _, review := range run.Reviews {
 				body := strings.TrimSpace(review.Body)
-				if review.ID == current.LastReviewID && body != bulkAcceptanceBody {
+				if review.ID == current.LastReviewID && !isBulkAcceptanceBody(body) {
 					prep.ExceptionReasons[check.ID] = body
 				}
 			}

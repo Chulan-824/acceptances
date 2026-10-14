@@ -77,6 +77,20 @@ export interface DeliveryPreparation {
   files: ArchivedFile[];
   exceptionReasons: Record<string, string>;
 }
+export interface CampaignDeliveryOverview {
+  campaignId: string;
+  preparation: {
+    runId: string;
+    status: Run["status"];
+    scopeType: Report["scopeType"];
+    reviewCounts: Run["reviewCounts"];
+    eligible: boolean;
+    issues: DeliveryPreparation["issues"];
+  } | null;
+  currentDelivery: DeliverySummary | null;
+  latestDelivery: DeliverySummary | null;
+  latestDocument: BusinessDocument | null;
+}
 export interface FreezeDeliveryInput {
   requestId: string;
   token: string;

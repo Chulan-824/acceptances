@@ -30,14 +30,14 @@ export function FreezeDelivery({
   return (
     <main className="delivery-page">
       <div className="section-heading">
-        <h1>冻结正式交付</h1>
+        <h1>确认需求交付</h1>
         <div className="actions">
           <Button
             variant="outline"
             disabled={busy}
             onClick={() => navigate("/deliveries")}
           >
-            交付归档
+            交付版本
           </Button>
           <Button
             variant="outline"
@@ -126,7 +126,7 @@ function FreezeConfirmation({
       setUnknown(uncertain);
       setError(
         uncertain
-          ? "提交结果未知，请查看交付归档，或按原内容重试。" + message(failure)
+          ? "提交结果未知，请查看交付版本，或按原内容重试。" + message(failure)
           : message(failure),
       );
       if (!uncertain) submitted.current = null;
@@ -140,7 +140,7 @@ function FreezeConfirmation({
     <>
       <h2>{prep.campaign.title}</h2>
       <p>
-        {prep.project.name} · <Status value={prep.run.status} /> ·{" "}
+        {prep.project.name} · <Status value={prep.run.status} context="run" /> ·{" "}
         {prep.run.report.checks.length} 项检查
       </p>
       <p className="muted">
@@ -149,7 +149,7 @@ function FreezeConfirmation({
       </p>
       {prep.issues.length > 0 && (
         <Alert variant="destructive" role="alert">
-          <p>尚不能冻结，请在项目侧为真实验证准备以下材料：</p>
+          <p>交付准备尚未完成，请在项目侧完成以下条件：</p>
           <ul>
             {prep.issues.map((issue) => (
               <li key={issue.code}>{issue.message}</li>
@@ -314,7 +314,11 @@ function FreezeConfirmation({
           disabled={busy || (!unknown && !ready)}
           onClick={() => void freeze()}
         >
-          {busy ? "正在冻结…" : unknown ? "重试原冻结提交" : "确认冻结交付"}
+          {busy
+            ? "正在保存交付…"
+            : unknown
+              ? "重试原交付确认"
+              : "确认交付并保存快照"}
         </Button>
       </div>
     </>

@@ -2,7 +2,6 @@ import { Badge } from "./components/ui/badge";
 import { Alert } from "./components/ui/alert";
 import { RunFollowUp } from "./run-follow-up";
 import { BulkAcceptanceDialog } from "./bulk-acceptance-dialog";
-import { CampaignDelivery } from "./campaign-delivery";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
 import { Disclosure } from "./components/disclosure";
 import { Button } from "./components/ui/button";
@@ -162,16 +161,10 @@ export function Run({
           </span>
         ))}
         <span>
-          {isLatest ? "当前报告" : "历史报告"} <Status value={run.status} />
+          {isLatest ? "当前报告" : "历史报告"}{" "}
+          <Status value={run.status} context="run" />
         </span>
       </div>
-      <CampaignDelivery
-        key={run.id}
-        run={run}
-        isLatest={isLatest}
-        busy={busy}
-        navigate={navigate}
-      />
       {missingTarget && (
         <Alert role="alert" ref={targetNotice}>
           <p>目标不存在或已不可用</p>
@@ -205,7 +198,7 @@ export function Run({
           </div>
           <p>
             已归档 · {isLatest ? "当前报告" : "历史报告"} · 人工状态{" "}
-            <Status value={run.status} />
+            <Status value={run.status} context="run" />
           </p>
           <p className="muted">
             保存成功不代表验证通过或人工接受。报告与附件不可原地修改。
@@ -227,7 +220,9 @@ export function Run({
             <div className="latest-decision">
               <span className="muted">人工评审进度 · 仅本次</span>
               <ReviewCounts counts={run.reviewCounts} />
-              <span className="muted">全部检查项人工通过即为本轮交付。</span>
+              <span className="muted">
+                全部检查项人工通过即为本轮已验收，需求交付需另行确认。
+              </span>
             </div>
           </div>
           <p className="prose">{report.description}</p>
@@ -372,7 +367,7 @@ export function Run({
           <section id="run-feedback">
             <div className="section-heading">
               <h2>整轮评论与历史决定</h2>
-              <Status value={run.status} />
+              <Status value={run.status} context="run" />
             </div>
             <ReviewHistory
               reviews={(run.reviews || []).filter((review) => !review.checkId)}
@@ -418,7 +413,7 @@ export function Run({
       >
         <div className="review-bar-context">
           <span>{isLatest ? "当前报告" : "历史报告"}</span>
-          <Status value={run.status} />
+          <Status value={run.status} context="run" />
           <span className="review-bar-title">
             已验收 {run.reviewCounts.accepted} / {report.checks.length} 项，剩余{" "}
             {run.reviewCounts.pending} 项待审
@@ -448,21 +443,7 @@ export function Run({
               setDeliveryOpen(true);
             }}
           >
-            {run.status === "accepted" ? "本轮已交付" : "一键交付"}
-          </Button>
-          <Button
-            variant="outline"
-            disabled={
-              busy ||
-              !isLatest ||
-              run.status !== "accepted" ||
-              report.scopeType !== "full"
-            }
-            onClick={() =>
-              navigate("/deliveries/new/" + encodeURIComponent(id))
-            }
-          >
-            冻结正式交付
+            {run.status === "accepted" ? "本轮已验收" : "全部人工通过"}
           </Button>
         </div>
       </div>

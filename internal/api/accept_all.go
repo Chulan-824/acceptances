@@ -2,7 +2,11 @@ package api
 
 import "net/http"
 
-const bulkAcceptanceBody = "一键交付：人工确认本轮全部检查项通过。"
+const bulkAcceptanceBody = "批量人工通过：人工确认本轮全部检查项通过。"
+
+func isBulkAcceptanceBody(body string) bool {
+	return body == bulkAcceptanceBody || body == "一键交付：人工确认本轮全部检查项通过。"
+}
 
 // acceptAll records the user's explicit bulk judgment, preserving item history.
 // Unlike individual acceptance, this action does not require a written reason.

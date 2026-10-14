@@ -66,7 +66,7 @@ export function BulkAcceptanceDialog({
         </DialogDescription>
         <>
           <div className="section-heading">
-            <DialogTitle>确认本轮交付</DialogTitle>
+            <DialogTitle>确认本轮全部检查项人工通过</DialogTitle>
             <Button
               autoFocus
               disabled={busy}
@@ -77,7 +77,7 @@ export function BulkAcceptanceDialog({
           </div>
           <p className="prose">{report.title}</p>
           <p>
-            人工状态 <Status value={run.status} />
+            人工状态 <Status value={run.status} context="run" />
           </p>
           {run.status === "void" && (
             <Alert role="note" className="notice">
@@ -107,7 +107,7 @@ export function BulkAcceptanceDialog({
           {exceptionalChecks.length > 0 && (
             <Alert role="note" className="notice">
               <p>
-                以下项目原始验证未通过。确认交付表示你仍同意这些项目，无需填写理由；原始结果保持不变。
+                以下项目原始验证未通过。确认人工通过表示你仍同意这些项目，无需填写理由；原始结果保持不变。
               </p>
               <ul>
                 {exceptionalChecks.map((check) => (
@@ -123,18 +123,18 @@ export function BulkAcceptanceDialog({
               {report.scopeType === "partial"
                 ? "本轮为局部验证"
                 : "本轮范围未知"}
-              ，交付仅代表本轮范围，不能代表需求整体通过。
+              ，人工验收仅代表本轮范围，不能代表需求整体通过。
             </Alert>
           )}
           <p className="muted">
-            已通过项保留当前判断。本轮交付后仍可逐项改判或撤回。
+            已通过项保留当前判断。本轮人工验收后仍可逐项改判或撤回。
           </p>
           {error && (
             <Alert variant="destructive" role="alert">
               {error}
             </Alert>
           )}
-          {busy && <p role="status">正在交付…</p>}
+          {busy && <p role="status">正在保存人工判断…</p>}
           <div className="actions">
             <Button
               variant="default"
@@ -143,7 +143,7 @@ export function BulkAcceptanceDialog({
               }
               onClick={() => void onConfirm()}
             >
-              确认交付
+              确认全部人工通过
             </Button>
           </div>
         </>

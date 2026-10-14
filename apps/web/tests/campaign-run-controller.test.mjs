@@ -30,6 +30,13 @@ function fixture() {
   const adapter = {
     campaigns: async () => ({ items: [campaign()] }),
     campaign: async () => campaign(),
+    delivery: async () => ({
+      campaignId: "c",
+      preparation: null,
+      currentDelivery: null,
+      latestDelivery: null,
+      latestDocument: null,
+    }),
     runs: async () => ({ items: [run()] }),
     run: async (id) => run(id),
     review: async (...args) => {
@@ -504,4 +511,49 @@ test("confirmed missing Run stays deleted during retries and read failures until
   await actions.refresh();
   assert.equal(f.controller.getSnapshot().run.status, "ready");
   assert.equal(f.controller.getSnapshot().writeLocked, false);
+});
+
+test("delivery read failure does not lock Run review or claim no delivery", async () => {
+  const f = fixture();
+  f.adapter.delivery = async () => {
+    throw new Error("delivery read failed");
+  };
+  await ready(f);
+  assert.equal(f.controller.getSnapshot().writeLocked, false);
+  assert.equal(f.controller.getSnapshot().delivery.status, "error");
+  assert.equal(f.controller.getSnapshot().delivery.data, undefined);
+});
+
+test("delivery refresh follows review without waiting for peripheral read", async () => {
+  const f = fixture();
+  const actions = await ready(f);
+  const delivery = deferred();
+  f.adapter.delivery = () => delivery.promise;
+  await actions.acceptAll();
+  await tick();
+  assert.equal(f.controller.getSnapshot().writeLocked, false);
+  assert.equal(f.controller.getSnapshot().delivery.status, "refreshing");
+  delivery.resolve({
+    campaignId: "c",
+    preparation: { runId: "a", status: "accepted" },
+  });
+  await tick();
+  assert.equal(
+    f.controller.getSnapshot().delivery.data.preparation.status,
+    "accepted",
+  );
+});
+
+test("late delivery response cannot overwrite another campaign", async () => {
+  const f = fixture();
+  const delayed = deferred();
+  f.adapter.delivery = (id) =>
+    id === "c" ? delayed.promise : Promise.resolve({ campaignId: id });
+  f.controller.select(scope);
+  await tick();
+  f.controller.select({ projectId: "p", campaignId: "other", runId: "b" });
+  await tick();
+  delayed.resolve({ campaignId: "c" });
+  await tick();
+  assert.equal(f.controller.getSnapshot().delivery.data.campaignId, "other");
 });

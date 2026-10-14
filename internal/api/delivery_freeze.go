@@ -91,7 +91,7 @@ func (s *Server) freezeDelivery(w http.ResponseWriter, r *http.Request) {
 		if reason == "" {
 			reason = previous
 		}
-		if reason == "" || reason == bulkAcceptanceBody {
+		if reason == "" || isBulkAcceptanceBody(reason) {
 			deliveryFailure(w, 400, "EXCEPTION_REASON_REQUIRED", "原始未通过项 "+checkID+" 必须有具体接受理由。")
 			return
 		}

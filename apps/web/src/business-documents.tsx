@@ -117,8 +117,9 @@ export function BusinessDocuments({
             <li key={document.id}>
               <div className="section-heading">
                 <p>
-                  说明 v{document.version} · <Status value={document.status} />{" "}
-                  · 尝试 {document.attempts} 次
+                  说明 v{document.version} ·{" "}
+                  <Status value={document.status} context="document" /> · 尝试{" "}
+                  {document.attempts} 次
                 </p>
                 {document.status === "succeeded" && (
                   <div className="actions">

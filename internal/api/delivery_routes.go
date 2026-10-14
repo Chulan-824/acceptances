@@ -3,6 +3,7 @@ package api
 import "net/http"
 
 func (s *Server) registerDeliveries(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/campaigns/{id}/delivery", s.campaignDelivery)
 	m.HandleFunc("GET /api/v1/runs/{id}/delivery-preparation", s.deliveryPreparation)
 	m.HandleFunc("POST /api/v1/runs/{id}/deliveries", s.freezeDelivery)
 	m.HandleFunc("GET /api/v1/deliveries", s.listDeliveries)

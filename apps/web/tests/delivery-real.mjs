@@ -267,14 +267,14 @@ export async function run(page, base, output, fixture) {
       "/runs/" +
       fixture.run.id,
   );
-  await page.getByRole("button", { name: "一键交付", exact: true }).click();
+  await page.getByRole("button", { name: "全部人工通过", exact: true }).click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "确认交付", exact: true })
+    .getByRole("button", { name: "确认全部人工通过", exact: true })
     .click();
-  await page.getByRole("button", { name: "冻结正式交付", exact: true }).click();
+  await page.getByRole("button", { name: "确认需求交付", exact: true }).click();
   const confirm = page.getByRole("button", {
-    name: "确认冻结交付",
+    name: "确认交付并保存快照",
     exact: true,
   });
   await confirm.waitFor();
@@ -360,9 +360,7 @@ export async function run(page, base, output, fixture) {
       "/runs/" +
       fixture.run.id,
   );
-  await page
-    .getByText("来源为当前展示的验证记录。", { exact: false })
-    .waitFor();
+  await page.getByText("已交付 v1", { exact: false }).waitFor();
   const nextReport = structuredClone(fixture.run.report);
   nextReport.scopeType = "partial";
   nextReport.evidence = [];
@@ -388,21 +386,24 @@ export async function run(page, base, output, fixture) {
       nextRun.id,
   );
   await page
-    .getByText("来源为历史验证记录，当前最新一轮另行审核。", { exact: false })
+    .getByText("当前有效交付 v1 来源于历史验证记录。", { exact: false })
     .waitFor();
   assert(
     (await api("/deliveries/" + deliveryID)).status === "valid",
     "New pending Run invalidated prior frozen version",
   );
   assert(
-    !(await page
-      .getByRole("button", { name: "冻结正式交付", exact: true })
-      .isEnabled()),
-    "New partial pending Run can freeze",
+    (await page
+      .getByRole("button", { name: "确认需求交付", exact: true })
+      .count()) === 0 &&
+      (await page
+        .getByRole("button", { name: "查看交付准备", exact: true })
+        .isEnabled()),
+    "Pending partial Run must keep preparation accessible without granting confirmation",
   );
   await record("new-run-keeps-frozen-version");
   await page
-    .getByRole("button", { name: "查看冻结版本与业务说明", exact: true })
+    .getByRole("button", { name: "查看交付与业务说明", exact: true })
     .click();
   await page.getByRole("button", { name: "预览 v2", exact: true }).waitFor();
   await api("/runs/" + fixture.run.id + "/reviews", "POST", {
@@ -438,7 +439,7 @@ export async function run(page, base, output, fixture) {
     "Archive lost source facts",
   );
   await record("deleted-source-retention");
-  await page.getByRole("button", { name: "交付归档", exact: true }).click();
+  await page.getByRole("button", { name: "交付版本", exact: true }).click();
   await page
     .getByRole("button", { name: "查看交付与业务说明", exact: true })
     .first()

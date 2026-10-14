@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -63,10 +64,18 @@ func (s *Server) listDeliveries(w http.ResponseWriter, r *http.Request) {
 			args = append(args, value)
 		}
 	}
-	rows, err := s.db.QueryContext(r.Context(), "SELECT id,version,status,created_at,project_id,campaign_id,source_run_id,successor_id,payload FROM delivery_snapshots WHERE "+where+" ORDER BY created_at DESC,rowid DESC", args...)
+	items, err := s.deliverySummaries(r.Context(), where, args...)
 	if err != nil {
 		fail(w, 500, "READ_FAILED")
 		return
+	}
+	respond(w, 200, map[string]any{"items": items})
+}
+
+func (s *Server) deliverySummaries(ctx context.Context, where string, args ...any) ([]DeliverySummary, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT id,version,status,created_at,project_id,campaign_id,source_run_id,successor_id,payload FROM delivery_snapshots WHERE "+where+" ORDER BY created_at DESC,rowid DESC", args...)
+	if err != nil {
+		return nil, err
 	}
 	defer rows.Close()
 	items := []DeliverySummary{}
@@ -74,25 +83,19 @@ func (s *Server) listDeliveries(w http.ResponseWriter, r *http.Request) {
 		var item DeliverySummary
 		var raw string
 		if err = rows.Scan(&item.ID, &item.Version, &item.Status, &item.CreatedAt, &item.ProjectID, &item.CampaignID, &item.RunID, &item.SuccessorID, &raw); err != nil {
-			fail(w, 500, "READ_FAILED")
-			return
+			return nil, err
 		}
 		var names struct {
 			Project  Project  `json:"project"`
 			Campaign Campaign `json:"campaign"`
 		}
 		if err = json.Unmarshal([]byte(raw), &names); err != nil {
-			fail(w, 500, "READ_FAILED")
-			return
+			return nil, err
 		}
 		item.ProjectName, item.CampaignTitle = names.Project.Name, names.Campaign.Title
 		items = append(items, item)
 	}
-	if err = rows.Err(); err != nil {
-		fail(w, 500, "READ_FAILED")
-		return
-	}
-	respond(w, 200, map[string]any{"items": items})
+	return items, rows.Err()
 }
 
 func (s *Server) deliveryEvidence(w http.ResponseWriter, r *http.Request) {

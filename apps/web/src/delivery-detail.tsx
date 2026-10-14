@@ -44,7 +44,7 @@ export function DeliveryDetail({
   if (!data)
     return (
       <main className="delivery-page">
-        <Button onClick={() => navigate("/deliveries")}>交付归档</Button>
+        <Button onClick={() => navigate("/deliveries")}>交付版本</Button>
         <Load error={error} />
       </main>
     );
@@ -61,7 +61,7 @@ export function DeliveryDetail({
             disabled={busy}
             onClick={() => navigate("/deliveries")}
           >
-            交付归档
+            交付版本
           </Button>
           <Button
             variant="outline"

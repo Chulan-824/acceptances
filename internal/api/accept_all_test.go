@@ -44,7 +44,7 @@ func TestAcceptAllPreservesHistoryAndOnlyAcceptsRemainingItems(t *testing.T) {
 			continue
 		}
 		entry := history[i+2].(map[string]any)
-		if entry["checkId"] != current["checkId"] || entry["id"] != current["lastReviewId"] || entry["legacy"] != false || entry["body"] != "一键交付：人工确认本轮全部检查项通过。" {
+		if entry["checkId"] != current["checkId"] || entry["id"] != current["lastReviewId"] || entry["legacy"] != false || entry["body"] != "批量人工通过：人工确认本轮全部检查项通过。" {
 			t.Fatal(entry, current)
 		}
 	}

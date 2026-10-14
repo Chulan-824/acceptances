@@ -26,9 +26,9 @@ import { HomeCreate } from "./home-create";
 
 const filters = [
   { value: "all", label: "全部", icon: Layers },
-  { value: "pending", label: "待审", icon: Clock3 },
-  { value: "accepted", label: "已通过", icon: CircleCheck },
-  { value: "rejected", label: "不通过", icon: CircleX },
+  { value: "pending", label: "整体待评审", icon: Clock3 },
+  { value: "accepted", label: "完整范围已验收", icon: CircleCheck },
+  { value: "rejected", label: "最新一轮人工不通过", icon: CircleX },
 ] as const;
 const resultLabels = {
   passed: "通过",
@@ -372,7 +372,7 @@ function DeliveryCard({
       <div className="home-delivery-top">
         <div className="home-delivery-state">
           <span>需求</span>
-          <Status value={item.status} />
+          <Status value={item.status} context="campaign" />
           <span className="home-project-tag">{item.projectName}</span>
         </div>
         {run && (
@@ -396,7 +396,7 @@ function DeliveryCard({
         <>
           <div className="home-run-meta">
             <span>最新验证</span>
-            <Status value={run.status} />
+            <Status value={run.status} context="run" />
             <span>{scopeLabels[run.scopeType]}</span>
             <time dateTime={run.verifiedAt}>
               {new Date(run.verifiedAt).toLocaleString("zh-CN", {

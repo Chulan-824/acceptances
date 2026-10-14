@@ -239,6 +239,34 @@ export async function run(page, base, scenario = "B02") {
       peripheralStarted.resolve();
       await peripheralGate.promise;
     }
+    if (endpoint === `/campaigns/${campaign.id}/delivery`) {
+      const latest = runs.find(
+        (item) => item.id === activeCampaign.latestRunId,
+      );
+      return route.fulfill({
+        json: {
+          campaignId: campaign.id,
+          preparation: latest
+            ? {
+                runId: latest.id,
+                status: latest.status,
+                scopeType: latest.report.scopeType,
+                reviewCounts: latest.reviewCounts,
+                eligible: false,
+                issues: [
+                  {
+                    code: "DELIVERY_MATERIALS_INVALID",
+                    message: "合成测试未准备交付材料",
+                  },
+                ],
+              }
+            : null,
+          currentDelivery: null,
+          latestDelivery: null,
+          latestDocument: null,
+        },
+      });
+    }
     if (endpoint === "/runs/first/delete-preview")
       return route.fulfill({
         json: { projects: 0, campaigns: 0, runs: 1, evidence: 0, reviews: 0 },
@@ -485,7 +513,9 @@ export async function run(page, base, scenario = "B02") {
         .endsWith(scenario.endsWith("default") ? campaignPath : "/runs/first"),
     );
     assert.equal(
-      await page.getByRole("button", { name: "一键交付", exact: true }).count(),
+      await page
+        .getByRole("button", { name: "全部人工通过", exact: true })
+        .count(),
       0,
     );
     await page.getByRole("button", { name: "返回需求", exact: true }).click();
@@ -502,16 +532,20 @@ export async function run(page, base, scenario = "B02") {
   await two.getByRole("textbox").fill("另一项保留草稿");
   if (scenario === "B14") {
     await page.getByRole("searchbox", { name: "搜索检查项" }).fill("one");
-    await page.getByRole("button", { name: "一键交付", exact: true }).click();
+    await page
+      .getByRole("button", { name: "全部人工通过", exact: true })
+      .click();
     const dialog = page.getByRole("dialog");
     await dialog.getByText("本轮共 2 项", { exact: false }).waitFor();
     await dialog.getByText("two · two", { exact: false }).first().waitFor();
     await dialog
       .getByText("以下项目原始验证未通过。", { exact: false })
       .waitFor();
-    await dialog.getByRole("button", { name: "确认交付", exact: true }).click();
+    await dialog
+      .getByRole("button", { name: "确认全部人工通过", exact: true })
+      .click();
     await page
-      .getByRole("button", { name: "本轮已交付", exact: true })
+      .getByRole("button", { name: "本轮已验收", exact: true })
       .waitFor();
     assert.equal(writes.length, 1);
     assert.equal(writes[0].endpoint, "/runs/first/accept-all");
@@ -591,7 +625,7 @@ export async function run(page, base, scenario = "B02") {
     );
     assert.equal(
       await page
-        .getByRole("button", { name: "一键交付", exact: true })
+        .getByRole("button", { name: "全部人工通过", exact: true })
         .isDisabled(),
       true,
     );
@@ -618,7 +652,7 @@ export async function run(page, base, scenario = "B02") {
     await peripheralStarted.promise;
     assert.equal(
       await page
-        .getByRole("button", { name: "一键交付", exact: true })
+        .getByRole("button", { name: "全部人工通过", exact: true })
         .isDisabled(),
       true,
     );
@@ -630,7 +664,7 @@ export async function run(page, base, scenario = "B02") {
     );
     assert.equal(
       await page
-        .getByRole("button", { name: "一键交付", exact: true })
+        .getByRole("button", { name: "全部人工通过", exact: true })
         .isDisabled(),
       false,
     );

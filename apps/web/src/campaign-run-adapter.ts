@@ -9,6 +9,7 @@ export const campaignRunAdapter: CampaignRunAdapter = {
   campaigns: (projectId) =>
     request(`/projects/${encodeURIComponent(projectId)}/campaigns`),
   campaign: (campaignId) => request(campaignPath(campaignId)),
+  delivery: (campaignId) => request(`${campaignPath(campaignId)}/delivery`),
   runs: (campaignId) => request(`${campaignPath(campaignId)}/runs`),
   run: (runId) => request(runPath(runId)),
   review: (runId, input) => request(`${runPath(runId)}/reviews`, "POST", input),

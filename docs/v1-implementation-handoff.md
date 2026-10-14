@@ -1,6 +1,6 @@
 # 本地报告归档与逐项评审实施交接
 
-本地归档基线见 `.scratch/local-simplification/spec.md` 与 [ADR-0001](adr/0001-local-report-archive.md)，逐项评审以 `.scratch/per-check-human-review/spec.md` 和 [ADR-0002](adr/0002-per-check-human-review.md) 为准，一键交付的批量例外见 [ADR-0003](adr/0003-bulk-human-acceptance.md)。本文件描述可执行验收步骤；实际通过、失败、阻塞和未运行结果记录在对应工单，不能把本文当通过证据。
+本地归档基线见 `.scratch/local-simplification/spec.md` 与 [ADR-0001](adr/0001-local-report-archive.md)，逐项评审以 `.scratch/per-check-human-review/spec.md` 和 [ADR-0002](adr/0002-per-check-human-review.md) 为准，批量人工通过的批量例外见 [ADR-0003](adr/0003-bulk-human-acceptance.md)。本文件描述可执行验收步骤；实际通过、失败、阻塞和未运行结果记录在对应工单，不能把本文当通过证据。
 
 2026-10-11 逐项评审已完成实现、隔离真实 API/浏览器验证和保留数据的日常升级，具体证据见[验证报告](../artifacts/per-check-human-review/verification/REPORT.md)。日常旧报告的检查项仍待用户逐项评审。
 
@@ -45,7 +45,7 @@ Go HTTP 集成测试覆盖隔离 SQLite 与附件目录中的失败边界。原�
 | 不通过、评论、普通通过、撤回     | 不通过与评论必须非空，普通通过和撤回理由可选                                  |
 | 已通过项新增评论                 | 评论追加到历史，当前人工状态不变                                              |
 | 改判及撤回                       | 历史保留、当前状态和整轮计数立即重算；相同时间戳下按保存顺序取判断            |
-| 逐项接口不带检查项的改判、未知项 | API 拒绝；批量确认使用独立的一键交付接口                                      |
+| 逐项接口不带检查项的改判、未知项 | API 拒绝；批量确认使用独立的批量人工通过接口                                  |
 | 作废 Run                         | 原结果、历史及原因保留，判断与撤回被拒绝，评论可保存                          |
 | 最新局部或范围未知 Run 全部通过  | Run 通过，Campaign 仍待审                                                     |
 | 历史 Run 改判、新 Run 创建       | 旧轮改判不影响最新 Campaign，新轮全部待审                                     |
@@ -58,7 +58,7 @@ Go HTTP 集成测试覆盖隔离 SQLite 与附件目录中的失败边界。原�
 
 浏览器记录理由提示、待审/通过/不通过数量、逐项历史、评论与改判、来源响应导航及窄屏下的可用性。真实 API 单独检查门禁和响应数据；只点击页面不能证明非法请求会被拒绝。
 
-## 一键交付验收矩阵
+## 批量人工通过验收矩阵
 
 使用专用服务与数据目录验证，不替日常报告作人工判断。
 

@@ -407,7 +407,7 @@ function Landing() {
                 执行事实与人工裁决解耦 (Dual-Tier)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
-                客观执行事实忠实归档，不替用户预设接受决定；支持逐项人工审阅与整轮一键交付，权属清晰，形成严密复验闭环。
+                客观执行事实忠实归档，不替用户预设接受决定；支持逐项人工审阅与整轮全部人工通过，权属清晰，形成严密复验闭环。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
                 ✓ 客观检验与主观判断权属分明
@@ -480,7 +480,7 @@ function Landing() {
               </h4>
               <p className="text-xs text-muted leading-relaxed">
                 用户在 Web
-                逐项评审或确认本轮一键交付，决定与评论保存到服务端。需要复验时，在业务聊天中授权
+                逐项评审或确认本轮全部人工通过，决定与评论保存到服务端。需要复验时，在业务聊天中授权
                 Agent 读取反馈、处理问题，并在同一需求下提交新 Run。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">

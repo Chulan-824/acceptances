@@ -41,7 +41,13 @@ export function useResource<T>(path: string, revision = 0, retainData = false) {
     ? state
     : {};
 }
-export function Status({ value }: { value: string }) {
+export function Status({
+  value,
+  context,
+}: {
+  value: string;
+  context?: "run" | "campaign" | "document";
+}) {
   const labels: Record<string, string> = {
     pending: "待审",
     accepted: "通过",
@@ -59,7 +65,25 @@ export function Status({ value }: { value: string }) {
     generating: "生成中",
     succeeded: "生成成功",
   };
-  return <Badge className={`badge ${value}`}>{labels[value] || value}</Badge>;
+  const contextual: Record<string, Record<string, string>> = {
+    run: {
+      pending: "本轮待评审",
+      accepted: "本轮已验收",
+      rejected: "本轮人工不通过",
+      void: "本轮已作废",
+    },
+    campaign: {
+      pending: "整体待评审",
+      accepted: "完整范围已验收",
+      rejected: "最新一轮人工不通过",
+    },
+    document: { generating: "生成中", succeeded: "已生成", failed: "生成失败" },
+  };
+  return (
+    <Badge className={`badge ${value}`}>
+      {(context && contextual[context]?.[value]) || labels[value] || value}
+    </Badge>
+  );
 }
 export function Load({ error }: { error?: string }) {
   return error ? (
@@ -179,7 +203,7 @@ export function DeleteButton({
                   <span className="block">
                     保留 {preview.retainedDeliveries} 份交付快照及{" "}
                     {preview.retainedDocuments ?? 0} 份业务说明。
-                    对应交付将失效，仍可从交付归档查看历史及复制证据。
+                    对应交付将失效，仍可从交付版本查看历史及复制证据。
                   </span>
                 )}
               </AlertDialogDescription>

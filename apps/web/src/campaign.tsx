@@ -6,6 +6,7 @@ import { Status, Load, DeleteButton } from "./client";
 import { Alert } from "./components/ui/alert";
 import { useCampaignRun } from "./campaign-run";
 import { Run } from "./run";
+import { CampaignDelivery } from "./campaign-delivery";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 
 export function Campaign({
@@ -75,13 +76,15 @@ export function Campaign({
                 </ActionMenu>
               </div>
               <div className="campaign-status-line">
-                <Status value={campaign.data.status} />
+                <span>需求评审</span>
+                <Status value={campaign.data.status} context="campaign" />
                 <span className="muted">每轮独立保存与评审</span>
               </div>
               <p className="prose">
                 {campaign.data.description || "暂无需求说明。"}
               </p>
             </section>
+            <CampaignDelivery navigate={navigate} />
             {campaign.error && (
               <Alert role="alert">
                 需求状态刷新失败：{campaign.error}
@@ -151,7 +154,7 @@ export function Campaign({
                   {run.id === campaign.data?.latestRunId && (
                     <span className="muted">最新</span>
                   )}
-                  <Status value={run.status} />
+                  <Status value={run.status} context="run" />
                   <time dateTime={run.report.verifiedAt}>
                     {new Date(run.report.verifiedAt).toLocaleString("zh-CN", {
                       month: "2-digit",

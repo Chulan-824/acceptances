@@ -19,9 +19,9 @@ import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 import "./workbench.css";
 const statuses = [
   { value: "all", label: "全部" },
-  { value: "pending", label: "待审" },
-  { value: "accepted", label: "通过" },
-  { value: "rejected", label: "不通过" },
+  { value: "pending", label: "整体待评审" },
+  { value: "accepted", label: "完整范围已验收" },
+  { value: "rejected", label: "最新一轮人工不通过" },
 ];
 export function Project({
   id,
@@ -185,7 +185,7 @@ export function Project({
                 onClick={() => navigate(`${base}/campaigns/${campaign.id}`)}
               >
                 <span className={`campaign-state ${campaign.status}`}>
-                  <Status value={campaign.status} />
+                  <Status value={campaign.status} context="campaign" />
                 </span>
                 <strong>{campaign.title}</strong>
                 <time dateTime={campaign.createdAt}>
