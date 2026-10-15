@@ -4,8 +4,21 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @import "../theme.css";
 @import "../ui.css";
+@import "../reui.css";
 
 @layer components {
+  html {
+    scroll-behavior: smooth;
+  }
+  section[id] {
+    scroll-margin-top: 80px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
   .landing-lightbox {
     @apply w-[min(1024px,calc(100%-32px))] max-w-none max-h-[90dvh] bg-transparent border-0 p-0 text-brand-fg shadow-none;
   }

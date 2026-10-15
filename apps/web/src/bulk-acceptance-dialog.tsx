@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import type { Run as RunData } from "@acceptances/api-client";
-import { Alert } from "./components/ui/alert";
+import { Alert } from "./components/reui/alert";
 import { Button } from "./components/ui/button";
 import {
   Dialog,

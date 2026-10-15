@@ -1,5 +1,7 @@
+import { EmptyState } from "./components/reui/empty-state";
+import { Frame, FrameHeader } from "./components/reui/frame";
 import type { WriteResult } from "./campaign-run-controller";
-import { Alert } from "./components/ui/alert";
+import { Alert } from "./components/reui/alert";
 import { Disclosure } from "./components/disclosure";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
@@ -16,7 +18,8 @@ import type {
 import { Status } from "./client";
 import { Evidence } from "./evidence";
 import { Icon } from "./workspace-controls";
-import { ReviewForm, ReviewHistory } from "./review";
+import { Button } from "./components/ui/button";
+import { ReviewForm, ReviewHistory, type ReviewDraft } from "./review";
 
 const statuses = [
   { value: "all", label: "全部" },
@@ -32,6 +35,8 @@ export function Checklist({
   onReview,
   query,
   status,
+  humanStatus,
+  onHumanStatusChange,
   onQueryChange,
   onStatusChange,
 }: {
@@ -40,9 +45,12 @@ export function Checklist({
   onReview: (input: ReviewInput) => Promise<WriteResult>;
   query: string;
   status: string;
+  humanStatus: string;
+  onHumanStatusChange: (value: string) => void;
   onQueryChange: (value: string) => void;
   onStatusChange: (value: string) => void;
 }) {
+  const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
   const report = run.report;
   const evidence = new Map(report.evidence?.map((item) => [item.path, item]));
   const humanStates = new Map(
@@ -59,76 +67,133 @@ export function Checklist({
   const checks = report.checks.filter(
     (check) =>
       (status === "all" || check.status === status) &&
+      (humanStatus === "all" ||
+        (humanStates.get(check.id) || "pending") === humanStatus) &&
       [check.id, check.title, check.expected, check.actual].some((text) =>
         text.toLocaleLowerCase().includes(search),
       ),
   );
   return (
-    <section aria-labelledby="checks-title">
-      <div className="section-heading checklist-heading">
-        <h2 id="checks-title">验收检查清单</h2>
-        <div className="checklist-tools">
-          <Label className="search-field">
-            <span className="sr-only">搜索检查项</span>
-            <Icon name="search" />
-            <Input
-              type="search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="搜索检查项"
-            />
-          </Label>
-          <Label>
-            <span className="sr-only">原始验证结果筛选</span>
-            <ChoiceSelect
-              aria-label="原始验证结果筛选"
-              value={status}
-              onValueChange={(value) => onStatusChange(value)}
-            >
-              {statuses.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}{" "}
-                  {item.value === "all"
-                    ? report.checks.length
-                    : report.checks.filter(
-                        (check) => check.status === item.value,
-                      ).length}
-                </SelectItem>
-              ))}
-            </ChoiceSelect>
-          </Label>
-        </div>
-      </div>
-      <p className="muted" role="status">
-        显示 {checks.length} / {report.checks.length} 项
-      </p>
-      {checks.map((check) => (
-        <CheckItem
-          key={check.id}
-          number={report.checks.indexOf(check) + 1}
-          check={check}
-          run={run.id}
-          evidence={evidence}
-          humanStatus={humanStates.get(check.id) || "pending"}
-          reviews={reviews.get(check.id) || []}
-          responses={run.feedbackResponses}
-          isVoid={run.status === "void"}
-          disabled={disabled}
-          onReview={onReview}
-        />
-      ))}
-      {!checks.length && (
-        <p>
-          {report.checks.length
-            ? "没有匹配的检查项，请调整搜索或状态筛选。"
-            : "本次报告没有检查项。"}
+    <Frame asChild variant="ghost" spacing="none" className="bg-surface">
+      <section aria-labelledby="checks-title">
+        <FrameHeader asChild>
+          <div className="section-heading checklist-heading">
+            <h2 id="checks-title">验收检查清单</h2>
+            <div className="checklist-tools">
+              <Label className="search-field">
+                <span className="sr-only">搜索检查项</span>
+                <Icon name="search" />
+                <Input
+                  type="search"
+                  value={query}
+                  onChange={(event) => onQueryChange(event.target.value)}
+                  placeholder="搜索检查项"
+                />
+              </Label>
+              <Label>
+                <span className="sr-only">原始验证结果筛选</span>
+                <ChoiceSelect
+                  aria-label="原始验证结果筛选"
+                  value={status}
+                  onValueChange={(value) => onStatusChange(value)}
+                >
+                  {statuses.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}{" "}
+                      {item.value === "all"
+                        ? report.checks.length
+                        : report.checks.filter(
+                            (check) => check.status === item.value,
+                          ).length}
+                    </SelectItem>
+                  ))}
+                </ChoiceSelect>
+              </Label>
+              <Label>
+                <span className="sr-only">人工评审状态筛选</span>
+                <ChoiceSelect
+                  aria-label="人工评审状态筛选"
+                  value={humanStatus}
+                  onValueChange={onHumanStatusChange}
+                >
+                  {[
+                    ["all", "全部人工状态"],
+                    ["pending", "待审"],
+                    ["accepted", "人工通过"],
+                    ["rejected", "人工不通过"],
+                  ].map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}{" "}
+                      {value === "all"
+                        ? report.checks.length
+                        : report.checks.filter(
+                            (check) =>
+                              (humanStates.get(check.id) || "pending") ===
+                              value,
+                          ).length}
+                    </SelectItem>
+                  ))}
+                </ChoiceSelect>
+              </Label>
+              {(query || status !== "all" || humanStatus !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onQueryChange("");
+                    onStatusChange("all");
+                    onHumanStatusChange("all");
+                  }}
+                >
+                  清除筛选
+                </Button>
+              )}
+            </div>
+          </div>
+        </FrameHeader>
+        <p className="muted" role="status">
+          显示 {checks.length} / {report.checks.length} 项
         </p>
-      )}
-    </section>
+        {checks.map((check) => (
+          <CheckItem
+            key={check.id}
+            draft={drafts[check.id]}
+            onDraftChange={(draft) =>
+              setDrafts((values) => ({ ...values, [check.id]: draft }))
+            }
+            number={report.checks.indexOf(check) + 1}
+            check={check}
+            run={run.id}
+            evidence={evidence}
+            humanStatus={humanStates.get(check.id) || "pending"}
+            reviews={reviews.get(check.id) || []}
+            responses={run.feedbackResponses}
+            isVoid={run.status === "void"}
+            disabled={disabled}
+            onReview={onReview}
+          />
+        ))}
+        {!checks.length && (
+          <EmptyState
+            compact
+            title={
+              report.checks.length ? "没有匹配的检查项" : "本次报告没有检查项"
+            }
+            description={
+              report.checks.length
+                ? "请调整关键词、原始验证结果或人工状态。"
+                : "报告保存的原始内容中没有检查项。"
+            }
+          />
+        )}
+      </section>
+    </Frame>
   );
 }
 
 function CheckItem({
+  draft,
+  onDraftChange,
   number,
   check,
   run,
@@ -140,6 +205,8 @@ function CheckItem({
   disabled,
   onReview,
 }: {
+  draft?: ReviewDraft;
+  onDraftChange: (draft: ReviewDraft) => void;
   number: number;
   check: Report["checks"][number];
   run: string;
@@ -202,6 +269,8 @@ function CheckItem({
             <p className="muted">此检查项未关联附件。</p>
           ))}
         <ReviewForm
+          draft={draft}
+          onDraftChange={onDraftChange}
           check={check}
           isVoid={isVoid}
           disabled={disabled}

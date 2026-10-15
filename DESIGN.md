@@ -414,3 +414,9 @@ Landing Page 入口为 `src/landing/main.tsx`。截图切换使用 Tabs，截图
 ## 排版字阶对齐与首页规范登记
 
 2026-10-13 对齐 apps/web 全站非标 11px 字阶至规范的 12px（`caption` / `mono` / `text-xs`），消除视觉跳变。同时将首页 28px（`home-title`，字重 600、行高 1.4）、18px（`project-title`，字重 600、行高 1.5）与 15px（`home-body`，字重 400、行高 1.7）等首页字阶登记回 DESIGN.md frontmatter，并在 `components.project-card` 中关联 `project-title`。
+
+## ReUI 组合组件接入
+
+2026-10-15，首页、项目与需求工作台、当前和历史 Run、证据、交付列表、冻结确认、交付详情与业务说明、Landing 均接入 ReUI。基础控件继续使用 shadcn/ui，主题令牌保持原值。Frame 的 Slot 模式只保留宿主语义元素，组合布局与主题样式仍实际生效。工作台采用明确的 ghost/flat 变体保留平面分区与 1120px 最小宽度；普通面板保留 12px 圆角和原有轻阴影。
+
+检查清单新增人工状态筛选与当前 Run 内的评审草稿保留；冻结确认采用四步 Stepper，保留明确勾选、后端准入和原请求重试；历史记录采用 Timeline，Landing 由 Scrollspy 更新分区高亮，浏览器原生锚点负责导航与历史，CSS 处理固定导航偏移和减弱动画。来源、适配、覆盖与验证边界见 [ReUI 页面组合层](docs/reui.md)。

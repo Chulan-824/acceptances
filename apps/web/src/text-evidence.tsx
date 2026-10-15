@@ -1,4 +1,4 @@
-import { Alert } from "./components/ui/alert";
+import { Alert } from "./components/reui/alert";
 import { useEffect, useState } from "react";
 
 const previewLimit = 64 * 1024;

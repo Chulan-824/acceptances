@@ -1,11 +1,18 @@
+import {
+  Timeline,
+  TimelineItem,
+  TimelineDate,
+  TimelineIndicator,
+  TimelineSeparator,
+} from "./components/reui/timeline";
 import type { WriteResult } from "./campaign-run-controller";
-import { Card } from "./components/ui/card";
-import { Alert } from "./components/ui/alert";
+import { FramePanel } from "./components/reui/frame";
+import { Alert } from "./components/reui/alert";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
-import { Label } from "./components/ui/label";
-import { Badge } from "./components/ui/badge";
-import { useState } from "react";
+import { FormField } from "./components/reui/form-field";
+import { Badge } from "./components/reui/badge";
+import { useId, useState } from "react";
 import type {
   FeedbackResponse,
   Report,
@@ -36,19 +43,33 @@ export function ReviewCounts({ counts }: { counts: ReviewCountsData }) {
   );
 }
 
+export type ReviewDraft = { body: string; editing?: Review["kind"] };
+
 export function ReviewForm({
   check,
   isVoid,
   disabled = false,
   onSubmit,
+  draft,
+  onDraftChange,
 }: {
+  draft?: ReviewDraft;
+  onDraftChange?: (draft: ReviewDraft) => void;
   check?: Report["checks"][number];
   isVoid: boolean;
   disabled?: boolean;
   onSubmit: (input: ReviewInput) => Promise<WriteResult>;
 }) {
-  const [body, setBody] = useState("");
-  const [editing, setEditing] = useState<Review["kind"]>();
+  const commentId = useId();
+  const [localDraft, setLocalDraft] = useState<ReviewDraft>({ body: "" });
+  const { body, editing } = draft ?? localDraft;
+  function changeDraft(value: ReviewDraft) {
+    setLocalDraft(value);
+    onDraftChange?.(value);
+  }
+  const setBody = (body: string) => changeDraft({ body, editing });
+  const setEditing = (editing: Review["kind"] | undefined) =>
+    changeDraft({ body, editing });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const hasReason = Boolean(body.trim());
@@ -64,8 +85,7 @@ export function ReviewForm({
         body: body.trim(),
       });
       if (result.kind === "committed") {
-        setBody("");
-        setEditing(undefined);
+        changeDraft({ body: "" });
       } else
         setError(
           result.kind === "unknown"
@@ -90,7 +110,7 @@ export function ReviewForm({
         </Alert>
       )}
       {(!check || editing) && (
-        <Card className="review-editor">
+        <FramePanel variant="flat" className="review-editor">
           <p className="muted">
             {check
               ? editing === "rejected"
@@ -100,9 +120,12 @@ export function ReviewForm({
                   : "评论不改变人工判断。"
               : "整轮评论不改变人工状态。没有对应检查项的新问题可在这里说明。"}
           </p>
-          <Label>
-            {check ? `评审理由或评论 · ${check.title}` : "整轮评论内容"}
+          <FormField
+            id={commentId}
+            label={check ? `评审理由或评论 · ${check.title}` : "整轮评论内容"}
+          >
             <Textarea
+              id={commentId}
               value={body}
               disabled={locked}
               onChange={(event) => setBody(event.target.value)}
@@ -110,7 +133,7 @@ export function ReviewForm({
                 check ? "填写判断依据或检查项问题" : "对本轮验证说点什么…"
               }
             />
-          </Label>
+          </FormField>
           <div className="actions">
             {check && (
               <Button
@@ -140,7 +163,7 @@ export function ReviewForm({
                     : "保存检查项评论"}
             </Button>
           </div>
-        </Card>
+        </FramePanel>
       )}
       {check && !editing && (
         <div className="actions check-review-actions">
@@ -200,52 +223,57 @@ export function ReviewHistory({
   responses: FeedbackResponse[];
 }) {
   return reviews.length ? (
-    reviews.map((review) => (
-      <article
-        className="check feedback-entry"
-        id={`feedback-${review.id}`}
-        key={review.id}
-      >
-        {review.legacy ? (
-          <Badge className="badge">
-            旧规则整轮{review.kind === "accepted" ? "接受" : "拒绝"}
-          </Badge>
-        ) : review.kind === "pending" ? (
-          <Badge className="badge pending">撤回到待审</Badge>
-        ) : (
-          <Status value={review.kind} />
-        )}
-        <time dateTime={review.createdAt}>
-          {new Date(review.createdAt).toLocaleString()}
-        </time>
-        {review.body && <p className="prose">{review.body}</p>}
-        {review.legacy && (
-          <p className="muted">历史决定不计入当前逐项人工评审。</p>
-        )}
-        {responses
-          .filter((response) => response.reviewId === review.id)
-          .map((response) => (
-            <div className="feedback-response" key={response.runId}>
-              <RunLink
-                id={response.runId}
-                target={
-                  response.checkIds.length
-                    ? `check-${response.checkIds[0]}`
-                    : "follow-up"
-                }
-              >
-                查看后续复验 {response.runId.slice(0, 8)}
-              </RunLink>
-              <p className="prose">{response.explanation}</p>
-              <p className="muted">
-                {response.checkIds.length
-                  ? `关联本次检查项：${response.checkIds.join("、")}`
-                  : "没有关联检查项，处理原因见说明。"}
-              </p>
-            </div>
-          ))}
-      </article>
-    ))
+    <Timeline value={0} className="review-timeline">
+      {reviews.map((review, index) => (
+        <TimelineItem
+          step={index + 1}
+          className="check feedback-entry"
+          id={`feedback-${review.id}`}
+          key={review.id}
+        >
+          <TimelineIndicator />
+          <TimelineSeparator />
+          {review.legacy ? (
+            <Badge className="badge">
+              旧规则整轮{review.kind === "accepted" ? "接受" : "拒绝"}
+            </Badge>
+          ) : review.kind === "pending" ? (
+            <Badge className="badge pending">撤回到待审</Badge>
+          ) : (
+            <Status value={review.kind} />
+          )}
+          <TimelineDate dateTime={review.createdAt}>
+            {new Date(review.createdAt).toLocaleString()}
+          </TimelineDate>
+          {review.body && <p className="prose">{review.body}</p>}
+          {review.legacy && (
+            <p className="muted">历史决定不计入当前逐项人工评审。</p>
+          )}
+          {responses
+            .filter((response) => response.reviewId === review.id)
+            .map((response) => (
+              <div className="feedback-response" key={response.runId}>
+                <RunLink
+                  id={response.runId}
+                  target={
+                    response.checkIds.length
+                      ? `check-${response.checkIds[0]}`
+                      : "follow-up"
+                  }
+                >
+                  查看后续复验 {response.runId.slice(0, 8)}
+                </RunLink>
+                <p className="prose">{response.explanation}</p>
+                <p className="muted">
+                  {response.checkIds.length
+                    ? `关联本次检查项：${response.checkIds.join("、")}`
+                    : "没有关联检查项，处理原因见说明。"}
+                </p>
+              </div>
+            ))}
+        </TimelineItem>
+      ))}
+    </Timeline>
   ) : (
     <p className="muted">尚无人工反馈。</p>
   );

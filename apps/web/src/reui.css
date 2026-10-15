@@ -1,0 +1,258 @@
+/* ReUI compositions share Modern Slate tokens with the shadcn foundation. */
+@layer components {
+  /* Frame owns layout and passes panel/bar spacing to its composed children.
+     Slot changes only the element; every variant also applies with asChild. */
+  .reui-frame {
+    --frame-radius: var(--radius-lg);
+    --frame-gap: 3px;
+    --frame-px: 3px;
+    --frame-py: 3px;
+    --frame-panel-bg: var(--color-surface);
+    --frame-panel-border-color: var(--color-border);
+    --frame-panel-radius: calc(var(--frame-radius) - var(--frame-px) - 1px);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--frame-gap);
+    padding: var(--frame-py) var(--frame-px);
+    border-radius: var(--frame-radius);
+  }
+  .reui-frame-default,
+  .reui-frame-inverse {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-subtle);
+  }
+  .reui-frame-inverse {
+    --frame-panel-bg: var(--color-surface-subtle);
+    background: var(--color-surface);
+  }
+  .reui-frame-ghost {
+    --frame-px: 0px;
+    --frame-py: 0px;
+    --frame-gap: 0px;
+    --frame-panel-radius: var(--radius-lg);
+    border: 0;
+    background: transparent;
+  }
+  .reui-frame-spacing-none {
+    --frame-gap: 0px;
+    --frame-panel-px: 0px;
+    --frame-panel-py: 0px;
+    --frame-bar-py: 0px;
+  }
+  .reui-frame-spacing-xs {
+    --frame-panel-px: 8px;
+    --frame-panel-py: 8px;
+    --frame-bar-py: 2px;
+  }
+  .reui-frame-spacing-sm {
+    --frame-panel-px: 12px;
+    --frame-panel-py: 14px;
+    --frame-bar-py: 6px;
+  }
+  .reui-frame-spacing-default {
+    --frame-panel-px: 16px;
+    --frame-panel-py: 16px;
+    --frame-bar-py: 8px;
+  }
+  .reui-frame-spacing-lg {
+    --frame-panel-px: 20px;
+    --frame-panel-py: 20px;
+    --frame-bar-py: 10px;
+  }
+  .reui-panel {
+    position: relative;
+    min-width: 0;
+    padding: var(--frame-panel-py, 0px) var(--frame-panel-px, 0px);
+    border: 1px solid var(--frame-panel-border-color, var(--color-border));
+    border-radius: var(--frame-panel-radius, var(--radius-lg));
+    background: var(--frame-panel-bg, var(--color-surface));
+    background-clip: padding-box;
+    box-shadow: var(--shadow-subtle);
+  }
+  .reui-panel-flat,
+  .reui-panel-divider {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-surface);
+    box-shadow: none;
+  }
+  .reui-panel-divider {
+    padding-block: 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: transparent;
+  }
+  .reui-panel-outline,
+  .reui-panel-subtle {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+  .reui-panel-subtle {
+    background: var(--color-surface-subtle);
+  }
+  .reui-frame-header,
+  .reui-frame-footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--frame-bar-gap, 0px);
+    padding: var(--frame-bar-py, 0px) var(--frame-panel-px, 0px);
+  }
+  .reui-frame-footer {
+    --frame-bar-gap: 4px;
+  }
+  .reui-frame-stacked {
+    --frame-gap: 0px;
+  }
+  .reui-frame-stacked > [data-slot="frame-panel"] + [data-slot="frame-panel"] {
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+  .reui-frame-stacked
+    > [data-slot="frame-panel"]:has(+ [data-slot="frame-panel"]) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .reui-frame-dense {
+    --frame-px: 0px;
+    --frame-py: 0px;
+    --frame-gap: 0px;
+    --frame-panel-radius: var(--frame-radius);
+  }
+  .reui-frame-dense > [data-slot="frame-panel"] {
+    margin-inline: -1px;
+  }
+  .reui-frame-dense > [data-slot="frame-panel"]:last-child {
+    margin-bottom: -1px;
+  }
+
+  [data-slot="frame-panel-header"],
+  [data-slot="frame-panel-footer"] {
+    margin: 0;
+    min-width: 0;
+  }
+  [data-slot="frame-panel-header"].section-heading {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .home-toolbar[data-slot="frame-panel-header"],
+  .home-delivery-footer[data-slot="frame-panel-footer"] {
+    flex-direction: row;
+  }
+  .workspace-main [data-slot="frame-panel"]:is(section, .report-metrics) {
+    overflow: visible;
+  }
+  [data-slot="timeline-date"] {
+    margin-left: 0;
+  }
+  [data-slot="timeline-content"] {
+    color: var(--color-fg-secondary);
+    overflow-wrap: anywhere;
+  }
+  .run-timeline [data-slot="timeline-item"] {
+    margin-left: 16px;
+    padding-bottom: 8px;
+  }
+  .run-timeline [data-slot="timeline-indicator"],
+  .run-timeline [data-slot="timeline-separator"] {
+    left: -10px;
+  }
+  .run-timeline [data-slot="timeline-indicator"] {
+    top: 20px;
+    width: 8px;
+    height: 8px;
+    background: var(--color-surface);
+  }
+  .run-timeline [data-slot="timeline-separator"] {
+    top: 20px;
+  }
+  .review-timeline {
+    margin-top: 16px;
+  }
+  .review-timeline .feedback-entry {
+    padding-top: 0;
+    border: 0;
+  }
+  .review-timeline [data-slot="timeline-indicator"],
+  .delivery-events [data-slot="timeline-indicator"] {
+    background: var(--color-surface);
+  }
+  .delivery-events {
+    padding-top: 8px;
+  }
+  .evidence-file-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .evidence-file-name [data-slot="file-type"] {
+    flex: none;
+  }
+  .delivery-wizard {
+    margin: 24px 0;
+  }
+  .delivery-wizard [data-slot="frame-panel"] {
+    padding: 16px;
+  }
+  .delivery-wizard [data-slot="stepper-nav"] {
+    margin: 0;
+    padding: 16px 12px;
+    gap: 8px;
+  }
+  .delivery-wizard [data-slot="stepper-trigger"] {
+    padding: 6px;
+    border: 0;
+    background: transparent;
+    color: var(--color-fg);
+    font: inherit;
+  }
+  .delivery-wizard [data-slot="stepper-title"] {
+    margin: 0;
+    font-size: 13px;
+    text-align: left;
+    line-height: 1.5;
+  }
+  .delivery-wizard [data-slot="stepper-content"] {
+    outline: none;
+    scroll-margin-top: 24px;
+  }
+  .delivery-wizard [data-slot="stepper-content"]:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 6px;
+  }
+  .delivery-wizard .disclosure-trigger {
+    margin-top: 0;
+  }
+  .wizard-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+  }
+  .wizard-actions p {
+    margin: 0;
+  }
+  [data-slot="scrollspy"] a[data-active="true"] {
+    color: var(--color-fg);
+    text-decoration: underline;
+    text-underline-offset: 6px;
+  }
+  @media (max-width: 640px) {
+    .delivery-wizard [data-slot="stepper-title"] {
+      max-width: 4em;
+      font-size: 12px;
+    }
+    .delivery-wizard [data-slot="stepper-trigger"] {
+      flex-direction: column;
+    }
+    .delivery-wizard [data-slot="stepper-nav"] {
+      gap: 0;
+      padding-inline: 4px;
+    }
+  }
+}

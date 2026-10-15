@@ -1,7 +1,16 @@
+import {
+  Timeline,
+  TimelineItem,
+  TimelineDate,
+  TimelineContent,
+  TimelineIndicator,
+  TimelineSeparator,
+} from "./components/reui/timeline";
+import { FramePanel } from "./components/reui/frame";
 import { useState } from "react";
 import { request, type DeliverySnapshot } from "@acceptances/api-client";
 import { Load, message, Status, useResource } from "./client";
-import { Alert } from "./components/ui/alert";
+import { Alert } from "./components/reui/alert";
 import { Button } from "./components/ui/button";
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
@@ -182,16 +191,23 @@ export function DeliveryDetail({
           ))}
         </ul>
       </Disclosure>
-      <section>
-        <h2>交付效力记录</h2>
-        <ol>
-          {data.events.map((event) => (
-            <li key={event.id}>
-              {new Date(event.createdAt).toLocaleString()} · {event.reason}
-            </li>
-          ))}
-        </ol>
-      </section>
+      <FramePanel asChild variant="flat">
+        <section>
+          <h2>交付效力记录</h2>
+          <Timeline value={0} className="delivery-events">
+            {data.events.map((event, index) => (
+              <TimelineItem key={event.id} step={index + 1}>
+                <TimelineIndicator />
+                <TimelineSeparator />
+                <TimelineDate dateTime={event.createdAt}>
+                  {new Date(event.createdAt).toLocaleString()}
+                </TimelineDate>
+                <TimelineContent>{event.reason}</TimelineContent>
+              </TimelineItem>
+            ))}
+          </Timeline>
+        </section>
+      </FramePanel>
       {data.status === "valid" && (
         <Disclosure title={<>主动撤销交付</>}>
           <Label>

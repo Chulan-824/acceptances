@@ -1,6 +1,8 @@
+import { EmptyState } from "./components/reui/empty-state";
+import { Frame, FrameHeader, FramePanel } from "./components/reui/frame";
 import { WorkspacePanels } from "./components/workspace-panels";
 import type { ReactNode } from "react";
-import { Alert } from "./components/ui/alert";
+import { Alert } from "./components/reui/alert";
 import { DropdownMenuItem } from "./components/ui/dropdown-menu";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -198,11 +200,15 @@ export function Project({
             ))}
           </div>
           {!filtered.length && (
-            <p className="muted">
-              {items.length
-                ? "没有匹配的需求，请调整搜索或状态筛选。"
-                : "暂无需求。先在业务目录执行真实验证，再通过 CLI 提交报告与附件。"}
-            </p>
+            <EmptyState
+              compact
+              title={items.length ? "没有匹配的需求" : "暂无需求"}
+              description={
+                items.length
+                  ? "请调整搜索或状态筛选。"
+                  : "先在业务目录执行真实验证，再通过 CLI 提交报告与附件。"
+              }
+            />
           )}
         </>
       )}
@@ -238,34 +244,42 @@ export function Project({
         {!project.data ? (
           <Load error={project.error} />
         ) : (
-          <section>
-            <div className="section-heading">
-              <h1>{project.data.name}</h1>
-              <div className="actions">
-                <Button onClick={refresh}>刷新项目</Button>
-                <DeleteButton path={base} label="项目" onDeleted={onDeleted} />
-              </div>
-            </div>
-            <p className="prose">{project.data.description}</p>
-            <h2>关联代码来源</h2>
-            {!repositories.data ? (
-              <Load error={repositories.error} />
-            ) : repositories.data.items.length ? (
-              <ul>
-                {repositories.data.items.map((repository) => (
-                  <li key={repository.id}>
-                    <strong>{repository.name}</strong>{" "}
-                    <code>{repository.source}</code>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>
-                尚未关联。在业务目录调用 Acceptances
-                skill，选择本项目即可关联；同仓库的 worktree 复用关联。
-              </p>
-            )}
-          </section>
+          <Frame asChild variant="ghost" spacing="none" className="bg-surface">
+            <section>
+              <FrameHeader className="section-heading">
+                <h1>{project.data.name}</h1>
+                <div className="actions">
+                  <Button onClick={refresh}>刷新项目</Button>
+                  <DeleteButton
+                    path={base}
+                    label="项目"
+                    onDeleted={onDeleted}
+                  />
+                </div>
+              </FrameHeader>
+              <FramePanel variant="flat">
+                <p className="prose">{project.data.description}</p>
+                <h2>关联代码来源</h2>
+                {!repositories.data ? (
+                  <Load error={repositories.error} />
+                ) : repositories.data.items.length ? (
+                  <ul>
+                    {repositories.data.items.map((repository) => (
+                      <li key={repository.id}>
+                        <strong>{repository.name}</strong>{" "}
+                        <code>{repository.source}</code>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>
+                    尚未关联。在业务目录调用 Acceptances
+                    skill，选择本项目即可关联；同仓库的 worktree 复用关联。
+                  </p>
+                )}
+              </FramePanel>
+            </section>
+          </Frame>
         )}
       </main>,
       <aside className="workspace-history" aria-label="工作台说明">

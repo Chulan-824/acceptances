@@ -1,5 +1,5 @@
 import type { WriteResult } from "./campaign-run-controller";
-import { Alert } from "./components/ui/alert";
+import { Alert } from "./components/reui/alert";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -9,7 +9,7 @@ import {
 } from "./components/ui/alert-dialog";
 import { DropdownMenuItem } from "./components/ui/dropdown-menu";
 import { Button } from "./components/ui/button";
-import { Badge } from "./components/ui/badge";
+import { Badge } from "./components/reui/badge";
 import { useEffect, useRef, useState } from "react";
 import { request, type DeletePreview } from "@acceptances/api-client";
 export { request };

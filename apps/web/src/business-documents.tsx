@@ -1,3 +1,5 @@
+import { EmptyState } from "./components/reui/empty-state";
+import { Frame, FrameHeader, FramePanel } from "./components/reui/frame";
 import { useEffect, useRef, useState } from "react";
 import {
   request,
@@ -6,7 +8,7 @@ import {
   type DeliverySnapshot,
 } from "@acceptances/api-client";
 import { Load, message, Status, useResource } from "./client";
-import { Alert } from "./components/ui/alert";
+import { Alert } from "./components/reui/alert";
 import { Button } from "./components/ui/button";
 import {
   Dialog,
@@ -73,137 +75,153 @@ export function BusinessDocuments({
     }
   }
   return (
-    <section className="business-documents">
-      <div className="section-heading">
-        <h2>业务说明</h2>
-        <div className="actions">
-          <Button
-            disabled={busy || generating || delivery.status !== "valid"}
-            onClick={() => void generate()}
-          >
-            {busy
-              ? "正在生成…"
-              : data?.items.some((item) => item.status === "succeeded")
-                ? "生成新的说明版本"
-                : "生成业务说明"}
-          </Button>
-          <Button variant="outline" onClick={() => setRevision((r) => r + 1)}>
-            刷新说明状态
-          </Button>
-        </div>
-      </div>
-      <p className="muted">
-        根据冻结材料确定性生成，不调用 LLM。HTML
-        内嵌图片，可离线阅读。生成不修改验证记录或交付快照。
-      </p>
-      {delivery.status !== "valid" && (
-        <p>交付已非有效状态，停止新生成；已有说明仍可作为历史预览与下载。</p>
-      )}
-      {error && (
-        <Alert variant="destructive" role="alert">
-          {error}
-        </Alert>
-      )}
-      {loadError && (
-        <Alert variant="destructive" role="alert">
-          {loadError}
-        </Alert>
-      )}
-      {!data ? (
-        <Load error={loadError} />
-      ) : data.items.length ? (
-        <ul className="document-versions">
-          {data.items.map((document) => (
-            <li key={document.id}>
-              <div className="section-heading">
-                <p>
-                  说明 v{document.version} ·{" "}
-                  <Status value={document.status} context="document" /> · 尝试{" "}
-                  {document.attempts} 次
-                </p>
-                {document.status === "succeeded" && (
-                  <div className="actions">
-                    <Button
-                      variant="outline"
-                      onClick={(event) => {
-                        previewTrigger.current = event.currentTarget;
-                        setPreview(document);
-                      }}
-                    >
-                      预览 v{document.version}
-                    </Button>
-                    <a
-                      href={
-                        "/api/v1/documents/" +
-                        encodeURIComponent(document.id) +
-                        "/html?download=1"
-                      }
-                    >
-                      下载离线 HTML v{document.version}
-                    </a>
-                  </div>
-                )}
-                {document.status === "failed" && (
-                  <Button
-                    disabled={busy || generating || delivery.status !== "valid"}
-                    onClick={() => void generate(document)}
-                  >
-                    重试说明 v{document.version}
-                  </Button>
-                )}
-              </div>
-              {document.error && <p role="alert">{document.error}</p>}
-              {document.sha256 && (
-                <p className="muted">
-                  成品摘要：<code>{document.sha256}</code>
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>尚未生成业务说明。</p>
-      )}
-      <Dialog
-        open={Boolean(preview)}
-        onOpenChange={(open) => {
-          if (!open) setPreview(undefined);
-        }}
-      >
-        <DialogContent
-          className="business-preview"
-          showCloseButton={false}
-          onOpenAutoFocus={(event) => {
-            event.preventDefault();
-            previewClose.current?.focus();
-          }}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            previewTrigger.current?.focus();
-          }}
-        >
-          <div className="section-heading">
-            <DialogTitle>业务说明 v{preview?.version}</DialogTitle>
-            <Button ref={previewClose} onClick={() => setPreview(undefined)}>
-              关闭预览
+    <Frame asChild spacing="none">
+      <section className="business-documents bg-surface px-6">
+        <FrameHeader className="section-heading">
+          <h2>业务说明</h2>
+          <div className="actions">
+            <Button
+              disabled={busy || generating || delivery.status !== "valid"}
+              onClick={() => void generate()}
+            >
+              {busy
+                ? "正在生成…"
+                : data?.items.some((item) => item.status === "succeeded")
+                  ? "生成新的说明版本"
+                  : "生成业务说明"}
+            </Button>
+            <Button variant="outline" onClick={() => setRevision((r) => r + 1)}>
+              刷新说明状态
             </Button>
           </div>
-          <DialogDescription>
-            {delivery.status === "valid"
-              ? "本说明对应此交付的冻结版本。"
-              : "历史说明，关联交付当前已非有效状态。"}
-          </DialogDescription>
-          {preview && (
-            <iframe
-              title="业务说明预览"
-              sandbox=""
-              src={
-                "/api/v1/documents/" + encodeURIComponent(preview.id) + "/html"
-              }
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </section>
+        </FrameHeader>
+        <p className="muted">
+          根据冻结材料确定性生成，不调用 LLM。HTML
+          内嵌图片，可离线阅读。生成不修改验证记录或交付快照。
+        </p>
+        {delivery.status !== "valid" && (
+          <p>交付已非有效状态，停止新生成；已有说明仍可作为历史预览与下载。</p>
+        )}
+        {error && (
+          <Alert variant="destructive" role="alert">
+            {error}
+          </Alert>
+        )}
+        {loadError && (
+          <Alert variant="destructive" role="alert">
+            {loadError}
+          </Alert>
+        )}
+        {!data ? (
+          <Load error={loadError} />
+        ) : data.items.length ? (
+          <ul className="document-versions">
+            {data.items.map((document) => (
+              <FramePanel key={document.id} asChild variant="divider">
+                <li>
+                  <div className="section-heading">
+                    <p>
+                      说明 v{document.version} ·{" "}
+                      <Status value={document.status} context="document" /> ·
+                      尝试 {document.attempts} 次
+                    </p>
+                    {document.status === "succeeded" && (
+                      <div className="actions">
+                        <Button
+                          variant="outline"
+                          onClick={(event) => {
+                            previewTrigger.current = event.currentTarget;
+                            setPreview(document);
+                          }}
+                        >
+                          预览 v{document.version}
+                        </Button>
+                        <a
+                          href={
+                            "/api/v1/documents/" +
+                            encodeURIComponent(document.id) +
+                            "/html?download=1"
+                          }
+                        >
+                          下载离线 HTML v{document.version}
+                        </a>
+                      </div>
+                    )}
+                    {document.status === "failed" && (
+                      <Button
+                        disabled={
+                          busy || generating || delivery.status !== "valid"
+                        }
+                        onClick={() => void generate(document)}
+                      >
+                        重试说明 v{document.version}
+                      </Button>
+                    )}
+                  </div>
+                  {document.error && <p role="alert">{document.error}</p>}
+                  {document.sha256 && (
+                    <p className="muted">
+                      成品摘要：<code>{document.sha256}</code>
+                    </p>
+                  )}
+                </li>
+              </FramePanel>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState
+            compact
+            title="尚未生成业务说明"
+            description={
+              delivery.status === "valid"
+                ? "审阅冻结材料后，可在上方生成说明。"
+                : "该交付当前非有效状态，不能生成新说明。"
+            }
+          />
+        )}
+        <Dialog
+          open={Boolean(preview)}
+          onOpenChange={(open) => {
+            if (!open) setPreview(undefined);
+          }}
+        >
+          <DialogContent
+            className="business-preview"
+            showCloseButton={false}
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              previewClose.current?.focus();
+            }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              previewTrigger.current?.focus();
+            }}
+          >
+            <div className="section-heading">
+              <DialogTitle>业务说明 v{preview?.version}</DialogTitle>
+              <Button ref={previewClose} onClick={() => setPreview(undefined)}>
+                关闭预览
+              </Button>
+            </div>
+            <DialogDescription>
+              {delivery.status === "valid"
+                ? "本说明对应此交付的冻结版本。"
+                : "历史说明，关联交付当前已非有效状态。"}
+            </DialogDescription>
+            {preview && (
+              <iframe
+                title="业务说明预览"
+                sandbox=""
+                src={
+                  "/api/v1/documents/" +
+                  encodeURIComponent(preview.id) +
+                  "/html"
+                }
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </section>
+    </Frame>
   );
 }

@@ -47,6 +47,7 @@ export function useRunNavigation(run: Run | undefined) {
   const [selectedTab, setTab] = useState<Tab>();
   const [checkQuery, setCheckQuery] = useState("");
   const [checkStatus, setCheckStatus] = useState("all");
+  const [humanStatus, setHumanStatus] = useState("all");
   const reportTop = useRef<HTMLDivElement>(null);
   const targetNotice = useRef<HTMLDivElement>(null);
   // A snapshot can change without a new navigation intent. Consume an intent
@@ -63,6 +64,7 @@ export function useRunNavigation(run: Run | undefined) {
     setTab(undefined);
     setCheckQuery("");
     setCheckStatus("all");
+    setHumanStatus("all");
     setTarget({ id });
   }
   useEffect(() => {
@@ -70,6 +72,7 @@ export function useRunNavigation(run: Run | undefined) {
       setTab(undefined);
       setCheckQuery("");
       setCheckStatus("all");
+      setHumanStatus("all");
       setTarget(readTarget());
     };
     window.addEventListener("hashchange", followLocation);
@@ -122,6 +125,8 @@ export function useRunNavigation(run: Run | undefined) {
     setCheckQuery,
     checkStatus,
     setCheckStatus,
+    humanStatus,
+    setHumanStatus,
     showTarget,
     missingTarget,
     returnToOverview,

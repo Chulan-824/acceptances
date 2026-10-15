@@ -1,4 +1,4 @@
-import { Badge } from "./components/ui/badge";
+import { Badge } from "./components/reui/badge";
 import type { Report } from "@acceptances/api-client";
 
 const statuses = [

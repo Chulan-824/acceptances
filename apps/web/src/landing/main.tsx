@@ -1,9 +1,10 @@
-import { Badge } from "../components/ui/badge";
+import { Scrollspy } from "../components/reui/scrollspy";
+import { Badge } from "../components/reui/badge";
 import { StrictMode, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
 import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
+import { FramePanel } from "../components/reui/frame";
 import {
   Tabs,
   TabsList,
@@ -41,6 +42,7 @@ const captions = [
   "图 3: 历史报告界面，展示需求说明与本轮验证记录",
 ];
 function Landing() {
+  const scrollTarget = useRef<Document | null>(document);
   const [showcaseTab, setShowcaseTab] = useState("0");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [copyTip, setCopyTip] = useState("点击复制");
@@ -81,45 +83,51 @@ function Landing() {
             </Badge>
           </div>
 
-          <nav className="flex items-center gap-4 text-sm font-medium">
-            <a
-              href="#showcase"
-              className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-            >
-              产品全景
-            </a>
-            <a
-              href="#features"
-              className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-            >
-              核心特性
-            </a>
-            <a
-              href="#workflow"
-              className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-            >
-              交付闭环
-            </a>
-            <a
-              href="#specification"
-              className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-            >
-              规范体系
-            </a>
-            <Separator
-              orientation="vertical"
-              className="h-4 w-px bg-border hidden sm:block"
-            ></Separator>
-            <Button asChild variant="ghost">
+          <Scrollspy targetRef={scrollTarget} offset={80}>
+            <nav className="flex items-center gap-4 text-sm font-medium">
               <a
-                href="index.html"
-                className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-subtle flex items-center gap-1.5"
+                href="#showcase"
+                data-scrollspy-anchor="showcase"
+                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
               >
-                <span>进入工作台</span>
-                <span className="text-xs">→</span>
+                产品全景
               </a>
-            </Button>
-          </nav>
+              <a
+                href="#features"
+                data-scrollspy-anchor="features"
+                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
+              >
+                核心特性
+              </a>
+              <a
+                href="#workflow"
+                data-scrollspy-anchor="workflow"
+                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
+              >
+                交付闭环
+              </a>
+              <a
+                href="#specification"
+                data-scrollspy-anchor="specification"
+                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
+              >
+                规范体系
+              </a>
+              <Separator
+                orientation="vertical"
+                className="h-4 w-px bg-border hidden sm:block"
+              ></Separator>
+              <Button asChild variant="ghost">
+                <a
+                  href="index.html"
+                  className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-subtle flex items-center gap-1.5"
+                >
+                  <span>进入工作台</span>
+                  <span className="text-xs">→</span>
+                </a>
+              </Button>
+            </nav>
+          </Scrollspy>
         </div>
       </header>
 
@@ -185,7 +193,7 @@ function Landing() {
           className="block"
         >
           <div className="max-w-6xl mx-auto">
-            <Card className="bg-surface border border-border rounded-2xl shadow-window overflow-hidden">
+            <FramePanel className="bg-surface border border-border rounded-2xl shadow-window overflow-hidden">
               <div className="h-11 px-4 bg-surface-subtle/80 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-danger"></span>
@@ -320,7 +328,7 @@ function Landing() {
                   </span>
                 </div>
               </div>
-            </Card>
+            </FramePanel>
           </div>
         </Tabs>
       </section>
@@ -337,7 +345,7 @@ function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
+            <FramePanel className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
               <div className="w-10 h-10 rounded-lg bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
                 <svg
                   width="20"
@@ -361,9 +369,9 @@ function Landing() {
                 ✓ 默认仅通过本机地址访问
                 <br />✓ 记录代码来源、提交版本与未提交改动标记
               </div>
-            </Card>
+            </FramePanel>
 
-            <Card className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
+            <FramePanel className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
               <div className="w-10 h-10 rounded-lg bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
                 <svg
                   width="20"
@@ -388,9 +396,9 @@ function Landing() {
                 ✓ 像素级高清截图与录像留存
                 <br />✓ 运行时网络请求与异常追踪
               </div>
-            </Card>
+            </FramePanel>
 
-            <Card className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
+            <FramePanel className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
               <div className="w-10 h-10 rounded-lg bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
                 <svg
                   width="20"
@@ -413,7 +421,7 @@ function Landing() {
                 ✓ 客观检验与主观判断权属分明
                 <br />✓ 逐项精准反馈驱动下轮修复
               </div>
-            </Card>
+            </FramePanel>
           </div>
         </div>
       </section>
@@ -509,7 +517,7 @@ function Landing() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
+            <FramePanel className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
                 <span>上传包与服务端归档</span>
                 <span className="text-xs text-accent font-semibold">
@@ -521,9 +529,9 @@ function Landing() {
                   "上传包（业务目录自选）\nbundle/\n├── report.json          # 验证事实与附件清单\n├── .submission-id       # CLI 自动生成，上传重试复用\n├── login.png            # 清单声明的附件\n└── browser.log\n\n归档位置（服务端数据目录）\n├── archive.db           # 项目、需求、报告与人工评审\n└── evidence/<Run ID>/   # 本轮附件"
                 }
               </pre>
-            </Card>
+            </FramePanel>
 
-            <Card className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
+            <FramePanel className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
                 <span>逐项人工评审请求示例</span>
                 <span className="text-xs text-accent font-semibold">
@@ -540,7 +548,7 @@ function Landing() {
                 提交人工判断，接口将其追加为评审记录。全部检查项人工通过才本轮通过；只有最新完整范围
                 Run 全部人工通过，需求才整体通过。新 Run 重新等待评审。
               </p>
-            </Card>
+            </FramePanel>
           </div>
         </div>
       </section>
@@ -560,7 +568,7 @@ function Landing() {
             </p>
           </div>
 
-          <Card className="bg-surface border border-border rounded-xl overflow-hidden shadow-subtle">
+          <FramePanel className="bg-surface border border-border rounded-xl overflow-hidden shadow-subtle">
             <Table className="w-full text-left text-xs border-collapse">
               <TableHeader>
                 <TableRow className="bg-canvas border-b border-border text-muted font-mono">
@@ -620,7 +628,7 @@ function Landing() {
                 </TableRow>
               </TableBody>
             </Table>
-          </Card>
+          </FramePanel>
         </div>
       </section>
 

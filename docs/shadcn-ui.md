@@ -1,5 +1,7 @@
 # shadcn/ui 页面覆盖
 
+2026-10-15 起，基础控件继续使用 shadcn/ui，各页组合层使用经 Modern Slate 适配的 ReUI Frame、Timeline、Stepper 等，Slot 模式同样应用布局与主题样式。当前覆盖与维护见 [ReUI 页面组合层](reui.md)；下文保留 2026-10-12 的迁移记录。
+
 2026-10-12 将当前前端两个入口中的可替换组件统一迁移到 shadcn/ui，沿用既有 Tailwind 4 Modern Slate 主题。业务接口、人工判断规则和 Project → Campaign → Run 关系保持现有契约。
 
 ## 页面清单

@@ -1,5 +1,6 @@
-import { Badge } from "./components/ui/badge";
-import { Alert } from "./components/ui/alert";
+import { FramePanel } from "./components/reui/frame";
+import { Badge } from "./components/reui/badge";
+import { Alert } from "./components/reui/alert";
 import { RunFollowUp } from "./run-follow-up";
 import { BulkAcceptanceDialog } from "./bulk-acceptance-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
@@ -46,6 +47,8 @@ export function Run({
     setCheckQuery,
     checkStatus,
     setCheckStatus,
+    humanStatus,
+    setHumanStatus,
     showTarget,
     missingTarget,
     returnToOverview,
@@ -109,12 +112,14 @@ export function Run({
     return view.operation?.phase === "submitting" ? (
       <p role="status">正在保存此验证记录，请等待结果。</p>
     ) : (
-      <section>
-        <Load error={error} />
-        {error && (
-          <Button onClick={() => void actions.refresh()}>重试刷新</Button>
-        )}
-      </section>
+      <FramePanel asChild variant="flat">
+        <section>
+          <Load error={error} />
+          {error && (
+            <Button onClick={() => void actions.refresh()}>重试刷新</Button>
+          )}
+        </section>
+      </FramePanel>
     );
   const report = run.report;
   return (
@@ -208,23 +213,25 @@ export function Run({
               作废原因：{run.voidReason}
             </Alert>
           )}
-          <div className="report-metrics">
-            <div>
-              <span className="muted">原始验证结果 · 仅本次</span>
-              <CheckCounts checks={report.checks} />
+          <FramePanel asChild variant="subtle">
+            <div className="report-metrics">
+              <div>
+                <span className="muted">原始验证结果 · 仅本次</span>
+                <CheckCounts checks={report.checks} />
+              </div>
+              <div>
+                <span className="muted">证据附件</span>
+                <strong>{report.evidence?.length ?? 0} 个</strong>
+              </div>
+              <div className="latest-decision">
+                <span className="muted">人工评审进度 · 仅本次</span>
+                <ReviewCounts counts={run.reviewCounts} />
+                <span className="muted">
+                  全部检查项人工通过即为本轮已验收，需求交付需另行确认。
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="muted">证据附件</span>
-              <strong>{report.evidence?.length ?? 0} 个</strong>
-            </div>
-            <div className="latest-decision">
-              <span className="muted">人工评审进度 · 仅本次</span>
-              <ReviewCounts counts={run.reviewCounts} />
-              <span className="muted">
-                全部检查项人工通过即为本轮已验收，需求交付需另行确认。
-              </span>
-            </div>
-          </div>
+          </FramePanel>
           <p className="prose">{report.description}</p>
           <dl>
             <dt>本次验证范围</dt>
@@ -333,6 +340,8 @@ export function Run({
             onReview={saveReview}
             query={checkQuery}
             status={checkStatus}
+            humanStatus={humanStatus}
+            onHumanStatusChange={setHumanStatus}
             onQueryChange={setCheckQuery}
             onStatusChange={setCheckStatus}
           />
@@ -364,45 +373,49 @@ export function Run({
           className="report-panel"
           hidden={tab !== "discussion"}
         >
-          <section id="run-feedback">
-            <div className="section-heading">
-              <h2>整轮评论与历史决定</h2>
-              <Status value={run.status} context="run" />
-            </div>
-            <ReviewHistory
-              reviews={(run.reviews || []).filter((review) => !review.checkId)}
-              responses={run.feedbackResponses}
-            />
-            <ReviewForm
-              isVoid={run.status === "void"}
-              disabled={busy}
-              onSubmit={saveReview}
-            />
-            {run.status !== "void" && (
-              <Disclosure title={<>报告整体有误：作废</>}>
-                <Label>
-                  作废原因
-                  <Textarea
-                    value={reason}
-                    disabled={busy}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
-                </Label>
-                <Button
-                  variant="destructive"
-                  disabled={busy || !reason.trim()}
-                  onClick={() => void mutate()}
-                >
-                  确认作废
-                </Button>
-              </Disclosure>
-            )}
-            {actionError && (
-              <Alert variant="destructive" role="alert">
-                {actionError}
-              </Alert>
-            )}
-          </section>
+          <FramePanel asChild variant="flat">
+            <section id="run-feedback">
+              <div className="section-heading">
+                <h2>整轮评论与历史决定</h2>
+                <Status value={run.status} context="run" />
+              </div>
+              <ReviewHistory
+                reviews={(run.reviews || []).filter(
+                  (review) => !review.checkId,
+                )}
+                responses={run.feedbackResponses}
+              />
+              <ReviewForm
+                isVoid={run.status === "void"}
+                disabled={busy}
+                onSubmit={saveReview}
+              />
+              {run.status !== "void" && (
+                <Disclosure title={<>报告整体有误：作废</>}>
+                  <Label>
+                    作废原因
+                    <Textarea
+                      value={reason}
+                      disabled={busy}
+                      onChange={(e) => setReason(e.target.value)}
+                    />
+                  </Label>
+                  <Button
+                    variant="destructive"
+                    disabled={busy || !reason.trim()}
+                    onClick={() => void mutate()}
+                  >
+                    确认作废
+                  </Button>
+                </Disclosure>
+              )}
+              {actionError && (
+                <Alert variant="destructive" role="alert">
+                  {actionError}
+                </Alert>
+              )}
+            </section>
+          </FramePanel>
         </TabsContent>
       </Tabs>
       <div

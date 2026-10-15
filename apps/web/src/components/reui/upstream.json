@@ -1,0 +1,47 @@
+[
+  {
+    "name": "frame",
+    "url": "https://reui.io/r/radix-nova/frame.json",
+    "sha256": "0e7b02fe8e6429c0c6bf49e4c12c50ea85648af7b0360c28e841fb0675195cef"
+  },
+  {
+    "name": "timeline",
+    "url": "https://reui.io/r/radix-nova/timeline.json",
+    "sha256": "25fe6a0962d8a2d4e17ed3d113a4c38b57d42316e2c4c326af35f2c0b1e587b2"
+  },
+  {
+    "name": "stepper",
+    "url": "https://reui.io/r/radix-nova/stepper.json",
+    "sha256": "2cd6f01155065c1c4363cf16484f8146b5a4357cd71c775f6c59af62736358be"
+  },
+  {
+    "name": "file-type",
+    "url": "https://reui.io/r/radix-nova/file-type.json",
+    "sha256": "55e32e796a61db2e3e97a9163ce8ab850077cf7eee29f2850ea7a0d82728083e"
+  },
+  {
+    "name": "scrollspy",
+    "url": "https://reui.io/r/radix-nova/scrollspy.json",
+    "sha256": "6e94f948a8931a8483b9796e3c5548948612c694b00bf5f6c47bbdb1a5f73915"
+  },
+  {
+    "name": "alert",
+    "url": "https://reui.io/r/radix-nova/alert.json",
+    "sha256": "2746c12047d4a0924477e45721af6be1deba6a1928fac9623c47848c0ea879b2"
+  },
+  {
+    "name": "badge",
+    "url": "https://reui.io/r/radix-nova/badge.json",
+    "sha256": "57b12b8298c4be86cccdd55f7f6306e73df86850d3abbb30ae06d44510eeb454"
+  },
+  {
+    "name": "c-empty-1",
+    "url": "https://reui.io/r/radix-nova/c-empty-1.json",
+    "sha256": "853e326f6349ef1349712285e4073194d2d65afe2e200430e4e4d4b7f74c404a"
+  },
+  {
+    "name": "c-field-2",
+    "url": "https://reui.io/r/radix-nova/c-field-2.json",
+    "sha256": "8cc31ea0df6bdeb07171927b373008d9a256a6f8c9fa8f46c7214c1a64d3d9a8"
+  }
+]

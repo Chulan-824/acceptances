@@ -97,7 +97,7 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply list-none p-0;
   }
   .document-versions > li {
-    @apply py-4 border-b border-border;
+    @apply py-4;
   }
   .business-preview iframe {
     @apply w-full h-[70dvh] min-h-80 border border-border rounded-md bg-white;
