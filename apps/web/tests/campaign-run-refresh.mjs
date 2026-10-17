@@ -299,6 +299,7 @@ export async function run(page, base, scenario = "B02") {
         json: { code: "READ_FAILED", message: "外围读取测试失败" },
       });
     const responses = {
+      "/dashboard": { items: [] },
       "/projects": {
         items: [project, { ...project, id: "other", name: "另一项目" }],
       },
@@ -454,7 +455,7 @@ export async function run(page, base, scenario = "B02") {
         );
         failRun = false;
         await page
-          .getByRole("button", { name: "重试刷新", exact: true })
+          .getByRole("button", { name: "重试核对", exact: true })
           .first()
           .click();
       }
@@ -468,9 +469,9 @@ export async function run(page, base, scenario = "B02") {
       return { scenario, status: "passed", writes, requests };
     }
     if (scenario === "B11-unknown") {
-      await page.getByText("该验证记录已删除。", { exact: false }).waitFor();
+      await page.getByText("该验证记录已不存在。", { exact: false }).waitFor();
       assert.ok(page.url().endsWith("/runs/first"));
-      await page.getByText(/此前提交结果未确认；/).waitFor();
+      await page.getByText(/对象已不存在，本次删除结果未确认。/).waitFor();
       await page.getByRole("button", { name: "返回需求", exact: true }).click();
       await page.getByText("暂无验证。", { exact: false }).waitFor();
       assert.equal(writes.length, 1);
@@ -478,7 +479,7 @@ export async function run(page, base, scenario = "B02") {
     }
     if (scenario === "B11-cleanup") {
       await page
-        .getByText("记录已删除，部分附件清理失败。", { exact: true })
+        .getByText(/验证记录“first 报告”已删除，部分附件清理失败。/)
         .waitFor();
       await page.getByText("暂无验证。", { exact: false }).waitFor();
       assert.equal(writes.length, 1);
@@ -491,9 +492,7 @@ export async function run(page, base, scenario = "B02") {
     else {
       await page.getByText("second 报告", { exact: true }).first().waitFor();
       if (scenario.startsWith("B09-history")) {
-        assert.ok(
-          await page.getByText("历史报告", { exact: true }).first().isVisible(),
-        );
+        await page.getByText("历史报告", { exact: true }).first().waitFor();
         assert.equal(activeCampaign.status, "pending");
       }
     }

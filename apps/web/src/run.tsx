@@ -10,7 +10,8 @@ import { Textarea } from "./components/ui/textarea";
 import { Label } from "./components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import type { ReviewInput } from "@acceptances/api-client";
-import { Status, Load, DeleteButton } from "./client";
+import { Status, Load } from "./client";
+import { DeleteButton, DeletionFeedback } from "./deletion-controls";
 import { useCampaignRun } from "./campaign-run";
 import { Evidence } from "./evidence";
 import { Checklist } from "./checklist";
@@ -35,6 +36,14 @@ export function Run({
 }) {
   const { view, actions } = useCampaignRun();
   const { data: run, error } = view.run;
+  const target = {
+    kind: "run" as const,
+    projectId: view.scope.projectId!,
+    campaignId: view.scope.campaignId!,
+    runId: id,
+    name: run?.report.title || id,
+  };
+  const deletion = view.operation?.deletion;
   const busy = view.writeLocked;
   const [actionError, setActionError] = useState("");
   const [reason, setReason] = useState("");
@@ -91,11 +100,13 @@ export function Run({
     if (result.kind === "committed") setDeliveryOpen(false);
     else setDeliveryError(result.message);
   }
+  if (view.run.status === "missing" && deletion)
+    return <DeletionFeedback target={target} navigate={navigate} />;
   if (view.run.status === "missing")
     return (
       <Alert role="alert">
         该验证记录已删除。
-        {view.operation?.result?.kind === "unknown" && (
+        {!deletion && view.operation?.result?.kind === "unknown" && (
           <p>此前提交结果未确认；当前记录已不存在。</p>
         )}
         <Button
@@ -108,6 +119,8 @@ export function Run({
         </Button>
       </Alert>
     );
+  if (!run && deletion)
+    return <DeletionFeedback target={target} navigate={navigate} />;
   if (!run)
     return view.operation?.phase === "submitting" ? (
       <p role="status">正在保存此验证记录，请等待结果。</p>
@@ -115,7 +128,7 @@ export function Run({
       <FramePanel asChild variant="flat">
         <section>
           <Load error={error} />
-          {error && (
+          {!deletion && error && (
             <Button onClick={() => void actions.refresh()}>重试刷新</Button>
           )}
         </section>
@@ -124,13 +137,14 @@ export function Run({
   const report = run.report;
   return (
     <RunNavigationProvider value={{ runPath, navigate }}>
-      {view.operation?.result?.kind === "unknown" && (
+      <DeletionFeedback target={target} navigate={navigate} />
+      {!deletion && view.operation?.result?.kind === "unknown" && (
         <Alert role="alert">
           提交结果未知，请核对当前记录和评审历史后再决定是否重试。
           {view.operation.result.message}
         </Alert>
       )}
-      {error && (
+      {!deletion && error && (
         <Alert role="alert">
           {view.operation?.result?.kind === "committed"
             ? "已保存，状态刷新失败"
@@ -139,7 +153,7 @@ export function Run({
           <Button onClick={() => void actions.refresh()}>重试刷新</Button>
         </Alert>
       )}
-      {view.operation?.phase === "checking" && !error && (
+      {!deletion && view.operation?.phase === "checking" && !error && (
         <p role="status">
           {view.operation.result?.kind === "committed"
             ? "已保存，正在刷新状态…"
@@ -191,15 +205,7 @@ export function Run({
         <div className="report-summary-body">
           <div className="section-heading">
             <h2>{report.title}</h2>
-            <DeleteButton
-              path={`/runs/${id}`}
-              label="验证记录"
-              disabled={busy}
-              commands={{
-                preview: actions.previewDeleteRun,
-                remove: actions.deleteRun,
-              }}
-            />
+            <DeleteButton target={target} disabled={busy} />
           </div>
           <p>
             已归档 · {isLatest ? "当前报告" : "历史报告"} · 人工状态{" "}

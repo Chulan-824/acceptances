@@ -45,6 +45,9 @@ function fixture() {
     acceptAll: async () => {},
     voidRun: async () => {},
     deleteRun: async () => {},
+    project: async (id) => ({ id, name: id }),
+    deleteTarget: () => adapter.deleteRun(),
+    previewDeletion: () => adapter.previewDeleteRun(),
     previewDeleteRun: async () => ({ runs: 1 }),
   };
   const controller = createCampaignRunController(adapter);
@@ -54,7 +57,20 @@ const scope = { projectId: "p", campaignId: "c", runId: "a" };
 async function ready(f) {
   f.controller.select(scope);
   await tick();
-  return f.controller.actions();
+  return { ...f.controller.actions(), deleteRun: removal(f) };
+}
+function removal(f) {
+  const snapshot = f.controller.getSnapshot();
+  const flow = f.controller.deletion({
+    ...snapshot.scope,
+    kind: "run",
+    runId: snapshot.selectedRunId,
+    name: snapshot.selectedRunId,
+  });
+  return async () => {
+    await flow.preview();
+    return flow.confirm();
+  };
 }
 test("M01 committed returns before readback and keeps the Run locked", async () => {
   const f = fixture();
@@ -237,14 +253,14 @@ test("M12/M13 confirmed deletion emits scoped intent and cleanup warning survive
   const view = f.controller.getSnapshot();
   assert.equal(view.run.status, "missing");
   assert.equal(view.writeLocked, true);
-  assert.equal(view.navigationIntent.runId, "a");
+  assert.equal(view.navigationIntent.target.runId, "a");
   f.controller.acknowledgeNavigation(view.navigationIntent.token);
   f.controller.select({ projectId: "p", campaignId: "c" });
   await tick();
   assert.equal(f.controller.getSnapshot().selectedRunId, "b");
-  assert.equal(
-    f.controller.getSnapshot().cleanupWarning,
-    "evidence-cleanup-failed",
+  assert.deepEqual(
+    f.controller.getSnapshot().notices.map((notice) => notice.target.runId),
+    ["a"],
   );
 });
 test("M12 late delete success does not navigate back after leaving the original selection", async () => {
@@ -253,6 +269,7 @@ test("M12 late delete success does not navigate back after leaving the original 
   const pending = deferred();
   f.adapter.deleteRun = () => pending.promise;
   const result = actions.deleteRun();
+  await tick();
   f.controller.select({ ...scope, runId: "b" });
   await tick();
   pending.resolve();
@@ -406,7 +423,7 @@ test("D7 deletion on the default Campaign URL recovers even when routing does no
   await tick();
   f.adapter.campaign = async () => campaign("b");
   f.adapter.runs = async () => ({ items: [run("b")] });
-  await f.controller.actions().deleteRun();
+  await removal(f)();
   const { token } = f.controller.getSnapshot().navigationIntent;
   f.controller.acknowledgeNavigation(token);
   f.controller.select(defaultScope);

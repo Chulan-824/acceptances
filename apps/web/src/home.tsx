@@ -30,6 +30,8 @@ import { Alert } from "./components/reui/alert";
 import { ChoiceSelect } from "./components/choice-select";
 import { SelectItem } from "./components/ui/select";
 import { HomeCreate } from "./home-create";
+import { useCampaignRun } from "./campaign-run";
+import { DeletionNotices } from "./deletion-controls";
 
 const filters = [
   { value: "all", label: "全部", icon: Layers },
@@ -62,11 +64,12 @@ export function Home({
   navigate: (path: string) => void;
   onCreated: (project: Project) => void;
 }) {
+  const { view } = useCampaignRun();
   const [createOpen, setCreateOpen] = useState(true);
   const [revision, setRevision] = useState(0);
   const dashboard = useResource<{ items: DashboardItem[] }>(
     "/dashboard",
-    revision,
+    revision + view.dashboardRevision,
   );
   const [projectId, setProjectId] = useState("all");
   const [query, setQuery] = useState("");
@@ -83,9 +86,23 @@ export function Home({
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
   }, []);
-  const scoped = (dashboard.data?.items || []).filter(
-    (item) => projectId === "all" || item.projectId === projectId,
-  );
+  const scoped = (dashboard.data?.items || [])
+    .filter(
+      (item) =>
+        (projectId === "all" || item.projectId === projectId) &&
+        view.deletions[`project:${item.projectId}`]?.presence !== "missing" &&
+        view.deletions[`campaign:${item.id}`]?.presence !== "missing",
+    )
+    .map((item) =>
+      view.deletions[`run:${item.latestRunId}`]?.presence === "missing"
+        ? {
+            ...item,
+            latestRunId: "",
+            latestRun: null,
+            status: "pending" as const,
+          }
+        : item,
+    );
   const counts = { all: scoped.length, pending: 0, accepted: 0, rejected: 0 };
   for (const item of scoped) counts[item.status]++;
   const term = query.trim().toLocaleLowerCase();
@@ -156,6 +173,7 @@ export function Home({
         id="home-content"
         tabIndex={-1}
       >
+        <DeletionNotices destination="/" />
         <h1 className="sr-only">交付验证看板</h1>
         <div className="home-stats" aria-label="需求状态统计">
           {filters.map(({ value, label, icon: MetricIcon }) => (

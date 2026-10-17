@@ -284,6 +284,12 @@ export async function run(
         "Ordinary refresh must preserve scroll position",
       );
       await page.getByRole("link", { name: "target", exact: true }).click();
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector("#check-target > button")
+            ?.getAttribute("aria-expanded") === "true",
+      );
       await visibleTarget("#check-target");
       assert.equal(
         await page

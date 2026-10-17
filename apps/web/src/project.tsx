@@ -14,7 +14,12 @@ import type {
   Project as ProjectData,
   Repository,
 } from "@acceptances/api-client";
-import { useResource, Status, Load, DeleteButton } from "./client";
+import { useResource, Status, Load } from "./client";
+import {
+  DeleteButton,
+  DeletionFeedback,
+  DeletionNotices,
+} from "./deletion-controls";
 import { useCampaignRun } from "./campaign-run";
 import { Campaign } from "./campaign";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
@@ -31,14 +36,12 @@ export function Project({
   projectsError,
   campaignId,
   navigate,
-  onDeleted,
 }: {
   id: string;
   projects?: ProjectData[];
   projectsError?: string;
   campaignId?: string;
   navigate: (path: string) => void;
-  onDeleted: () => void;
 }) {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
@@ -225,6 +228,18 @@ export function Project({
       onRightCollapsedChange={setRightCollapsed}
     />
   );
+  const target = {
+    kind: "project" as const,
+    projectId: id,
+    name: project.data?.name || id,
+  };
+  if (view.deletions[`project:${id}`]?.presence === "missing")
+    return renderLayout(
+      <main className="workspace-main">
+        <DeletionFeedback target={target} navigate={navigate} />
+      </main>,
+      null,
+    );
   return campaignId ? (
     <Campaign
       key={campaignId}
@@ -233,14 +248,12 @@ export function Project({
       onToggleHistory={() => setRightCollapsed((value) => !value)}
       base={`${base}/campaigns/${campaignId}`}
       navigate={navigate}
-      onDeleted={() => {
-        void actions.refreshCampaigns();
-        navigate(base);
-      }}
     />
   ) : (
     renderLayout(
       <main className="workspace-main" aria-label="项目管理">
+        <DeletionNotices destination={base} />
+        <DeletionFeedback target={target} navigate={navigate} />
         {!project.data ? (
           <Load error={project.error} />
         ) : (
@@ -250,11 +263,7 @@ export function Project({
                 <h1>{project.data.name}</h1>
                 <div className="actions">
                   <Button onClick={refresh}>刷新项目</Button>
-                  <DeleteButton
-                    path={base}
-                    label="项目"
-                    onDeleted={onDeleted}
-                  />
+                  <DeleteButton target={target} />
                 </div>
               </FrameHeader>
               <FramePanel variant="flat">

@@ -273,6 +273,14 @@ export async function run(page, base, output, fixture) {
     .getByRole("button", { name: "确认全部人工通过", exact: true })
     .click();
   await page.getByRole("button", { name: "确认需求交付", exact: true }).click();
+  await page.getByRole("button", { name: "下一步", exact: true }).click();
+  const next = page.getByRole("button", { name: "下一步", exact: true });
+  await page.getByLabel("我确认所选地图版本及必验范围准确、完整。").check();
+  await next.click();
+  await page
+    .getByLabel("我已审阅功能说明、操作步骤、角色前提、限制和对应截图。")
+    .check();
+  await next.click();
   const confirm = page.getByRole("button", {
     name: "确认交付并保存快照",
     exact: true,
@@ -282,10 +290,6 @@ export async function run(page, base, output, fixture) {
     !(await confirm.isEnabled()),
     "Freeze enabled without explicit confirmations",
   );
-  await page.getByLabel("我确认所选地图版本及必验范围准确、完整。").check();
-  await page
-    .getByLabel("我已审阅功能说明、操作步骤、角色前提、限制和对应截图。")
-    .check();
   await page
     .getByLabel("我已检查说明素材和截图中的敏感信息，确认可用于业务说明。")
     .check();
@@ -429,8 +433,22 @@ export async function run(page, base, output, fixture) {
     preview.retainedDeliveries === 1 && preview.retainedDocuments === 2,
     "Deletion omitted retained artifacts",
   );
-  await api("/projects/" + fixture.project.id, "DELETE");
-  await page.getByRole("button", { name: "刷新", exact: true }).click();
+  const archiveURL = page.url();
+  await page.goto(`${base}/projects/${fixture.project.id}`);
+  await page.getByRole("button", { name: "删除项目", exact: true }).click();
+  await page
+    .getByRole("alertdialog")
+    .getByText(/保留 1 份交付快照及 2 份业务说明/)
+    .waitFor();
+  const deleted = page.waitForResponse(
+    (response) =>
+      response.request().method() === "DELETE" &&
+      response.url().endsWith(`/projects/${fixture.project.id}`),
+  );
+  await page.getByRole("button", { name: "确认永久删除", exact: true }).click();
+  assert((await deleted).status() === 204, "Project deletion did not commit");
+  await page.waitForURL(base + "/");
+  await page.goto(archiveURL);
   await page.getByText("来源验证记录已删除", { exact: false }).waitFor();
   const retained = await api("/deliveries/" + deliveryID);
   assert(

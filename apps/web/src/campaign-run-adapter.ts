@@ -1,5 +1,6 @@
 import { request } from "@acceptances/api-client";
 import type { CampaignRunAdapter } from "./campaign-run-controller";
+import { deletionPath } from "./deletion";
 
 const runPath = (id: string) => `/runs/${encodeURIComponent(id)}`;
 const campaignPath = (id: string) => `/campaigns/${encodeURIComponent(id)}`;
@@ -16,6 +17,8 @@ export const campaignRunAdapter: CampaignRunAdapter = {
   acceptAll: (runId) => request(`${runPath(runId)}/accept-all`, "POST", {}),
   voidRun: (runId, reason) =>
     request(`${runPath(runId)}/void`, "POST", { reason }),
-  deleteRun: (runId) => request(runPath(runId), "DELETE"),
-  previewDeleteRun: (runId) => request(`${runPath(runId)}/delete-preview`),
+  project: (projectId) => request(`/projects/${encodeURIComponent(projectId)}`),
+  deleteTarget: (target) => request(deletionPath(target), "DELETE"),
+  previewDeletion: (target) =>
+    request(`${deletionPath(target)}/delete-preview`),
 };

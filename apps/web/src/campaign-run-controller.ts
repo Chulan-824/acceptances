@@ -1,10 +1,17 @@
 import type {
   Campaign,
+  Project,
   Run,
   ReviewInput,
   DeletePreview,
   CampaignDeliveryOverview,
 } from "@acceptances/api-client";
+
+import {
+  deletionKey,
+  deletionCovers,
+  type DeletionTarget,
+} from "./deletion.ts";
 
 export type WriteResult =
   | { kind: "committed"; warning?: "evidence-cleanup-failed" }
@@ -28,10 +35,28 @@ export interface CampaignRunAdapter {
   review(runId: string, input: ReviewInput): Promise<unknown>;
   acceptAll(runId: string): Promise<unknown>;
   voidRun(runId: string, reason: string): Promise<unknown>;
-  deleteRun(runId: string): Promise<unknown>;
-  previewDeleteRun(runId: string): Promise<DeletePreview>;
+  project(projectId: string): Promise<Project>;
+  deleteTarget(target: DeletionTarget): Promise<unknown>;
+  previewDeletion(target: DeletionTarget): Promise<DeletePreview>;
+}
+interface DeletionData {
+  target: DeletionTarget;
+  attempt: number;
+  preview: ReadState<DeletePreview>;
+  presence: "present" | "missing" | "error";
+  error?: string;
+}
+export interface DeletionState extends DeletionData {
+  phase: Operation["phase"];
+  result?: WriteResult;
+  deleted?: boolean;
+}
+export interface DeletionNotice {
+  id: number;
+  target: DeletionTarget;
 }
 export interface Operation {
+  deletion?: DeletionData;
   deleted?: boolean;
   phase: "submitting" | "checking" | "settled";
   result?: WriteResult;
@@ -47,8 +72,11 @@ export interface CampaignRunView {
   isLatest: boolean;
   writeLocked: boolean;
   operation?: Operation;
-  navigationIntent?: CampaignRunScope & { runId: string; token: number };
-  cleanupWarning?: "evidence-cleanup-failed";
+  navigationIntent?: { target: DeletionTarget; token: number };
+  deletions: Record<string, DeletionState>;
+  notices: DeletionNotice[];
+  projectsRevision: number;
+  dashboardRevision: number;
 }
 const rejectedCodes = new Set([
   "INVALID_INPUT",
@@ -86,11 +114,26 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     run: { status: "idle" },
     isLatest: false,
     writeLocked: true,
+    deletions: {},
+    notices: [],
+    projectsRevision: 0,
+    dashboardRevision: 0,
   };
   const listeners = new Set<() => void>();
   const operations = new Map<string, Operation>();
   let generation = 0;
-  let navigationSequence = 0;
+  let sequence = 0;
+  const deletionReads = new Map<
+    string,
+    { attempt: number; promise: Promise<void> }
+  >();
+  const runKey = (id: string) => `run:${id}`;
+  const gone = (key: string) => {
+    const operation = operations.get(key);
+    return !!operation?.deleted || operation?.deletion?.presence === "missing";
+  };
+  const currentTarget = (target: DeletionTarget) =>
+    deletionCovers(target, { ...view.scope, runId: view.selectedRunId });
   let reading: Promise<void> | undefined;
   const peripheralReads: Partial<
     Record<"campaigns" | "campaign" | "runs" | "delivery", Promise<void>>
@@ -98,15 +141,34 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
   let snapshot = view;
   const publish = () => {
     const operation = view.selectedRunId
-      ? operations.get(view.selectedRunId)
+      ? operations.get(runKey(view.selectedRunId))
       : undefined;
     view = {
       ...view,
       operation,
+      deletions: Object.fromEntries(
+        [...operations].flatMap(([key, entry]) =>
+          entry.deletion
+            ? [
+                [
+                  key,
+                  {
+                    ...entry.deletion,
+                    phase: entry.phase,
+                    result: entry.result,
+                    deleted: entry.deleted,
+                  },
+                ],
+              ]
+            : [],
+        ),
+      ),
       isLatest:
         !!view.selectedRunId &&
         view.selectedRunId === view.campaign.data?.latestRunId,
       writeLocked:
+        gone(`project:${view.scope.projectId}`) ||
+        gone(`campaign:${view.scope.campaignId}`) ||
         view.campaigns.status === "missing" ||
         view.campaign.status === "missing" ||
         !view.run.data ||
@@ -119,21 +181,27 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         ...view.runs,
         data: {
           items: view.runs.data.items
-            .filter((item) => !operations.get(item.id)?.deleted)
+            .filter((item) => !gone(runKey(item.id)))
             .map((item) =>
               item.id === view.run.data?.id ? view.run.data : item,
             ),
         },
       };
-    if (view.campaign.data && view.campaigns.data)
+    if (view.campaigns.data)
       snapshot.campaigns = {
         ...view.campaigns,
         data: {
-          items: view.campaigns.data.items.map((item) =>
-            item.id === view.campaign.data?.id ? view.campaign.data : item,
-          ),
+          items: view.campaigns.data.items
+            .filter((item) => !gone(`campaign:${item.id}`))
+            .map((item) =>
+              item.id === view.campaign.data?.id ? view.campaign.data : item,
+            ),
         },
       };
+    if (gone(`project:${view.scope.projectId}`))
+      snapshot.campaigns = { status: "missing" };
+    if (gone(`campaign:${view.scope.campaignId}`))
+      snapshot.campaign = { status: "missing" };
     listeners.forEach((listener) => listener());
   };
   function invalidate() {
@@ -145,13 +213,21 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     delete peripheralReads.delivery;
   }
   function readRun(id: string): Promise<void> {
-    if (operations.get(id)?.deleted) {
+    const deletion = operations.get(runKey(id))?.deletion;
+    if (
+      deletion &&
+      operations.get(runKey(id))?.result &&
+      !operations.get(runKey(id))?.deleted
+    )
+      return recheckDeletion(deletion.target);
+    if (operations.get(runKey(id))?.deleted) {
       view.run = { status: "missing" };
       publish();
       return Promise.resolve();
     }
     if (reading) return reading;
-    if (operations.get(id)?.phase === "submitting") return Promise.resolve();
+    if (operations.get(runKey(id))?.phase === "submitting")
+      return Promise.resolve();
     const token = generation;
     view.run = {
       ...view.run,
@@ -169,8 +245,9 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         const data = await adapter.run(id);
         if (token !== generation || view.selectedRunId !== id) return;
         view.run = { status: "ready", data };
-        const operation = operations.get(id);
-        if (operation) operations.set(id, { ...operation, phase: "settled" });
+        const operation = operations.get(runKey(id));
+        if (operation)
+          operations.set(runKey(id), { ...operation, phase: "settled" });
       } catch (error) {
         if (token !== generation || view.selectedRunId !== id) return;
         view.run = {
@@ -202,7 +279,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
     const id =
       view.campaign.data.latestRunId ||
       (view.runs.status === "ready" ? view.runs.data?.items[0]?.id : undefined);
-    if (id && !operations.get(id)?.deleted) {
+    if (id && !gone(runKey(id))) {
       view.selectedRunId = id;
       publish();
       void readRun(id);
@@ -262,14 +339,18 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
   }
   function refreshCampaigns() {
     const id = view.scope.projectId;
-    return id
+    return id && !gone(`project:${id}`)
       ? readPeripheral("campaigns", () => adapter.campaigns(id))
       : Promise.resolve();
   }
   function refresh(includeRun = true) {
     const tasks = [refreshCampaigns()];
     const campaignId = view.scope.campaignId;
-    if (campaignId) {
+    if (
+      campaignId &&
+      !gone(`project:${view.scope.projectId}`) &&
+      !gone(`campaign:${campaignId}`)
+    ) {
       tasks.push(
         readPeripheral("campaign", () => adapter.campaign(campaignId)),
         readPeripheral("runs", () => adapter.runs(campaignId)),
@@ -280,15 +361,243 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
       tasks.push(readRun(view.selectedRunId));
     return Promise.all(tasks).then(() => {});
   }
+  function deletionBlocked(target: DeletionTarget) {
+    const operation = operations.get(deletionKey(target));
+    return (
+      !currentTarget(target) ||
+      gone(deletionKey(target)) ||
+      gone(`project:${target.projectId}`) ||
+      (target.kind !== "project" && gone(`campaign:${target.campaignId}`)) ||
+      (operation !== undefined && operation.phase !== "settled") ||
+      (target.kind === "run" && view.writeLocked)
+    );
+  }
+  async function previewDeletion(target: DeletionTarget) {
+    if (deletionBlocked(target)) return;
+    const key = deletionKey(target);
+    const previous = operations.get(key);
+    if (previous?.deletion?.preview.status === "loading") return;
+    const attempt = ++sequence;
+    operations.set(key, {
+      phase: "settled",
+      result: previous?.deletion ? previous.result : undefined,
+      deletion: {
+        target: { ...target },
+        attempt,
+        presence: "present",
+        preview: { status: "loading" },
+      },
+    });
+    publish();
+    try {
+      const data = await adapter.previewDeletion(target);
+      const operation = operations.get(key);
+      if (operation?.deletion?.attempt !== attempt) return;
+      operations.set(key, {
+        ...operation,
+        deletion: { ...operation.deletion, preview: { status: "ready", data } },
+      });
+    } catch (error) {
+      const operation = operations.get(key);
+      if (operation?.deletion?.attempt !== attempt) return;
+      operations.set(key, {
+        ...operation,
+        deletion: {
+          ...operation.deletion,
+          preview: {
+            status: "error",
+            error: String(error instanceof Error ? error.message : error),
+          },
+        },
+      });
+    }
+    publish();
+  }
+  function cancelDeletionPreview(target: DeletionTarget) {
+    const key = deletionKey(target);
+    const operation = operations.get(key);
+    if (!operation?.deletion || operation.phase !== "settled") return;
+    operations.set(key, {
+      ...operation,
+      deletion: {
+        ...operation.deletion,
+        attempt: ++sequence,
+        preview: { status: "idle" },
+      },
+    });
+    publish();
+  }
+  function refreshDeletionLists(target: DeletionTarget) {
+    view.dashboardRevision++;
+    if (target.kind === "project") view.projectsRevision++;
+    if (view.scope.projectId === target.projectId) {
+      invalidate();
+      // Restart reads retired by invalidation, including a newly selected Run.
+      void refresh(!currentTarget(target));
+    }
+    publish();
+  }
+  function recheckDeletion(target: DeletionTarget): Promise<void> {
+    const key = deletionKey(target);
+    const operation = operations.get(key);
+    if (
+      !operation?.deletion ||
+      operation.deleted ||
+      operation.phase === "submitting"
+    )
+      return Promise.resolve();
+    const { attempt } = operation.deletion;
+    const pending = deletionReads.get(key);
+    if (pending?.attempt === attempt) return pending.promise;
+    operations.set(key, {
+      ...operation,
+      phase: "checking",
+      deletion: { ...operation.deletion, error: undefined },
+    });
+    if (target.kind === "run" && currentTarget(target)) {
+      view.run = {
+        ...view.run,
+        status:
+          view.run.status === "missing"
+            ? "missing"
+            : view.run.data
+              ? "refreshing"
+              : "loading",
+        error: undefined,
+      };
+    }
+    publish();
+    const active = () => operations.get(key)?.deletion?.attempt === attempt;
+    const promise = (async () => {
+      try {
+        if (target.kind === "project") await adapter.project(target.projectId);
+        else if (target.kind === "campaign") {
+          const data = await adapter.campaign(target.campaignId);
+          if (active() && currentTarget(target))
+            view.campaign = { status: "ready", data };
+        } else {
+          const data = await adapter.run(target.runId);
+          if (active() && currentTarget(target))
+            view.run = { status: "ready", data };
+        }
+        const latest = operations.get(key);
+        if (!active() || !latest?.deletion) return;
+        const wasMissing = latest.deletion.presence === "missing";
+        operations.set(key, {
+          ...latest,
+          phase: "settled",
+          deletion: {
+            ...latest.deletion,
+            presence: "present",
+            error: undefined,
+          },
+        });
+        if (wasMissing) refreshDeletionLists(target);
+      } catch (error) {
+        const latest = operations.get(key);
+        if (!active() || !latest?.deletion) return;
+        const missing = (error as { status?: number })?.status === 404;
+        const presence =
+          missing || latest.deletion.presence === "missing"
+            ? "missing"
+            : "error";
+        const message = error instanceof Error ? error.message : String(error);
+        operations.set(key, {
+          ...latest,
+          deletion: {
+            ...latest.deletion,
+            presence,
+            error: missing ? undefined : message,
+          },
+        });
+        if (target.kind === "run" && currentTarget(target))
+          view.run = {
+            ...view.run,
+            status: presence,
+            error: missing ? undefined : message,
+          };
+        if (missing && latest.deletion.presence !== "missing")
+          refreshDeletionLists(target);
+      } finally {
+        if (deletionReads.get(key)?.attempt === attempt)
+          deletionReads.delete(key);
+        if (active()) publish();
+      }
+    })();
+    deletionReads.set(key, { attempt, promise });
+    return promise;
+  }
+  async function confirmDeletion(target: DeletionTarget): Promise<WriteResult> {
+    const key = deletionKey(target);
+    const previous = operations.get(key);
+    if (
+      deletionBlocked(target) ||
+      previous?.deletion?.preview.status !== "ready"
+    )
+      return { kind: "rejected", message: "请重新查看删除范围并确认。" };
+    const attempt = ++sequence;
+    const deletion: DeletionData = {
+      ...previous.deletion,
+      attempt,
+      preview: { status: "idle" },
+      error: undefined,
+    };
+    // Parent deletion has no global child-write lock. Keep unrelated Run reads
+    // alive until deletion is confirmed or absence is established.
+    if (target.kind === "run") invalidate();
+    operations.set(key, { phase: "submitting", deletion });
+    publish();
+    let result: WriteResult;
+    let missing = false;
+    try {
+      await adapter.deleteTarget(target);
+      result = { kind: "committed" };
+    } catch (error) {
+      result = classify(error, true);
+      missing = new Set([
+        "NOT_FOUND",
+        "RUN_NOT_FOUND",
+        "CAMPAIGN_NOT_FOUND",
+        "PROJECT_NOT_FOUND",
+      ]).has((error as { code?: string })?.code || "");
+    }
+    if (result.kind === "committed") {
+      operations.set(key, {
+        phase: "settled",
+        result,
+        deleted: true,
+        deletion: { ...deletion, presence: "missing" },
+      });
+      if (result.warning)
+        view.notices = [
+          ...view.notices,
+          { id: attempt, target: deletion.target },
+        ];
+      if (currentTarget(target)) {
+        if (target.kind === "run") view.run = { status: "missing" };
+        view.navigationIntent = { target: deletion.target, token: ++sequence };
+      }
+      refreshDeletionLists(target);
+    } else {
+      operations.set(key, {
+        phase: result.kind === "unknown" || missing ? "checking" : "settled",
+        result,
+        deletion,
+      });
+      publish();
+      if (result.kind === "unknown" || missing) void recheckDeletion(target);
+      if (target.kind === "run" && currentTarget(target)) void refresh(false);
+    }
+    return result;
+  }
   async function write(
     id: string | undefined,
     operation: () => Promise<unknown>,
-    deleting = false,
   ): Promise<WriteResult> {
     if (!id || id !== view.selectedRunId || view.writeLocked)
       return { kind: "rejected", message: "正在刷新或保存，请稍后再试。" };
     invalidate();
-    operations.set(id, { phase: "submitting" });
+    operations.set(runKey(id), { phase: "submitting" });
     publish();
     let result: WriteResult;
     let stale = false;
@@ -296,7 +605,7 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
       await operation();
       result = { kind: "committed" };
     } catch (error) {
-      result = classify(error, deleting);
+      result = classify(error);
       stale = new Set([
         "RUN_NOT_FOUND",
         "NOT_FOUND",
@@ -305,25 +614,11 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         "CHECK_NOT_FOUND",
       ]).has((error as { code?: string })?.code || "");
     }
-    operations.set(id, {
+    operations.set(runKey(id), {
       phase: result.kind === "rejected" && !stale ? "settled" : "checking",
       result,
     });
-    if (deleting && result.kind === "committed") {
-      operations.set(id, { phase: "settled", result, deleted: true });
-      if (result.warning) view.cleanupWarning = result.warning;
-      if (view.selectedRunId === id) {
-        invalidate();
-        view.run = { status: "missing" };
-        view.navigationIntent = {
-          ...view.scope,
-          runId: id,
-          token: ++navigationSequence,
-        };
-        publish();
-        void refresh(false);
-      } else publish();
-    } else if (view.selectedRunId === id) {
+    if (view.selectedRunId === id) {
       invalidate();
       publish();
       void refresh(result.kind !== "rejected" || stale);
@@ -355,13 +650,29 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         view.scope.runId === scope.runId
       )
         return;
+      for (const [key, entry] of operations) {
+        if (
+          entry.deletion &&
+          entry.phase === "settled" &&
+          entry.deletion.preview.status !== "idle"
+        )
+          operations.set(key, {
+            ...entry,
+            deletion: {
+              ...entry.deletion,
+              attempt: ++sequence,
+              preview: { status: "idle" },
+            },
+          });
+      }
       const old = view.selectedRunId;
       if (
         old &&
-        operations.get(old)?.phase === "settled" &&
-        operations.get(old)?.result?.kind !== "unknown"
+        !operations.get(runKey(old))?.deletion &&
+        operations.get(runKey(old))?.phase === "settled" &&
+        operations.get(runKey(old))?.result?.kind !== "unknown"
       )
-        operations.delete(old);
+        operations.delete(runKey(old));
       invalidate();
       view = {
         ...view,
@@ -388,11 +699,34 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
       };
       publish();
       void refresh();
+      for (const entry of operations.values()) {
+        if (
+          entry.deletion &&
+          !entry.deleted &&
+          entry.phase === "checking" &&
+          currentTarget(entry.deletion.target)
+        )
+          void recheckDeletion(entry.deletion.target);
+      }
+    },
+    deletion(target: DeletionTarget) {
+      const bound = { ...target };
+      return {
+        preview: () => previewDeletion(bound),
+        cancel: () => cancelDeletionPreview(bound),
+        confirm: () => confirmDeletion(bound),
+        recheck: () => recheckDeletion(bound),
+      };
+    },
+    dismissNotice(id: number) {
+      view.notices = view.notices.filter((notice) => notice.id !== id);
+      publish();
     },
     acknowledgeNavigation(token: number) {
-      if (view.navigationIntent?.token === token) {
+      const intent = view.navigationIntent;
+      if (intent?.token === token) {
         view.navigationIntent = undefined;
-        void recoverCampaign();
+        if (intent.target.kind === "run") void recoverCampaign();
       }
     },
     actions(target: CampaignRunScope = view.scope) {
@@ -409,10 +743,9 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
         id === view.selectedRunId;
       const submit = (
         operation: () => Promise<unknown>,
-        deleting = false,
       ): Promise<WriteResult> =>
         current()
-          ? write(id, operation, deleting)
+          ? write(id, operation)
           : Promise.resolve({
               kind: "rejected",
               message: "验证记录已切换，请重新操作。",
@@ -429,11 +762,6 @@ export function createCampaignRunController(adapter: CampaignRunAdapter) {
           submit(() => adapter.review(id!, input)),
         acceptAll: () => submit(() => adapter.acceptAll(id!)),
         voidRun: (reason: string) => submit(() => adapter.voidRun(id!, reason)),
-        deleteRun: () => submit(() => adapter.deleteRun(id!), true),
-        previewDeleteRun: () => {
-          if (!id) return Promise.reject(new Error("未选择验证记录"));
-          return adapter.previewDeleteRun(id);
-        },
       };
     },
   };
