@@ -41,6 +41,8 @@ requestId 全局唯一，同标识同内容返回原快照 200，异内容返回
 
 同 requestId 生成成功返回既有版本 200；同标识用于其他交付返回 409 DOCUMENT_REQUEST_CONFLICT。失败重试保留 id/version，attempts 增加。新的明确 requestId 创建新版本。成功版本不重写。生成中重复操作返回 409 DOCUMENT_GENERATING，不引入队列。
 
+显式 retry 和同 requestId 再次生成均在既有生成资格检查通过后，确认当前版本为 failed，先清理残留成品目录，再占用 generating 并增加 attempts。清理失败返回 500 READ_FAILED，原版本的 status/attempts 保持不变；条件恢复后可再次明确重试。成功版本即使文件缺失或损坏也不重建、不重写，仍在读取成品时报错。
+
 生成在请求内执行。status 先持久保存 generating，再生成临时文件，成品同步保存完成才变 succeeded 并返回 201。可处理的渲染失败返回 200 的 failed 记录及 error；生成状态自身保存失败为 500，客户端需重新读取确认。服务重启将中断 generating 标成 failed，清理临时文件，允许重试。
 
 仅 valid 快照允许新生成或失败重试，失效/撤销/替代返回 409 DELIVERY_INACTIVE。已成功说明继续可作为历史预览和下载；未成功的 HTML 返回 409 DOCUMENT_NOT_READY。文件摘要不匹配返回 500 DOCUMENT_INTEGRITY_FAILED。
@@ -52,6 +54,8 @@ HTML 由固定模板和转义后的纯文本生成，只内嵌实际栅格图片
 数据库版本增至 3，既有当前版本 2 人审保持不变。迁移前以 VACUUM INTO 保存 archive.before-v3.*.db 一致备份。旧版逐项人审迁移规则仍单独适用，不将历史整轮决定推断为新冻结交付。
 
 交付副本位于 deliveries/<id>/evidence，说明成品位于 documents/<id>/business.html。交付表不依赖来源记录的级联删除；数据库触发器保护冻结内容、事件及成功说明状态。数据库决定可见性，启动清理无归属目录及中断临时产物。
+
+文件发布与恢复共用归属规则：存在快照记录就保留交付副本，不受当前效力影响；成功文档保留成品。运行时失败清理仅处理当前发布尝试，必须在事务结束后核对归属；无法确认归属时保留目录并返回错误，清理错误不得忽略。启动恢复的归属查询或清理失败继续阻止启动，修复环境后重启可再次恢复，不自动续跑文档生成。
 
 ## Web 入口与状态
 

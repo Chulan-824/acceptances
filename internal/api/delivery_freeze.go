@@ -1,11 +1,12 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -122,59 +123,35 @@ func (s *Server) freezeDelivery(w http.ResponseWriter, r *http.Request) {
 		fail(w, 500, "READ_FAILED")
 		return
 	}
-	stage, err := os.MkdirTemp(s.dir, ".delivery-")
-	if err != nil {
-		fail(w, 500, "SAVE_FAILED")
-		return
-	}
-	defer os.RemoveAll(stage)
-	if err = s.copyDeliveryEvidence(prep.Run.ID, stage, prep.Files); err != nil {
-		deliveryFailure(w, 500, "DELIVERY_EVIDENCE_SAVE_FAILED", "交付证据保存失败或发生变化，未创建快照。")
-		return
-	}
-	key, createdAt := id(), now()
-	target := filepath.Join(s.dir, "deliveries", key)
-	if err = os.Rename(stage, target); err != nil {
-		fail(w, 500, "SAVE_FAILED")
-		return
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			os.RemoveAll(target)
+	snapshot := DeliverySnapshot{ID: id(), RequestID: input.RequestID, CreatedAt: now(), SHA256: contentHash, Payload: payload}
+	if err = s.publishDeliverySnapshot(r.Context(), snapshot, requestHash, string(raw)); err != nil {
+		slog.ErrorContext(r.Context(), "publish delivery snapshot failed", "deliveryId", snapshot.ID, "error", err)
+		if errors.Is(err, errDeliveryEvidenceSave) {
+			deliveryFailure(w, 500, "DELIVERY_EVIDENCE_SAVE_FAILED", "交付证据保存失败或发生变化，未创建快照。")
+		} else {
+			fail(w, 500, "SAVE_FAILED")
 		}
-	}()
-	if err = syncDirectory(filepath.Dir(target)); err != nil {
-		fail(w, 500, "SAVE_FAILED")
 		return
 	}
-	tx, err := s.db.BeginTx(r.Context(), nil)
-	if err != nil {
-		fail(w, 500, "SAVE_FAILED")
-		return
-	}
-	defer tx.Rollback()
-	var version int
-	err = tx.QueryRowContext(r.Context(), "SELECT COALESCE(MAX(version),0)+1 FROM delivery_snapshots WHERE campaign_id=?", prep.Campaign.ID).Scan(&version)
-	if err == nil {
-		_, err = tx.ExecContext(r.Context(), `INSERT INTO delivery_snapshots(id,project_id,campaign_id,source_run_id,version,request_id,request_hash,payload,content_hash,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, key, prep.Project.ID, prep.Campaign.ID, prep.Run.ID, version, input.RequestID, requestHash, string(raw), contentHash, createdAt)
-	}
-	if err == nil {
-		_, err = tx.ExecContext(r.Context(), "INSERT INTO delivery_requests VALUES(?,?,?)", input.RequestID, requestHash, key)
-	}
-	if err == nil {
-		err = transitionDeliveries(r.Context(), tx, "campaign_id=? AND id<>? AND status='valid'", []any{prep.Campaign.ID, key}, "superseded", "已由新的明确冻结交付替代。", key, createdAt)
-	}
-	if err == nil {
-		_, err = tx.ExecContext(r.Context(), "INSERT INTO delivery_events VALUES(?,?,?,?,?,?)", id(), key, "frozen", "人工确认交付范围、说明素材及审核结论。", prep.Run.ID, createdAt)
-	}
-	if err == nil {
-		err = tx.Commit()
-	}
-	if err != nil {
-		fail(w, 500, "SAVE_FAILED")
-		return
-	}
-	committed = true
-	s.respondDelivery(w, r, key, 201)
+	s.respondDelivery(w, r, snapshot.ID, 201)
+}
+
+func (s *Server) persistDeliverySnapshot(ctx context.Context, snapshot DeliverySnapshot, requestHash, raw string) error {
+	return s.deliveryTransaction(ctx, func(tx *sql.Tx) error {
+		var version int
+		err := tx.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0)+1 FROM delivery_snapshots WHERE campaign_id=?", snapshot.Payload.Campaign.ID).Scan(&version)
+		if err == nil {
+			_, err = tx.ExecContext(ctx, `INSERT INTO delivery_snapshots(id,project_id,campaign_id,source_run_id,version,request_id,request_hash,payload,content_hash,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, snapshot.ID, snapshot.Payload.Project.ID, snapshot.Payload.Campaign.ID, snapshot.Payload.Run.ID, version, snapshot.RequestID, requestHash, raw, snapshot.SHA256, snapshot.CreatedAt)
+		}
+		if err == nil {
+			_, err = tx.ExecContext(ctx, "INSERT INTO delivery_requests VALUES(?,?,?)", snapshot.RequestID, requestHash, snapshot.ID)
+		}
+		if err == nil {
+			err = transitionDeliveries(ctx, tx, "campaign_id=? AND id<>? AND status='valid'", []any{snapshot.Payload.Campaign.ID, snapshot.ID}, "superseded", "已由新的明确冻结交付替代。", snapshot.ID, snapshot.CreatedAt)
+		}
+		if err == nil {
+			_, err = tx.ExecContext(ctx, "INSERT INTO delivery_events VALUES(?,?,?,?,?,?)", id(), snapshot.ID, "frozen", "人工确认交付范围、说明素材及审核结论。", snapshot.Payload.Run.ID, snapshot.CreatedAt)
+		}
+		return err
+	})
 }

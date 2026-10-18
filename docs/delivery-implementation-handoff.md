@@ -16,11 +16,17 @@
 
 文件目录新增 `deliveries/<id>/evidence/` 和 `documents/<id>/business.html`。冻结先复制并核对全部附件，再提交快照与事件；服务启动清理未提交目录，将中断的生成记录置失败。成功 HTML 和归档证据读取核对摘要。删除源记录保留独立材料与历史文档，未提供交付档案删除接口。
 
+2026-10-18，文件发布与恢复集中到 `internal/api/delivery_artifacts.go`，两条发布入口位于 `delivery_files.go`。暂存、文件及目录同步、rename、数据库归属确认与失败清理由同一 module 管理。失败清理无法确认归属时保留文件；成功档案损坏仍在读取时报错，不自动重建。显式 retry 和同 requestId 重试均先清理 failed 版本残留，清理失败不消耗 attempts。
+
+快照提交和文档生成占用使用 `delivery_transactions.go`，确保归属核对前事务已结束。针对当前 SQLite 驱动的 COMMIT 失败后连接可能仍保留事务的行为，保留并丢弃对应失败连接；连接级 foreign_keys/busy_timeout 在每次连接建立时设置。未改变数据库版本、归档目录或既有成功记录。
+
 以后升级日常服务前，仍须按 [README](../README.md) 备份整个数据目录，数据库自动备份不包含附件。仓库 skill 已补材料契约，当前机器既有安装未替换；部署与 skill 替换需要后续明确安排。
 
 ## 验证证据与范围
 
 平台 Go 测试覆盖冻结门槛、旧 token、重复/并发请求、事务失败、失效与替代、来源删除保留、迁移备份与重启、文档独立版本、摘要损坏、失败重试及输入转义。`make lint typecheck build` 检查前后端与构建。
+
+文件协议回归新增同步/rename/清理失败、真实 SQLite 延迟约束导致的 COMMIT 失败、取消请求后的归属核对、两个重试入口、启动失败恢复及成功档案损坏保留。`delivery_crash_test.go` 让独立子进程通过回环 HTTP，在 stage 完成、rename 后及数据库成功后三个节点直接退出，再重新打开归档验证恢复和幂等；需要允许本地临时端口。这验证进程中断恢复，不等于物理断电验证。
 
 [delivery-real.mjs](../apps/web/tests/delivery-real.mjs) 在独立临时 Go 服务与专用浏览器中验证真实冻结、生成、sandbox 预览、撤回失效、来源删除保留、窄屏和断网离线 HTML；合成数据均明确标注。既有刷新与定位回归使用受控 HTTP fixture，不能将其记作真实业务验证。
 

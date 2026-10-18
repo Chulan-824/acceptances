@@ -2,15 +2,10 @@ package api
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -57,7 +52,7 @@ func (s *Server) startDocument(w http.ResponseWriter, r *http.Request, deliveryI
 		respond(w, 200, document)
 		return
 	}
-	if err = s.renderAndSaveDocument(r.Context(), snapshot, document); err != nil {
+	if err = s.publishBusinessDocument(r.Context(), snapshot, document); err != nil {
 		s.mu.Lock()
 		_, saveErr := s.db.ExecContext(context.Background(), "UPDATE business_documents SET status='failed',error=?,completed_at=? WHERE id=? AND status='generating'", "生成失败："+err.Error(), now(), document.ID)
 		document, readErr := s.document(document.ID)
@@ -127,84 +122,41 @@ func (s *Server) prepareDocument(ctx context.Context, deliveryID, requestID, ret
 	if document.ID != "" && document.TemplateVersion != documentTemplateVersion {
 		return document, snapshot, false, documentProblem{"DOCUMENT_TEMPLATE_CHANGED", "该失败版本的模板已不受支持，请创建新说明版本。"}
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return document, snapshot, false, err
-	}
-	defer tx.Rollback()
-	if document.ID == "" {
-		document = BusinessDocument{ID: id(), DeliveryID: deliveryID, RequestID: requestID, TemplateVersion: documentTemplateVersion, Status: "generating", Attempts: 1, CreatedAt: now()}
-		err = tx.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0)+1 FROM business_documents WHERE delivery_id=?", deliveryID).Scan(&document.Version)
-		if err == nil {
-			_, err = tx.ExecContext(ctx, `INSERT INTO business_documents(id,delivery_id,version,request_id,template_version,status,created_at) VALUES(?,?,?,?,?,'generating',?)`, document.ID, document.DeliveryID, document.Version, document.RequestID, document.TemplateVersion, document.CreatedAt)
+	if document.ID != "" {
+		if err = s.artifacts.prepareDocumentRetry(document.ID); err != nil {
+			return document, snapshot, false, err
 		}
-	} else {
-		document.Status, document.Error, document.CompletedAt = "generating", "", ""
-		document.Attempts++
-		_, err = tx.ExecContext(ctx, "UPDATE business_documents SET status='generating',attempts=attempts+1,error='',completed_at='' WHERE id=? AND status='failed'", document.ID)
 	}
-	if err == nil {
-		err = tx.Commit()
-	}
+	err = s.deliveryTransaction(ctx, func(tx *sql.Tx) error {
+		if document.ID == "" {
+			document = BusinessDocument{ID: id(), DeliveryID: deliveryID, RequestID: requestID, TemplateVersion: documentTemplateVersion, Status: "generating", Attempts: 1, CreatedAt: now()}
+			err = tx.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0)+1 FROM business_documents WHERE delivery_id=?", deliveryID).Scan(&document.Version)
+			if err == nil {
+				_, err = tx.ExecContext(ctx, `INSERT INTO business_documents(id,delivery_id,version,request_id,template_version,status,created_at) VALUES(?,?,?,?,?,'generating',?)`, document.ID, document.DeliveryID, document.Version, document.RequestID, document.TemplateVersion, document.CreatedAt)
+			}
+		} else {
+			document.Status, document.Error, document.CompletedAt = "generating", "", ""
+			document.Attempts++
+			_, err = tx.ExecContext(ctx, "UPDATE business_documents SET status='generating',attempts=attempts+1,error='',completed_at='' WHERE id=? AND status='failed'", document.ID)
+		}
+		return err
+	})
 	return document, snapshot, err == nil, err
 }
 
-func (s *Server) renderAndSaveDocument(ctx context.Context, snapshot DeliverySnapshot, document BusinessDocument) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	stage, err := os.MkdirTemp(s.dir, ".document-")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(stage)
-	root, err := os.OpenRoot(filepath.Join(s.dir, "deliveries", snapshot.ID, "evidence"))
-	if err != nil {
-		return fmt.Errorf("冻结证据不可用")
-	}
-	defer root.Close()
-	file, err := os.OpenFile(filepath.Join(stage, "business.html"), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-	hash := sha256.New()
-	renderErr := renderBusinessDocument(io.MultiWriter(file, hash), root, snapshot, document)
-	syncErr, closeErr := file.Sync(), file.Close()
-	if renderErr != nil {
-		return renderErr
-	}
-	if syncErr != nil {
-		return syncErr
-	}
-	if closeErr != nil {
-		return closeErr
-	}
-	if err = syncDirectory(stage); err != nil {
-		return err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *Server) checkDocumentDelivery(ctx context.Context, deliveryID string) error {
 	var state string
-	if err = s.db.QueryRowContext(ctx, "SELECT status FROM delivery_snapshots WHERE id=?", snapshot.ID).Scan(&state); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT status FROM delivery_snapshots WHERE id=?", deliveryID).Scan(&state); err != nil {
 		return err
 	}
 	if state != "valid" {
 		return fmt.Errorf("生成期间交付已失效或被替代")
 	}
-	target := filepath.Join(s.dir, "documents", document.ID)
-	if err = os.Rename(stage, target); err != nil {
-		return err
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			os.RemoveAll(target)
-		}
-	}()
-	if err = syncDirectory(filepath.Dir(target)); err != nil {
-		return err
-	}
-	result, err := s.db.ExecContext(ctx, "UPDATE business_documents SET status='succeeded',content_hash=?,completed_at=? WHERE id=? AND status='generating'", hex.EncodeToString(hash.Sum(nil)), now(), document.ID)
+	return nil
+}
+
+func (s *Server) persistBusinessDocument(ctx context.Context, documentID, hash string) error {
+	result, err := s.db.ExecContext(ctx, "UPDATE business_documents SET status='succeeded',content_hash=?,completed_at=? WHERE id=? AND status='generating'", hash, now(), documentID)
 	if err != nil {
 		return err
 	}
@@ -215,6 +167,5 @@ func (s *Server) renderAndSaveDocument(ctx context.Context, snapshot DeliverySna
 	if count != 1 {
 		return fmt.Errorf("说明生成状态已变化")
 	}
-	committed = true
 	return nil
 }

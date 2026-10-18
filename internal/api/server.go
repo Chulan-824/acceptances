@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,9 +23,10 @@ import (
 )
 
 type Server struct {
-	db  *sql.DB
-	dir string
-	mu  sync.Mutex
+	db        *sql.DB
+	dir       string
+	mu        sync.Mutex
+	artifacts *deliveryArtifacts
 }
 type Project struct {
 	ID          string `json:"id"`
@@ -42,13 +44,17 @@ func Open(dir string) (*Server, error) {
 			return nil, err
 		}
 	}
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	databaseURL := url.URL{Scheme: "file", Path: filepath.ToSlash(filepath.Join(dir, "archive.db"))}
+	// These settings belong to each connection, including replacements after a
+	// failed transaction. WAL is persistent and is initialized below.
+	databaseURL.RawQuery = url.Values{"_pragma": {"foreign_keys(1)", "busy_timeout(5000)"}}.Encode()
+	db, err := sql.Open("sqlite", databaseURL.String())
 	if err != nil {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
-	s := &Server{db: db, dir: dir}
-	if _, err = db.Exec("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;"); err != nil {
+	s := &Server{db: db, dir: dir, artifacts: &deliveryArtifacts{db: db, dir: dir}}
+	if _, err = db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
 		db.Close()
 		return nil, err
 	}
