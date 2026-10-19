@@ -219,7 +219,7 @@
     @apply w-full min-w-0;
   }
   .check-item {
-    @apply mt-0 border-b border-border;
+    @apply mt-0 border-b border-border scroll-mt-20;
   }
   .check-item .disclosure-trigger {
     @apply pt-4 pr-0 pb-4 pl-0 m-0 leading-[1.6] wrap-anywhere;

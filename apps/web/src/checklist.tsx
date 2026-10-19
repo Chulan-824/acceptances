@@ -7,7 +7,7 @@ import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { ChoiceSelect } from "./components/choice-select";
 import { SelectItem } from "./components/ui/select";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Report,
   Review,
@@ -51,6 +51,13 @@ export function Checklist({
   onStatusChange: (value: string) => void;
 }) {
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [advance, setAdvance] = useState<{
+    checkId: string;
+    query: string;
+    status: string;
+    humanStatus: string;
+  }>();
+  const revealed = useRef<typeof advance>(undefined);
   const report = run.report;
   const evidence = new Map(report.evidence?.map((item) => [item.path, item]));
   const humanStates = new Map(
@@ -73,6 +80,51 @@ export function Checklist({
         text.toLocaleLowerCase().includes(search),
       ),
   );
+  const sourceIndex = report.checks.findIndex(
+    (check) => check.id === advance?.checkId,
+  );
+  const remaining = checks.filter(
+    (check) =>
+      check.id !== advance?.checkId && humanStates.get(check.id) !== "accepted",
+  );
+  const nextCheckId = (
+    remaining.find((check) => report.checks.indexOf(check) > sourceIndex) ||
+    remaining[0]
+  )?.id;
+  const confirmed = Boolean(
+    advance &&
+    !disabled &&
+    advance.query === query &&
+    advance.status === status &&
+    advance.humanStatus === humanStatus &&
+    humanStates.get(advance.checkId) === "accepted",
+  );
+  const complete = confirmed && !nextCheckId;
+  useEffect(() => {
+    if (!confirmed || !nextCheckId || revealed.current === advance) return;
+    const element = document.getElementById(`check-${nextCheckId}`);
+    if (!element || element.closest("[hidden]")) return;
+    element.dispatchEvent(new Event("reveal-disclosure"));
+    const frame = requestAnimationFrame(() => {
+      element
+        .querySelector<HTMLButtonElement>("[data-slot=collapsible-trigger]")
+        ?.focus({ preventScroll: true });
+      element.scrollIntoView({ block: "start" });
+      revealed.current = advance;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [advance, confirmed, nextCheckId]);
+  async function review(input: ReviewInput) {
+    setAdvance(undefined);
+    const result = await onReview(input);
+    if (
+      result.kind === "committed" &&
+      input.kind === "accepted" &&
+      input.checkId
+    )
+      setAdvance({ checkId: input.checkId, query, status, humanStatus });
+    return result;
+  }
   return (
     <Frame asChild variant="ghost" spacing="none" className="bg-surface">
       <section aria-labelledby="checks-title">
@@ -170,9 +222,12 @@ export function Checklist({
             responses={run.feedbackResponses}
             isVoid={run.status === "void"}
             disabled={disabled}
-            onReview={onReview}
+            onReview={review}
           />
         ))}
+        {complete && (
+          <Alert role="status">当前筛选内的检查项已全部人工通过。</Alert>
+        )}
         {!checks.length && (
           <EmptyState
             compact
@@ -219,6 +274,12 @@ function CheckItem({
   onReview: (input: ReviewInput) => Promise<WriteResult>;
 }) {
   const [expanded, setExpanded] = useState(humanStatus !== "accepted");
+  async function review(input: ReviewInput) {
+    const result = await onReview(input);
+    if (result.kind === "committed" && input.kind === "accepted")
+      setExpanded(false);
+    return result;
+  }
   return (
     <Disclosure
       className="check-item"
@@ -272,9 +333,10 @@ function CheckItem({
           draft={draft}
           onDraftChange={onDraftChange}
           check={check}
+          humanStatus={humanStatus}
           isVoid={isVoid}
           disabled={disabled}
-          onSubmit={onReview}
+          onSubmit={review}
         />
         <Disclosure title={<>评审历史 · {reviews.length} 条</>}>
           <ReviewHistory reviews={reviews} responses={responses} />

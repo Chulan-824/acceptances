@@ -19,6 +19,7 @@ import type {
   Review,
   ReviewCounts as ReviewCountsData,
   ReviewInput,
+  ReviewStatus,
 } from "@acceptances/api-client";
 import { message, Status } from "./client";
 
@@ -52,10 +53,12 @@ export function ReviewForm({
   onSubmit,
   draft,
   onDraftChange,
+  humanStatus,
 }: {
   draft?: ReviewDraft;
   onDraftChange?: (draft: ReviewDraft) => void;
   check?: Report["checks"][number];
+  humanStatus?: ReviewStatus;
   isVoid: boolean;
   disabled?: boolean;
   onSubmit: (input: ReviewInput) => Promise<WriteResult>;
@@ -74,6 +77,7 @@ export function ReviewForm({
   const [error, setError] = useState("");
   const hasReason = Boolean(body.trim());
   const locked = busy || disabled;
+  const accepted = Boolean(check && humanStatus === "accepted");
   async function save(kind: Review["kind"]) {
     if (locked) return;
     setBusy(true);
@@ -109,7 +113,7 @@ export function ReviewForm({
           本轮已作废，仅可添加评论。
         </Alert>
       )}
-      {(!check || editing) && (
+      {(!check || (editing && !accepted)) && (
         <FramePanel variant="flat" className="review-editor">
           <p className="muted">
             {check
@@ -165,44 +169,50 @@ export function ReviewForm({
           </div>
         </FramePanel>
       )}
-      {check && !editing && (
+      {check && (!editing || accepted) && (
         <div className="actions check-review-actions">
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={locked || isVoid}
-            onClick={() => void save("pending")}
-          >
-            撤回到待审
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={locked}
-            onClick={() => setEditing("comment")}
-          >
-            添加检查项评论
-          </Button>
-          <Button
-            variant="destructive"
-            type="button"
-            disabled={locked || isVoid}
-            onClick={() => setEditing("rejected")}
-          >
-            人工不通过
-          </Button>
-          <Button
-            variant="default"
-            type="button"
-            disabled={locked || isVoid}
-            onClick={() =>
-              check.status === "passed"
-                ? void save("accepted")
-                : setEditing("accepted")
-            }
-          >
-            人工通过
-          </Button>
+          {(humanStatus === "accepted" || humanStatus === "rejected") && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={locked || isVoid}
+              onClick={() => void save("pending")}
+            >
+              撤回到待审
+            </Button>
+          )}
+          {!accepted && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={locked}
+                onClick={() => setEditing("comment")}
+              >
+                添加检查项评论
+              </Button>
+              <Button
+                variant="destructive"
+                type="button"
+                disabled={locked || isVoid}
+                onClick={() => setEditing("rejected")}
+              >
+                人工不通过
+              </Button>
+              <Button
+                variant="default"
+                type="button"
+                disabled={locked || isVoid}
+                onClick={() =>
+                  check.status === "passed"
+                    ? void save("accepted")
+                    : setEditing("accepted")
+                }
+              >
+                人工通过
+              </Button>
+            </>
+          )}
         </div>
       )}
       {busy && <p role="status">正在保存…</p>}

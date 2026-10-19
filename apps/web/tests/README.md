@@ -1,5 +1,11 @@
 # Run 定位浏览器验证
 
+## 检查项通过后连续审查
+
+`check-review-flow.mjs` 导出 `run(page, base, output)`，使用真实 Go API 和生产 Web。调用前设置 `ACCEPTANCES_TEST_ISOLATED=1`，以全新临时数据目录和随机本机端口启动服务，并创建专用 Playwright context。测试拒绝日常端口 5173、8765，且要求初始项目列表为空；不新增测试依赖。
+
+覆盖通过后收起、跳过已通过项、定位并展开下一待审或不通过项、末尾回跳、保留搜索与两种筛选、筛选内全部通过提示、隐藏通过项三个按钮及撤回恢复。另用受控 HTTP 故障验证拒绝和结果未知保留草稿，以及回读延迟、失败重试前不跳转。定位检查标题是否避开顶部固定标签栏和底部评审栏。提供 `output` 时保存截图，返回各场景结果；失败抛错，由调用方关闭浏览器和专用服务。结果仅证明平台合成交互。
+
 ## 正式交付与离线业务说明
 
 `delivery-real.mjs` 导出 `seed(base)` 和 `run(page, base, output, fixture)`，连接真实 Go API 与当前生产 Web，使用专用 Playwright context。调用前设置 `ACCEPTANCES_TEST_ISOLATED=1`，在 `127.0.0.1` 随机端口启动带全新临时数据目录的服务。seed 要求项目列表为空并拒绝日常端口 8765，创建的合成项目可被删除。
