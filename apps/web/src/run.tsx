@@ -364,7 +364,13 @@ export function Run({
             <div className="file-grid">
               {report.evidence?.length ? (
                 report.evidence.map((item) => (
-                  <Evidence key={item.path} run={id} item={item} gallery />
+                  <Evidence
+                    key={item.path}
+                    run={id}
+                    item={item}
+                    resources={report.evidence}
+                    gallery
+                  />
                 ))
               ) : (
                 <p>本次报告未提供附件。</p>

@@ -1,11 +1,8 @@
 import { FramePanel } from "./components/reui/frame";
 import { FileType, getFileType } from "./components/reui/file-type";
-import { Disclosure } from "./components/disclosure";
-import { useState } from "react";
 import { EvidenceImage } from "./evidence-image";
-import { EvidenceDiff } from "./evidence-diff";
-import { TextEvidence } from "./text-evidence";
-import { Icon } from "./workspace-controls";
+import { FilePreview, isDocumentEvidence } from "./file-preview";
+import type { PreviewResource } from "./file-preview-formats";
 import {
   evidenceURL,
   type Evidence as EvidenceData,
@@ -22,16 +19,16 @@ export function Evidence({
   item,
   inline = false,
   gallery = false,
+  resources = [],
 }: {
   run: string;
   item: EvidenceData;
   inline?: boolean;
   gallery?: boolean;
+  resources?: EvidenceData[];
 }) {
   const url = evidenceURL(run, item.path);
-  const extension = item.path.split(".").pop()?.toLowerCase();
   const isImage = isImageEvidence(item.path);
-  const [textExpanded, setTextExpanded] = useState(false);
   return (
     <FramePanel
       asChild
@@ -55,36 +52,54 @@ export function Evidence({
             <span>{item.description}</span>
           </figcaption>
         )}
-        {isImage ? (
-          <EvidenceImage
-            url={url}
-            description={item.description || item.path}
-            label={`放大预览 ${item.path}`}
-            eager={inline}
-          />
-        ) : ["mp4", "webm", "ogg"].includes(extension || "") ? (
-          <video controls preload="metadata" src={url} />
-        ) : ["diff", "patch"].includes(extension || "") ? (
-          <EvidenceDiff key={url} url={url} name={item.path} />
-        ) : ["txt", "log", "json", "csv"].includes(extension || "") ? (
-          <Disclosure
-            className="text-evidence-disclosure"
-            open={textExpanded}
-            onOpenChange={setTextExpanded}
-            title={
-              <>
-                <Icon name="file" />
-                <span>{item.path}</span>
-                <Icon name="chevron" />
-              </>
-            }
-          >
-            {textExpanded && <TextEvidence url={url} />}
-          </Disclosure>
-        ) : (
-          <p>此附件格式暂不支持预览。</p>
-        )}
+        <EvidenceContent
+          url={url}
+          name={item.path}
+          description={item.description}
+          eager={inline}
+          resources={resources.map((resource) => ({
+            path: resource.path,
+            url: evidenceURL(run, resource.path),
+          }))}
+        />
       </figure>
     </FramePanel>
   );
+}
+
+export function EvidenceContent({
+  url,
+  name,
+  description,
+  resources = [],
+  eager = false,
+}: {
+  url: string;
+  name: string;
+  description?: string;
+  resources?: PreviewResource[];
+  eager?: boolean;
+}) {
+  const extension = name.split(".").pop()?.toLowerCase();
+  if (isImageEvidence(name))
+    return (
+      <EvidenceImage
+        url={url}
+        description={description || name}
+        label={`放大预览 ${name}`}
+        eager={eager}
+      />
+    );
+  if (["mp4", "webm", "ogg"].includes(extension || ""))
+    return <video controls preload="metadata" src={url} />;
+  if (isDocumentEvidence(name))
+    return (
+      <FilePreview
+        url={url}
+        name={name}
+        description={description}
+        resources={resources}
+      />
+    );
+  return <p>此附件格式暂不支持预览。</p>;
 }

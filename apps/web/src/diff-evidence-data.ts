@@ -1,8 +1,17 @@
 import { parsePatchFiles, type FileDiffMetadata } from "@pierre/diffs";
+import {
+  readByteRange,
+  PreviewReadError,
+  PREVIEW_MAX_BYTES as DIFF_PREVIEW_MAX_BYTES,
+  PREVIEW_MAX_LINES as DIFF_PREVIEW_MAX_LINES,
+  PREVIEW_MAX_LINE_LENGTH as DIFF_PREVIEW_MAX_LINE_LENGTH,
+} from "./file-preview-data.ts";
 
-export const DIFF_PREVIEW_MAX_BYTES = 2 * 1024 * 1024;
-export const DIFF_PREVIEW_MAX_LINE_LENGTH = 20_000;
-export const DIFF_PREVIEW_MAX_LINES = 30_000;
+export {
+  DIFF_PREVIEW_MAX_BYTES,
+  DIFF_PREVIEW_MAX_LINE_LENGTH,
+  DIFF_PREVIEW_MAX_LINES,
+};
 
 export type DiffEvidenceData = {
   text: string;
@@ -24,78 +33,45 @@ export async function loadDiffEvidence(
   url: string,
   signal: AbortSignal,
 ): Promise<DiffEvidenceData> {
-  signal.throwIfAborted();
-  let text: string;
   try {
-    const response = await fetch(url, { signal });
-    if (!response.ok)
-      throw new DiffEvidenceError(
-        "load",
-        `附件请求失败（${response.status}）。`,
-      );
-    const reader = response.body?.getReader();
-    if (!reader) throw new DiffEvidenceError("load", "浏览器无法读取附件。");
-    const cancel = () => {
-      void reader.cancel().catch(() => {});
-    };
-    signal.addEventListener("abort", cancel, { once: true });
-    const decoder = new TextDecoder();
-    text = "";
-    let bytes = 0;
-    try {
-      if (
-        Number(response.headers.get("Content-Length")) > DIFF_PREVIEW_MAX_BYTES
-      ) {
-        await reader.cancel();
-        throw new DiffEvidenceError(
-          "limit",
-          "附件超过 2 MiB 预览上限，请下载原文件查看。",
-        );
-      }
-      while (true) {
-        signal.throwIfAborted();
-        const chunk = await reader.read();
-        signal.throwIfAborted();
-        if (chunk.done) break;
-        bytes += chunk.value.byteLength;
-        if (bytes > DIFF_PREVIEW_MAX_BYTES) {
-          await reader.cancel();
-          throw new DiffEvidenceError(
-            "limit",
-            "附件超过 2 MiB 预览上限，请下载原文件查看。",
-          );
-        }
-        text += decoder.decode(chunk.value, { stream: true });
-      }
-      text += decoder.decode();
-    } finally {
-      signal.removeEventListener("abort", cancel);
-      reader.releaseLock();
-    }
+    const { bytes } = await readByteRange(
+      url,
+      0,
+      DIFF_PREVIEW_MAX_BYTES - 1,
+      signal,
+    );
+    return parseDiffEvidence(new TextDecoder().decode(bytes));
   } catch (error) {
     signal.throwIfAborted();
     if (error instanceof DiffEvidenceError) throw error;
-    throw new DiffEvidenceError("load", "附件加载失败，请重试。");
+    throw new DiffEvidenceError(
+      error instanceof PreviewReadError ? error.kind : "load",
+      error instanceof Error ? error.message : "附件加载失败，请重试。",
+    );
   }
+}
+
+export function parseDiffEvidence(text: string): DiffEvidenceData {
+  if (new TextEncoder().encode(text).length > DIFF_PREVIEW_MAX_BYTES)
+    throw new DiffEvidenceError("limit", "文件较大，请切换为分段原文。");
   if (text.length === 0)
     return { text, files: [], warning: "附件为空，没有可预览的代码变更。" };
   const lines = text.split("\n");
   if (lines.length > DIFF_PREVIEW_MAX_LINES)
     throw new DiffEvidenceError(
       "limit",
-      "附件超过 30,000 行预览上限，请下载查看。",
+      "附件超过 30,000 行差异预览上限，请查看分段原文。",
     );
   if (lines.some((line) => line.length > DIFF_PREVIEW_MAX_LINE_LENGTH))
     throw new DiffEvidenceError(
       "limit",
-      "附件单行超过 20,000 字符预览上限，请下载查看。",
+      "附件单行超过 20,000 字符差异预览上限，请查看分段原文。",
     );
   if (/^GIT binary patch\r?$/m.test(text))
     return {
       text,
       files: [],
-      warning:
-        "附件包含 Git 二进制补丁，无法完整展示代码差异，请查看原文或下载。",
+      warning: "附件包含 Git 二进制补丁，无法完整展示代码差异，请查看原文。",
     };
   try {
     const fileCount = assertPatchCoverage(text);
@@ -111,15 +87,14 @@ export async function loadDiffEvidence(
       text,
       files,
       warning: files.some((file) => file.hunks.length === 0)
-        ? "包含二进制或仅元数据变更，这些文件没有可展示的代码行，请对照原文或下载查看。"
+        ? "包含二进制或仅元数据变更，这些文件没有可展示的代码行，请查看原文。"
         : undefined,
     };
   } catch {
     return {
       text,
       files: [],
-      warning:
-        "无法识别完整补丁，可能是不支持的格式或内容不完整，请查看原文或下载。",
+      warning: "无法识别完整补丁，可能是不支持的格式或内容不完整，请查看原文。",
     };
   }
 }

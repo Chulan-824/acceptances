@@ -139,14 +139,12 @@ export async function run(page, base, output) {
       0,
     );
   assert.equal(
-    await mixed
-      .getByRole("button", { name: "查看代码变更 change.diff" })
-      .count(),
+    await mixed.getByRole("button", { name: "预览 change.diff" }).count(),
     0,
   );
   assert.equal(
     await mixed
-      .getByRole("button", { name: "result.log", exact: true })
+      .getByRole("button", { name: "预览 result.log", exact: true })
       .count(),
     0,
   );
@@ -171,6 +169,16 @@ export async function run(page, base, output) {
     await mixed.locator("video").evaluate((video) => video.duration),
     1,
   );
+  await mixed.locator("video").evaluate(async (video) => {
+    video.muted = true;
+    await video.play();
+  });
+  await page.waitForFunction(() => {
+    const video = document.querySelector("#check-mixed video");
+    return video && video.currentTime > 0;
+  });
+  await mixed.locator("video").evaluate((video) => video.pause());
+  scenarios.push("video-playback-progress-and-pause");
   assert.deepEqual(await mixed.locator("figcaption > span").allTextContents(), [
     "合成附件 recording.mp4",
     "合成附件 change.diff",
@@ -182,14 +190,19 @@ export async function run(page, base, output) {
       .count(),
     0,
   );
-  await mixed.getByRole("button", { name: "result.log", exact: true }).click();
   await mixed
+    .getByRole("button", { name: "预览 result.log", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
     .getByText("synthetic-log-body-image-first", { exact: true })
     .waitFor();
-  await mixed.getByRole("button", { name: "查看代码变更 change.diff" }).click();
-  const diff = page.getByRole("dialog", { name: "代码变更", exact: true });
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await mixed.getByRole("button", { name: "预览 change.diff" }).click();
+  const diff = page.getByRole("dialog", { name: "change.diff", exact: true });
   await diff
-    .getByRole("button", { name: "查看原文", exact: true, pressed: false })
+    .getByRole("button", { name: "原文", exact: true, pressed: false })
     .click();
   await diff
     .getByText("diff --git a/sample.txt b/sample.txt", { exact: false })
@@ -323,9 +336,7 @@ export async function run(page, base, output) {
   );
   assert.equal(await gallery.locator("video").count(), 1);
   assert.equal(
-    await gallery
-      .getByRole("button", { name: "查看代码变更 change.diff" })
-      .isVisible(),
+    await gallery.getByRole("button", { name: "预览 change.diff" }).isVisible(),
     true,
   );
   assert.equal(
@@ -335,11 +346,14 @@ export async function run(page, base, output) {
     true,
   );
   await gallery
-    .getByRole("button", { name: "result.log", exact: true })
+    .getByRole("button", { name: "预览 result.log", exact: true })
     .click();
-  await gallery
+  await page
+    .getByRole("dialog")
     .getByText("synthetic-log-body-image-first", { exact: true })
     .waitFor();
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
   await page.getByRole("tab", { name: /^检查清单/ }).click();
   assert.equal(await more("mixed", 3).getAttribute("aria-expanded"), "true");
   scenarios.push(

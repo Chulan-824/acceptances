@@ -2,73 +2,16 @@ import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import { FileDiff } from "@pierre/diffs/react";
 import { preloadHighlighter, type FileDiffMetadata } from "@pierre/diffs";
 import { Button } from "./components/ui/button";
-import {
-  DiffEvidenceError,
-  loadDiffEvidence,
-  type DiffEvidenceData,
-} from "./diff-evidence-data";
+import type { DiffEvidenceData } from "./diff-evidence-data";
 
-export function DiffEvidenceViewer({ url }: { url: string }) {
-  const [attempt, setAttempt] = useState(0);
-  return (
-    <LoadedDiffEvidence
-      key={attempt}
-      url={url}
-      retry={() => setAttempt(attempt + 1)}
-    />
-  );
-}
-
-function LoadedDiffEvidence({
-  url,
-  retry,
+export function DiffEvidenceViewer({
+  data,
+  showRaw,
 }: {
-  url: string;
-  retry: () => void;
+  data: DiffEvidenceData;
+  showRaw: () => void;
 }) {
-  const [result, setResult] = useState<
-    { data: DiffEvidenceData } | { error: string; limited: boolean }
-  >();
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadDiffEvidence(url, controller.signal).then(
-      (data) => {
-        if (!controller.signal.aborted) setResult({ data });
-      },
-      (error: unknown) => {
-        if (!controller.signal.aborted)
-          setResult({
-            error: error instanceof Error ? error.message : "附件加载失败。",
-            limited:
-              error instanceof DiffEvidenceError && error.kind === "limit",
-          });
-      },
-    );
-    return () => controller.abort();
-  }, [url]);
-  if (!result)
-    return (
-      <p className="diff-evidence-message" role="status">
-        正在加载差异附件…
-      </p>
-    );
-  if ("error" in result)
-    return (
-      <div className="diff-evidence-message" role="alert">
-        <p>{result.error}</p>
-        {result.limited ? (
-          <p>请使用上方“下载原文件”查看完整内容。</p>
-        ) : (
-          <Button onClick={retry}>重试加载附件</Button>
-        )}
-      </div>
-    );
-  return <DiffContents data={result.data} />;
-}
-
-function DiffContents({ data }: { data: DiffEvidenceData }) {
   const [selected, setSelected] = useState(0);
-  const [raw, setRaw] = useState(false);
   const [style, setStyle] = useState<"split" | "unified">(() =>
     window.matchMedia("(min-width: 768px)").matches ? "split" : "unified",
   );
@@ -88,7 +31,6 @@ function DiffContents({ data }: { data: DiffEvidenceData }) {
             <Button
               size="sm"
               aria-pressed={style === "unified"}
-              disabled={raw}
               onClick={() => setStyle("unified")}
             >
               统一
@@ -96,38 +38,25 @@ function DiffContents({ data }: { data: DiffEvidenceData }) {
             <Button
               size="sm"
               aria-pressed={style === "split"}
-              disabled={raw}
               onClick={() => setStyle("split")}
             >
               并排
             </Button>
           </div>
         )}
-        <Button
-          size="sm"
-          variant="outline"
-          aria-pressed={raw}
-          onClick={() => setRaw(!raw)}
-        >
-          {raw ? "查看差异" : "查看原文"}
-        </Button>
       </div>
       {data.warning && (
         <p className="diff-evidence-warning" role="status">
           {data.warning}
         </p>
       )}
-      {raw ? (
-        <pre
-          className="diff-evidence-raw"
-          tabIndex={0}
-          aria-label="差异附件原文"
-        >
-          {data.text || "文件为空。"}
-        </pre>
-      ) : data.files.length > 0 ? (
+      {data.files.length > 0 ? (
         <div className="diff-evidence-body">
-          <nav className="diff-evidence-files" aria-label="变更文件">
+          <nav
+            className="diff-evidence-files"
+            aria-label="变更文件"
+            hidden={data.files.length === 1}
+          >
             {data.files.map((entry, index) => (
               <button
                 type="button"
@@ -140,7 +69,10 @@ function DiffContents({ data }: { data: DiffEvidenceData }) {
               </button>
             ))}
           </nav>
-          <label className="diff-evidence-file-select">
+          <label
+            className="diff-evidence-file-select"
+            hidden={data.files.length === 1}
+          >
             变更文件
             <select
               value={selected}
@@ -164,21 +96,21 @@ function DiffContents({ data }: { data: DiffEvidenceData }) {
             </div>
             {file.hunks.length === 0 ? (
               <p className="diff-evidence-message">
-                此文件仅有元数据或二进制变更，无法显示逐行差异。请查看原文或下载原文件。
+                此文件仅有元数据或二进制变更，无法显示逐行差异。请查看原文。
               </p>
             ) : (
               <DiffFile
                 key={`${selected}:${style}`}
                 file={file}
                 style={style}
-                showRaw={() => setRaw(true)}
+                showRaw={showRaw}
               />
             )}
           </section>
         </div>
       ) : (
         <div className="diff-evidence-message">
-          <p>此附件没有可展示的逐行差异。可查看原文或下载原文件。</p>
+          <p>此附件没有可展示的逐行差异。可查看原文。</p>
         </div>
       )}
     </div>
@@ -243,7 +175,7 @@ function DiffFile({
   );
   const failure = (
     <div className="diff-evidence-message" role="alert">
-      <p>此文件的差异渲染失败，可重试、查看原文或下载原文件。</p>
+      <p>此文件的差异渲染失败，可重试或查看原文。</p>
       <Button onClick={() => setAttempt(attempt + 1)}>重试渲染</Button>
       <Button variant="outline" onClick={showRaw}>
         查看原文

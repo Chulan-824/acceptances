@@ -16,6 +16,7 @@ import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
 import { Disclosure } from "./components/disclosure";
 import { BusinessDocuments } from "./business-documents";
+import { EvidenceContent } from "./evidence";
 
 export function DeliveryDetail({
   id,
@@ -58,6 +59,14 @@ export function DeliveryDetail({
       </main>
     );
   const snapshot = data.payload;
+  const resources = snapshot.files.map((file) => ({
+    path: file.path,
+    url:
+      "/api/v1/deliveries/" +
+      encodeURIComponent(id) +
+      "/evidence/" +
+      encodeURIComponent(file.path),
+  }));
   return (
     <main className="delivery-page">
       <div className="section-heading">
@@ -174,17 +183,19 @@ export function DeliveryDetail({
         <ul>
           {snapshot.files.map((file) => (
             <li key={file.path}>
-              <a
-                href={
-                  "/api/v1/deliveries/" +
-                  encodeURIComponent(id) +
-                  "/evidence/" +
-                  encodeURIComponent(file.path) +
-                  "?download=1"
+              <span>{file.path}</span>{" "}
+              <EvidenceContent
+                url={
+                  resources.find((resource) => resource.path === file.path)!.url
                 }
-              >
-                {file.path}
-              </a>
+                name={file.path}
+                description={
+                  snapshot.run.report.evidence?.find(
+                    (item) => item.path === file.path,
+                  )?.description
+                }
+                resources={resources}
+              />
               {" · "}
               <code>{file.sha256}</code>
             </li>

@@ -342,6 +342,7 @@ function CheckItem({
                   key={path}
                   run={run}
                   item={evidence.get(path)!}
+                  resources={[...evidence.values()]}
                   inline
                 />
               ))}
@@ -363,6 +364,7 @@ function CheckItem({
                           key={path}
                           run={run}
                           item={evidence.get(path)!}
+                          resources={[...evidence.values()]}
                           inline
                         />
                       ))}
