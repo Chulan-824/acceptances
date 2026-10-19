@@ -3,6 +3,7 @@ import { FileType, getFileType } from "./components/reui/file-type";
 import { Disclosure } from "./components/disclosure";
 import { useState } from "react";
 import { EvidenceImage } from "./evidence-image";
+import { EvidenceDiff } from "./evidence-diff";
 import { TextEvidence } from "./text-evidence";
 import { Icon } from "./workspace-controls";
 import {
@@ -58,6 +59,8 @@ export function Evidence({
           />
         ) : ["mp4", "webm", "ogg"].includes(extension || "") ? (
           <video controls preload="metadata" src={url} />
+        ) : ["diff", "patch"].includes(extension || "") ? (
+          <EvidenceDiff key={url} url={url} name={item.path} />
         ) : ["txt", "log", "json", "csv"].includes(extension || "") ? (
           <Disclosure
             className="text-evidence-disclosure"

@@ -1,0 +1,242 @@
+.diff-evidence-dialog[data-slot="dialog-content"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: calc(100vw - 48px);
+  max-width: 1600px;
+  height: min(880px, calc(100dvh - 48px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.diff-evidence-header {
+  display: grid;
+  justify-content: stretch;
+  align-items: start;
+  gap: 8px;
+  margin: 0;
+  padding: 24px 64px 12px 24px;
+  min-width: 0;
+}
+
+.diff-evidence-header [data-slot="dialog-title"],
+.diff-evidence-header [data-slot="dialog-description"] {
+  margin: 0;
+}
+
+.diff-evidence-header [data-slot="dialog-description"] {
+  line-height: 1.5;
+}
+
+.diff-evidence-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.diff-evidence-download {
+  padding: 0 24px 16px;
+}
+
+.diff-evidence-viewer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+}
+
+.diff-evidence-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.diff-evidence-style {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.diff-evidence-style button[aria-pressed="true"] {
+  background: var(--color-brand);
+  color: var(--color-brand-fg);
+}
+
+.diff-evidence-warning {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning-dark);
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.diff-evidence-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.diff-evidence-files {
+  display: block;
+  margin: 0;
+  width: 248px;
+  flex-shrink: 0;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+  padding: 8px;
+}
+
+.diff-evidence-files button {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.diff-evidence-files button span {
+  max-width: 100%;
+}
+
+.diff-evidence-files button:hover {
+  background: var(--color-surface-hover);
+}
+
+.diff-evidence-files button[aria-current="true"] {
+  background: var(--color-surface-subtle);
+  box-shadow: inset 3px 0 var(--color-brand);
+}
+
+.diff-evidence-files small,
+.diff-evidence-file-heading span {
+  color: var(--color-fg-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+.diff-evidence-file-select {
+  display: none;
+}
+
+.diff-evidence-file {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.diff-evidence-file-heading {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.diff-evidence-file diffs-container {
+  display: block;
+  min-width: 0;
+  --diffs-font-size: 12px;
+}
+
+.diff-evidence-raw {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.diff-evidence-message {
+  padding: 20px 24px;
+  overflow: auto;
+  font-size: 14px;
+}
+
+.diff-evidence-message p {
+  margin: 0 0 12px;
+}
+
+.diff-evidence-message button + button {
+  margin-left: 8px;
+}
+
+@media (max-width: 767px) {
+  .diff-evidence-dialog[data-slot="dialog-content"] {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .diff-evidence-header {
+    padding: 20px 52px 12px 16px;
+  }
+
+  .diff-evidence-download {
+    padding-left: 16px;
+  }
+
+  .diff-evidence-toolbar {
+    gap: 8px;
+  }
+
+  .diff-evidence-body {
+    flex-direction: column;
+  }
+
+  .diff-evidence-files {
+    display: none;
+  }
+
+  .diff-evidence-file-select {
+    display: grid;
+    gap: 6px;
+    padding: 10px 16px;
+    min-width: 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .diff-evidence-file-select select {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0 8px;
+    background: var(--background);
+    font-family: var(--font-mono);
+  }
+}
