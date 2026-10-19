@@ -65,6 +65,12 @@ export async function run(page, base, output) {
     await page.getByRole("combobox", { name, exact: true }).click();
     await page.getByRole("option", { name: option }).click();
   }
+  async function reject(id, reason) {
+    await button(id, "人工不通过").click();
+    assert.equal(await trigger(id).getAttribute("aria-expanded"), "true");
+    await check(id).getByRole("textbox").fill(reason);
+    await button(id, "确认不通过").click();
+  }
   async function createRun(name) {
     await page.unrouteAll({ behavior: "wait" });
     const report = {
@@ -199,81 +205,148 @@ export async function run(page, base, output) {
     "filtered-completion",
   );
 
-  for (const mode of ["rejected", "unknown"]) {
-    const run = await createRun(`${mode} 保留草稿与当前项`);
-    await page.route(`**/runs/${run.id}/reviews`, (route) =>
-      mode === "rejected"
-        ? route.fulfill({
-            status: 400,
-            json: { code: "BODY_REQUIRED", message: "合成拒绝" },
-          })
-        : route.abort("failed"),
-    );
-    await button("tail", "人工通过").click();
-    await check("tail").getByRole("textbox").fill("失败后应保留的理由");
-    await button("tail", "确认人工通过").click();
-    await check("tail").getByRole("alert").waitFor();
-    assert.equal(await trigger("tail").getAttribute("aria-expanded"), "true");
-    assert.equal(
-      await check("tail").getByRole("textbox").inputValue(),
-      "失败后应保留的理由",
-    );
-    assert.equal(
-      (await api(`/runs/${run.id}`)).checkReviews.find(
-        (item) => item.checkId === "tail",
-      ).status,
-      "pending",
-    );
-    results.push(`${mode}-keeps-current-and-draft`);
-  }
+  const rejected = await createRun("不通过后收起并跳到下一项");
+  await open("rejected", false);
+  await reject("current", "检查结果不符合预期");
+  await focused("rejected");
+  assert.equal(await trigger("current").getAttribute("aria-expanded"), "false");
+  assert.ok(
+    (await api(`/runs/${rejected.id}`)).reviews.some(
+      (review) =>
+        review.checkId === "current" &&
+        review.kind === "rejected" &&
+        review.body === "检查结果不符合预期",
+    ),
+  );
+  results.push("rejected-collapse-advance-and-preserve-reason");
 
-  for (const mode of ["delayed", "failed"]) {
-    const run = await createRun(`${mode} 保存后的状态回读`);
-    await open("rejected", false);
-    let release;
-    let reading;
-    const started = new Promise((resolve) => {
-      reading = resolve;
-    });
-    const released = new Promise((resolve) => {
-      release = resolve;
-    });
-    let intercept = true;
-    await page.route(`**/api/v1/runs/${run.id}`, async (route) => {
-      if (!intercept) return route.continue();
-      reading();
-      if (mode === "failed")
-        return route.fulfill({
-          status: 500,
-          json: { message: "合成回读失败" },
-        });
-      await released;
-      return route.continue();
-    });
-    await button("current", "人工通过").click();
-    await started;
-    await waitFor(
-      () =>
-        trigger("current")
-          .getAttribute("aria-expanded")
-          .then((value) => value === "false"),
-      "Commit should collapse current item",
-    );
-    assert.equal(
-      await trigger("rejected").getAttribute("aria-expanded"),
-      "false",
-    );
-    if (mode === "delayed") release();
-    else {
-      await page
-        .getByRole("alert")
-        .filter({ hasText: "已保存，状态刷新失败" })
-        .waitFor();
-      intercept = false;
-      await page.getByRole("button", { name: "重试刷新", exact: true }).click();
+  await createRun("不通过后从末尾回跳");
+  await open("earlier", false);
+  await reject("outside", "末项未通过");
+  await focused("earlier");
+  assert.equal(await trigger("outside").getAttribute("aria-expanded"), "false");
+  results.push("rejected-wrap-to-first-unaccepted");
+
+  await createRun("不通过后保留筛选并结束当前筛选");
+  await page.getByRole("searchbox", { name: "搜索检查项" }).fill("连续审查");
+  await select("原始验证结果筛选", /^通过 /);
+  await select("人工评审状态筛选", /^待审 /);
+  await open("current", false);
+  await reject("earlier", "筛选内第一项未通过");
+  await focused("current");
+  assert.equal(await check("earlier").count(), 0);
+  assert.equal(
+    await page.getByRole("searchbox", { name: "搜索检查项" }).inputValue(),
+    "连续审查",
+  );
+  assert.match(
+    await page
+      .getByRole("combobox", { name: "原始验证结果筛选", exact: true })
+      .innerText(),
+    /^通过 /,
+  );
+  assert.match(
+    await page
+      .getByRole("combobox", { name: "人工评审状态筛选", exact: true })
+      .innerText(),
+    /^待审 /,
+  );
+  await reject("current", "筛选内最后一项未通过");
+  await page
+    .getByRole("status")
+    .filter({
+      hasText: "当前筛选内没有下一项待审查的检查项。",
+    })
+    .waitFor();
+  assert.equal(await page.locator(".check-item").count(), 0);
+  results.push("rejected-preserve-filters-and-completion");
+
+  for (const kind of ["accepted", "rejected"]) {
+    for (const mode of ["rejected", "unknown"]) {
+      const run = await createRun(`${kind} ${mode} 保留草稿与当前项`);
+      await page.route(`**/runs/${run.id}/reviews`, (route) =>
+        mode === "rejected"
+          ? route.fulfill({
+              status: 400,
+              json: { code: "BODY_REQUIRED", message: "合成拒绝" },
+            })
+          : route.abort("failed"),
+      );
+      await button(
+        "tail",
+        kind === "accepted" ? "人工通过" : "人工不通过",
+      ).click();
+      await check("tail").getByRole("textbox").fill("失败后应保留的理由");
+      await button(
+        "tail",
+        kind === "accepted" ? "确认人工通过" : "确认不通过",
+      ).click();
+      await check("tail").getByRole("alert").waitFor();
+      assert.equal(await trigger("tail").getAttribute("aria-expanded"), "true");
+      assert.equal(
+        await check("tail").getByRole("textbox").inputValue(),
+        "失败后应保留的理由",
+      );
+      assert.equal(
+        (await api(`/runs/${run.id}`)).checkReviews.find(
+          (item) => item.checkId === "tail",
+        ).status,
+        "pending",
+      );
+      results.push(`${kind}-${mode}-keeps-current-and-draft`);
     }
-    await focused("rejected");
-    results.push(`${mode}-read-waits-for-confirmation`);
+
+    for (const mode of ["delayed", "failed"]) {
+      const run = await createRun(`${kind} ${mode} 保存后的状态回读`);
+      await open("rejected", false);
+      let release;
+      let reading;
+      const started = new Promise((resolve) => {
+        reading = resolve;
+      });
+      const released = new Promise((resolve) => {
+        release = resolve;
+      });
+      let intercept = true;
+      await page.route(`**/api/v1/runs/${run.id}`, async (route) => {
+        if (!intercept) return route.continue();
+        reading();
+        if (mode === "failed")
+          return route.fulfill({
+            status: 500,
+            json: { message: "合成回读失败" },
+          });
+        await released;
+        return route.continue();
+      });
+      if (kind === "accepted") await button("current", "人工通过").click();
+      else await reject("current", "回读确认前不跳转");
+      await started;
+      await waitFor(
+        () =>
+          trigger("current")
+            .getAttribute("aria-expanded")
+            .then((value) => value === "false"),
+        "Commit should collapse current item",
+      );
+      assert.equal(
+        await trigger("rejected").getAttribute("aria-expanded"),
+        "false",
+      );
+      if (mode === "delayed") release();
+      else {
+        await page
+          .getByRole("alert")
+          .filter({ hasText: "已保存，状态刷新失败" })
+          .waitFor();
+        intercept = false;
+        await page
+          .getByRole("button", { name: "重试刷新", exact: true })
+          .click();
+      }
+      await focused("rejected");
+      results.push(`${kind}-${mode}-read-waits-for-confirmation`);
+    }
   }
   if (output) {
     await mkdir(output, { recursive: true });

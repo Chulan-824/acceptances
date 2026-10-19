@@ -53,6 +53,7 @@ export function Checklist({
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
   const [advance, setAdvance] = useState<{
     checkId: string;
+    kind: "accepted" | "rejected";
     query: string;
     status: string;
     humanStatus: string;
@@ -97,7 +98,7 @@ export function Checklist({
     advance.query === query &&
     advance.status === status &&
     advance.humanStatus === humanStatus &&
-    humanStates.get(advance.checkId) === "accepted",
+    humanStates.get(advance.checkId) === advance.kind,
   );
   const complete = confirmed && !nextCheckId;
   useEffect(() => {
@@ -119,10 +120,16 @@ export function Checklist({
     const result = await onReview(input);
     if (
       result.kind === "committed" &&
-      input.kind === "accepted" &&
+      (input.kind === "accepted" || input.kind === "rejected") &&
       input.checkId
     )
-      setAdvance({ checkId: input.checkId, query, status, humanStatus });
+      setAdvance({
+        checkId: input.checkId,
+        kind: input.kind,
+        query,
+        status,
+        humanStatus,
+      });
     return result;
   }
   return (
@@ -226,7 +233,11 @@ export function Checklist({
           />
         ))}
         {complete && (
-          <Alert role="status">当前筛选内的检查项已全部人工通过。</Alert>
+          <Alert role="status">
+            {advance?.kind === "rejected"
+              ? "当前筛选内没有下一项待审查的检查项。"
+              : "当前筛选内的检查项已全部人工通过。"}
+          </Alert>
         )}
         {!checks.length && (
           <EmptyState
@@ -284,7 +295,10 @@ function CheckItem({
   const missing = (check.evidence || []).filter((path) => !evidence.has(path));
   async function review(input: ReviewInput) {
     const result = await onReview(input);
-    if (result.kind === "committed" && input.kind === "accepted")
+    if (
+      result.kind === "committed" &&
+      (input.kind === "accepted" || input.kind === "rejected")
+    )
       setExpanded(false);
     return result;
   }
