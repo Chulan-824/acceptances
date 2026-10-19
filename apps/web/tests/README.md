@@ -1,5 +1,11 @@
 # Run 定位浏览器验证
 
+## 检查项附件默认图片
+
+`check-item-image-first.mjs` 导出 `run(page, base, output)`，使用真实 Go API 和生产 Web。设置 `ACCEPTANCES_TEST_ISOLATED=1`，使用全新临时数据目录、随机本机端口及专用 Playwright Page。测试拒绝日常端口 5173、8765，且要求初始项目列表为空。调用前在 `output/fixture.mp4` 准备一个可解码、时长一秒的视频；本机已有 ffmpeg 时可用 `ffmpeg -f lavfi -i color=c=blue:s=32x32:d=1 -c:v libx264 -pix_fmt yuv420p output/fixture.mp4` 生成。
+
+覆盖混合附件默认只挂载图片、附件顺序与计数、展开及收起、图片缩放、视频元数据、差异预览、日志单独展开、仅图片、仅其他附件、无附件、检查项独立状态、收起检查项后保留状态、页面刷新与跨 Run 重置，以及原有字段、人工评审和文件页回归。缺失引用提示单独使用受控 GET 响应注入验证，不修改存储的报告。返回场景结果并保存默认及展开截图；失败抛错，由调用方关闭浏览器和临时服务。结果只证明平台合成交互，不代表业务验收。
+
 ## 检查项通过后连续审查
 
 `check-review-flow.mjs` 导出 `run(page, base, output)`，使用真实 Go API 和生产 Web。调用前设置 `ACCEPTANCES_TEST_ISOLATED=1`，以全新临时数据目录和随机本机端口启动服务，并创建专用 Playwright context。测试拒绝日常端口 5173、8765，且要求初始项目列表为空；不新增测试依赖。

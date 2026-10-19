@@ -10,6 +10,13 @@ import {
   evidenceURL,
   type Evidence as EvidenceData,
 } from "@acceptances/api-client";
+
+export function isImageEvidence(path: string) {
+  return ["png", "jpg", "jpeg", "gif", "webp"].includes(
+    path.split(".").pop()?.toLowerCase() || "",
+  );
+}
+
 export function Evidence({
   run,
   item,
@@ -23,9 +30,7 @@ export function Evidence({
 }) {
   const url = evidenceURL(run, item.path);
   const extension = item.path.split(".").pop()?.toLowerCase();
-  const isImage = ["png", "jpg", "jpeg", "gif", "webp"].includes(
-    extension || "",
-  );
+  const isImage = isImageEvidence(item.path);
   const [textExpanded, setTextExpanded] = useState(false);
   return (
     <FramePanel

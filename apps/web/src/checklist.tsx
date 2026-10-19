@@ -16,7 +16,7 @@ import type {
   Run as RunData,
 } from "@acceptances/api-client";
 import { Status } from "./client";
-import { Evidence } from "./evidence";
+import { Evidence, isImageEvidence } from "./evidence";
 import { Icon } from "./workspace-controls";
 import { Button } from "./components/ui/button";
 import { ReviewForm, ReviewHistory, type ReviewDraft } from "./review";
@@ -274,6 +274,14 @@ function CheckItem({
   onReview: (input: ReviewInput) => Promise<WriteResult>;
 }) {
   const [expanded, setExpanded] = useState(humanStatus !== "accepted");
+  const [moreExpanded, setMoreExpanded] = useState(false);
+  const images = (check.evidence || []).filter(
+    (path) => evidence.has(path) && isImageEvidence(path),
+  );
+  const others = (check.evidence || []).filter(
+    (path) => evidence.has(path) && !isImageEvidence(path),
+  );
+  const missing = (check.evidence || []).filter((path) => !evidence.has(path));
   async function review(input: ReviewInput) {
     const result = await onReview(input);
     if (result.kind === "committed" && input.kind === "accepted")
@@ -315,16 +323,39 @@ function CheckItem({
         {expanded &&
           (check.evidence?.length ? (
             <div className="inline-evidence">
-              {check.evidence.map((path) => {
-                const item = evidence.get(path);
-                return item ? (
-                  <Evidence key={path} run={run} item={item} inline />
-                ) : (
-                  <Alert role="note" key={path} className="notice">
-                    附件清单中未找到 {path}。
-                  </Alert>
-                );
-              })}
+              {images.map((path) => (
+                <Evidence
+                  key={path}
+                  run={run}
+                  item={evidence.get(path)!}
+                  inline
+                />
+              ))}
+              {missing.map((path) => (
+                <Alert role="note" key={path} className="notice">
+                  附件清单中未找到 {path}。
+                </Alert>
+              ))}
+              {others.length > 0 && (
+                <Disclosure
+                  open={moreExpanded}
+                  onOpenChange={setMoreExpanded}
+                  title={<>更多附件（{others.length}）</>}
+                >
+                  {moreExpanded && (
+                    <div className="inline-evidence">
+                      {others.map((path) => (
+                        <Evidence
+                          key={path}
+                          run={run}
+                          item={evidence.get(path)!}
+                          inline
+                        />
+                      ))}
+                    </div>
+                  )}
+                </Disclosure>
+              )}
             </div>
           ) : (
             <p className="muted">此检查项未关联附件。</p>
