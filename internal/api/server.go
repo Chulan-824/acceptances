@@ -36,6 +36,11 @@ type Project struct {
 }
 
 func Open(dir string) (*Server, error) {
+	absoluteDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+	dir = absoluteDir
 	if err := os.MkdirAll(filepath.Join(dir, "evidence"), 0700); err != nil {
 		return nil, err
 	}
