@@ -181,7 +181,7 @@ function FreezeConfirmation({
         </Alert>
       )}
       <Frame className="delivery-wizard" ref={wizard}>
-        <Stepper value={step} onValueChange={setStep}>
+        <Stepper value={step}>
           <StepperNav aria-label="交付确认步骤">
             {["代码与构建", "地图与范围", "说明素材", "最终确认"].map(
               (title, index) => (
@@ -197,9 +197,9 @@ function FreezeConfirmation({
                           ? materialsConfirmed
                           : false
                   }
-                  disabled={busy || unknown}
+                  disabled
                 >
-                  <StepperTrigger>
+                  <StepperTrigger className="disabled:cursor-default disabled:opacity-100">
                     <StepperIndicator>{index + 1}</StepperIndicator>
                     <StepperTitle>{title}</StepperTitle>
                   </StepperTrigger>
