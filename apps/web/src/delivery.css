@@ -59,9 +59,73 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
   .delivery-page {
     @apply w-full max-w-280 px-4 py-8 sm:px-6;
   }
-  .delivery-home-entry {
-    @apply max-w-280 mx-auto justify-end px-4 pt-5 sm:px-6;
+  .delivery-page-desc {
+    @apply text-sm text-muted mt-2 mb-0 leading-relaxed max-w-[75ch];
   }
+
+  /* 交付归档工具栏与卡片优化 */
+  .delivery-archive-tools-panel {
+    @apply rounded-default border border-border bg-surface;
+  }
+  .delivery-archive-card {
+    @apply p-4 sm:p-5 rounded-default bg-surface border border-border flex flex-col gap-3 transition-colors hover:border-border-dark;
+  }
+  .delivery-archive-card-header {
+    @apply flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3 border-b border-border;
+  }
+  .delivery-archive-card-titles {
+    @apply flex flex-col gap-1 min-w-0;
+  }
+  .delivery-archive-project-tag {
+    @apply flex items-center gap-1.5 text-xs text-muted font-medium;
+  }
+  .delivery-archive-campaign-title {
+    @apply text-base sm:text-lg font-medium text-fg m-0 tracking-tight flex items-center gap-2 flex-wrap;
+  }
+  .delivery-version-badge {
+    @apply text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-surface-subtle border border-border text-fg-secondary;
+  }
+  .delivery-archive-meta-row {
+    @apply flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted;
+  }
+  .delivery-archive-meta-item {
+    @apply flex items-center gap-1.5;
+  }
+  .delivery-archive-card-footer {
+    @apply flex items-center justify-end pt-2 border-t border-border/50;
+  }
+
+  /* 交付冻结页面顶部卡片 */
+  .delivery-summary-card {
+    @apply my-6 p-4 sm:p-5 rounded-default bg-surface border border-border;
+  }
+  .delivery-summary-top {
+    @apply flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 mb-3 border-b border-border;
+  }
+  .delivery-summary-titles {
+    @apply flex flex-col gap-1 min-w-0;
+  }
+  .delivery-summary-project {
+    @apply flex items-center gap-1.5 text-xs text-muted font-medium;
+  }
+  .delivery-summary-campaign {
+    @apply text-lg sm:text-xl font-medium text-fg m-0 tracking-tight truncate;
+  }
+  .delivery-summary-status-cluster {
+    @apply flex items-center gap-2 shrink-0;
+  }
+  .delivery-summary-footnote {
+    @apply text-xs text-muted leading-relaxed m-0;
+  }
+
+  /* 向导导航栏与外框优化 */
+  .delivery-wizard {
+    @apply my-6 rounded-default border border-border bg-surface;
+  }
+  .delivery-stepper-nav {
+    @apply p-4 sm:px-6 border-b border-border;
+  }
+
   .delivery-list {
     @apply grid grid-cols-1 gap-4;
   }
@@ -97,14 +161,40 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
   .delivery-step-intro {
     @apply mb-6 pb-4 border-b border-border;
   }
+  .delivery-step-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-subtle border border-border text-xs font-medium text-muted mb-2.5;
+  }
+  .delivery-step-badge-dot {
+    @apply size-1.5 rounded-full bg-fg/40;
+  }
   .delivery-step-meta {
     @apply text-xs font-medium uppercase tracking-wider text-muted block mb-1;
   }
   .delivery-step-heading {
-    @apply text-xl font-medium text-fg m-0;
+    @apply text-xl font-medium text-fg m-0 tracking-tight;
   }
   .delivery-step-desc {
     @apply text-sm text-muted mt-1.5 mb-0 leading-relaxed max-w-[72ch];
+  }
+
+  /* 步骤通用的区块布局 */
+  .delivery-section-group {
+    @apply flex flex-col gap-4 my-4;
+  }
+  .delivery-card-block {
+    @apply p-4 rounded-default bg-surface border border-border;
+  }
+  .delivery-card-block-header {
+    @apply flex items-center justify-between gap-3 pb-3 mb-3 border-b border-border;
+  }
+  .delivery-card-block-title {
+    @apply text-sm font-medium text-fg;
+  }
+  .delivery-build-row {
+    @apply flex flex-wrap items-center justify-between gap-3 text-sm p-3 rounded-default bg-surface-subtle border border-border/60;
+  }
+  .delivery-empty-text {
+    @apply text-xs text-muted m-0 italic py-2 text-center;
   }
 
   /* 步骤 1：受验代码与实际构建卡片 */
