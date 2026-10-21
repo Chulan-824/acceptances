@@ -66,7 +66,8 @@ Agent 使用 `acceptances feedback --campaign <标题或ID>` 读取反馈，`acc
 工具版本由 `toolchain.lock.json`、`go.mod` 和 `pnpm-lock.yaml` 固定。
 
 ```sh
-make dev
+make dev                  # 前台启动，Ctrl-C 清理
+# 或 make dev-up 后台启动；make dev-status 查询；make dev-stop 停止
 make fmt
 make lint typecheck build
 make test
@@ -76,7 +77,7 @@ make test SUITE=platform
 
 开发 Web 为 <http://127.0.0.1:5173>，API 为 <http://127.0.0.1:8765>，开发数据默认在 `.cache/dev-data`。开发时在业务目录首次关联使用 `acceptances link --url http://127.0.0.1:5173 --project <项目名称>`，与 Web 共用 Vite 代理入口；后续命令复用关联中保存的 URL。生产构建输出 `build/server`、`build/acceptances` 和 `apps/web/dist`。
 
-`make test` 执行隔离 Go 测试，不能代替真实 Docker 和浏览器验收。命令边界见 [工具链](docs/toolchain.md)，T1–T9 验证步骤见 [实现交接](docs/v1-implementation-handoff.md)。
+`make test` 执行隔离 Go 测试、Web 单元及服务生命周期回归。`make services-status` 查询受管开发/验证服务，`make services-stop` 停止它们（会中断验证）；真实开发启动/退出烟测使用 `make test SUITE=services`。`pnpm test:browser` 构建当前源码，再执行已有真实浏览器回归；分组与证据边界见 [Web 回归验证](apps/web/tests/README.md)。这些检查不能代替真实业务及 Docker 验收。命令边界见 [工具链](docs/toolchain.md)，T1–T9 验证步骤见 [实现交接](docs/v1-implementation-handoff.md)。
 
 ## 目录
 
