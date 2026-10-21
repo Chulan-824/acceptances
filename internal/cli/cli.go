@@ -49,7 +49,7 @@ func run(args []string, log io.Writer) (any, error) {
 		return map[string]any{"commands": []string{
 			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...]",
 			"context [--repo .]", "campaigns [--title <new-title>] [--description ...] [--repo .]",
-			"publish --bundle <directory> --campaign <title-or-id> [--repo .]", "status --run <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
+			"publish --bundle <directory> --campaign <title-or-id> [--repo .]", "status --run <id> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
 		}, "bundle": "report.json and declared evidence files; .submission-id retained for retries; use a new directory for each actual verification"}, nil
 	}
 	if args[0] == "version" {
@@ -65,6 +65,9 @@ func run(args []string, log io.Writer) (any, error) {
 	description := f.String("description", "", "campaign description")
 	bundle := f.String("bundle", "", "directory containing report.json and evidence")
 	runID := f.String("run", "", "Run ID")
+	fromCampaign := f.String("from-campaign", "", "expected current Campaign ID")
+	reason := f.String("reason", "", "reason for correcting Run ownership")
+	requestID := f.String("request-id", "", "stable move request ID for retries")
 	f.Bool("json", true, "JSON output")
 	if err := f.Parse(args[1:]); err != nil {
 		return nil, err
@@ -146,6 +149,8 @@ func run(args []string, log io.Writer) (any, error) {
 		}
 		payload, _ := json.Marshal(map[string]string{"title": *title, "description": *description})
 		return c.request("POST", campaigns, bytes.NewReader(payload), "application/json")
+	case "move-run":
+		return c.moveRun(campaigns, saved.ProjectID, *runID, *fromCampaign, *campaign, *reason, *requestID)
 	case "status":
 		if *runID == "" {
 			return nil, fmt.Errorf("--run is required")
@@ -169,6 +174,9 @@ func run(args []string, log io.Writer) (any, error) {
 		var run map[string]any
 		if err := json.Unmarshal(result, &run); err != nil {
 			return nil, err
+		}
+		if actualCampaign, ok := run["campaignId"].(string); ok && actualCampaign != "" {
+			id = actualCampaign
 		}
 		if runID, ok := run["id"].(string); ok {
 			run["webUrl"] = c.base + "/projects/" + url.PathEscape(saved.ProjectID) + "/campaigns/" + id + "/runs/" + url.PathEscape(runID)

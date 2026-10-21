@@ -79,6 +79,10 @@ func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 		lookupFailure(w, r, e, "RUN_NOT_FOUND")
 		return
 	}
+	if v.ConsolidatedInto != nil {
+		fail(w, 409, "RUN_CONSOLIDATED")
+		return
+	}
 	if v.Status == "void" && in.Kind != "comment" {
 		fail(w, 409, "RUN_VOID")
 		return
@@ -148,6 +152,10 @@ func (s *Server) voidRun(w http.ResponseWriter, r *http.Request) {
 	v, e := s.run(r.PathValue("id"))
 	if e != nil {
 		lookupFailure(w, r, e, "RUN_NOT_FOUND")
+		return
+	}
+	if v.ConsolidatedInto != nil {
+		fail(w, 409, "RUN_CONSOLIDATED")
 		return
 	}
 	if v.Status == "void" {

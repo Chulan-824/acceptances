@@ -88,6 +88,9 @@ func (s *Server) prepareDelivery(runID string) (DeliveryPreparation, error) {
 		return prep, err
 	}
 	issue := func(code, message string) { prep.Issues = append(prep.Issues, DeliveryIssue{code, message}) }
+	if run.ConsolidatedInto != nil {
+		issue("RUN_CONSOLIDATED", "该报告已合并留档，请使用当前报告。")
+	}
 	if prep.Campaign.LatestRunID != run.ID {
 		issue("RUN_NOT_LATEST", "只能冻结当前最新的验证记录。")
 	}
@@ -174,7 +177,11 @@ func loadDeliveryMaterials(root *os.Root, prep *DeliveryPreparation) error {
 		return err
 	}
 	prep.Manifest = &manifest
-	if manifest.SchemaVersion != 1 || manifest.ProjectID != prep.Project.ID || manifest.CampaignID != prep.Campaign.ID {
+	materialsCampaignID, err := prep.Run.materialsCampaignID()
+	if err != nil {
+		return err
+	}
+	if manifest.SchemaVersion != 1 || manifest.ProjectID != prep.Project.ID || manifest.CampaignID != materialsCampaignID {
 		return fmt.Errorf("交付清单版本或 Project/Campaign 归属不匹配。")
 	}
 	refs := []ArtifactRef{manifest.Requirement, manifest.Map, manifest.Materials}

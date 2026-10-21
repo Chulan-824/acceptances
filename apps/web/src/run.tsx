@@ -1,3 +1,4 @@
+import { ConsolidatedRuns, ConsolidatedRunArchive } from "./consolidated-runs";
 import { FramePanel } from "./components/reui/frame";
 import { Badge } from "./components/reui/badge";
 import { Alert } from "./components/reui/alert";
@@ -134,6 +135,17 @@ export function Run({
         </section>
       </FramePanel>
     );
+  if (run.campaignId !== view.scope.campaignId) {
+    const href = `/projects/${encodeURIComponent(view.scope.projectId!)}/campaigns/${encodeURIComponent(run.campaignId)}/runs/${encodeURIComponent(run.id)}`;
+    return (
+      <Alert role="note">
+        此报告已归属其他需求，原验证记录保持不变。{" "}
+        <a href={href}>前往报告所属需求</a>
+      </Alert>
+    );
+  }
+  if (run.consolidatedInto)
+    return <ConsolidatedRunArchive run={run} runPath={runPath} />;
   const report = run.report;
   return (
     <RunNavigationProvider value={{ runPath, navigate }}>
@@ -161,6 +173,7 @@ export function Run({
         </p>
       )}
 
+      <ConsolidatedRuns run={run} runPath={runPath} />
       <div className="report-version-line" ref={reportTop}>
         {report.versions?.map((version, index) => (
           <span key={index} title={`${version.repository} · ${version.commit}`}>
@@ -238,6 +251,29 @@ export function Run({
               </div>
             </div>
           </FramePanel>
+          {run.moves?.length ? (
+            <section aria-label="需求迁移记录">
+              <h3>需求迁移记录</h3>
+              <p className="muted">
+                仅更正需求归属，原验证时间、结果、附件和评审记录保持不变。
+              </p>
+              <ul>
+                {run.moves.map((move) => (
+                  <li key={move.id}>
+                    <time dateTime={move.createdAt}>
+                      {new Date(move.createdAt).toLocaleString()}
+                    </time>
+                    {" · "}
+                    {move.reason}
+                    <div className="muted">
+                      来源需求：<code>{move.fromCampaignId}</code>
+                      {" → "}目标需求：<code>{move.toCampaignId}</code>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           <p className="prose">{report.description}</p>
           <dl>
             <dt>本次验证范围</dt>

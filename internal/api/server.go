@@ -68,9 +68,9 @@ func Open(dir string) (*Server, error) {
 		db.Close()
 		return nil, err
 	}
-	if version > 4 {
+	if version > 6 {
 		db.Close()
-		return nil, fmt.Errorf("database schema version %d is newer than supported version 4", version)
+		return nil, fmt.Errorf("database schema version %d is newer than supported version 6", version)
 	}
 	if version == 0 {
 		if _, err = db.Exec(`BEGIN;
@@ -94,6 +94,14 @@ func Open(dir string) (*Server, error) {
 		return nil, err
 	}
 	if err = s.migrateDocumentKinds(version != 0); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err = s.migrateRunMoves(version != 0); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err = s.migrateRunConsolidations(version != 0); err != nil {
 		db.Close()
 		return nil, err
 	}
@@ -185,6 +193,8 @@ func (s *Server) Register(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/campaigns/{id}/runs", s.submitRun)
 	m.HandleFunc("GET /api/v1/campaigns/{id}/runs", s.listRuns)
 	m.HandleFunc("GET /api/v1/runs/{id}", s.getRun)
+	m.HandleFunc("POST /api/v1/runs/{id}/move", s.moveRun)
+	m.HandleFunc("POST /api/v1/runs/{id}/consolidate", s.consolidateRun)
 	m.HandleFunc("GET /api/v1/runs/{id}/evidence/{filename}", s.evidence)
 	m.HandleFunc("POST /api/v1/runs/{id}/reviews", s.review)
 	m.HandleFunc("POST /api/v1/runs/{id}/accept-all", s.acceptAll)

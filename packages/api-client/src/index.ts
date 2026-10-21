@@ -71,7 +71,33 @@ export interface Report {
   }[];
   evidence: Evidence[];
 }
+export interface RunMove {
+  id: string;
+  runId: string;
+  requestId: string;
+  fromCampaignId: string;
+  toCampaignId: string;
+  reason: string;
+  createdAt: string;
+}
+export interface RunConsolidation {
+  id: string;
+  requestId: string;
+  sourceRunId: string;
+  primaryRunId: string;
+  fromCampaignId: string;
+  reason: string;
+  createdAt: string;
+}
+export interface ConsolidatedRun extends RunConsolidation {
+  title: string;
+  verifiedAt: string;
+  evidenceCount: number;
+}
 export interface Run {
+  consolidatedInto?: RunConsolidation;
+  consolidatedRuns?: ConsolidatedRun[];
+  moves?: RunMove[];
   id: string;
   campaignId: string;
   submissionId: string;

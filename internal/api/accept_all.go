@@ -22,6 +22,10 @@ func (s *Server) acceptAll(w http.ResponseWriter, r *http.Request) {
 		lookupFailure(w, r, err, "RUN_NOT_FOUND")
 		return
 	}
+	if v.ConsolidatedInto != nil {
+		fail(w, 409, "RUN_CONSOLIDATED")
+		return
+	}
 	if v.Status == "void" {
 		fail(w, http.StatusConflict, "RUN_VOID")
 		return

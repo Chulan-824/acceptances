@@ -80,6 +80,9 @@ type ReviewCounts struct {
 	Rejected int `json:"rejected"`
 }
 type Run struct {
+	ConsolidatedInto   *RunConsolidation     `json:"consolidatedInto,omitempty"`
+	ConsolidatedRuns   []ConsolidatedRun     `json:"consolidatedRuns,omitempty"`
+	Moves              []RunMove             `json:"moves,omitempty"`
 	ID                 string                `json:"id"`
 	CampaignID         string                `json:"campaignId"`
 	SubmissionID       string                `json:"submissionId"`
@@ -400,6 +403,13 @@ func (s *Server) run(key string) (Run, error) {
 		return v, e
 	}
 	v.deriveCheckReviews()
+	v.Moves, e = s.runMoves(key)
+	if e != nil {
+		return v, e
+	}
+	if e = s.loadRunConsolidations(&v); e != nil {
+		return v, e
+	}
 	return v, s.deriveFeedbackResponses(&v)
 }
 func (s *Server) getRun(w http.ResponseWriter, r *http.Request) {
@@ -415,7 +425,7 @@ func (s *Server) listRuns(w http.ResponseWriter, r *http.Request) {
 		lookupFailure(w, r, e, "CAMPAIGN_NOT_FOUND")
 		return
 	}
-	rows, e := s.db.QueryContext(r.Context(), "SELECT id FROM runs WHERE campaign_id=? ORDER BY created_at DESC,id", r.PathValue("id"))
+	rows, e := s.db.QueryContext(r.Context(), `SELECT id FROM runs WHERE campaign_id=? AND (? OR NOT EXISTS(SELECT 1 FROM run_consolidations c WHERE c.source_run_id=runs.id)) ORDER BY created_at DESC,id`, r.PathValue("id"), r.URL.Query().Get("includeArchived") == "true")
 	if e != nil {
 		fail(w, 500, "READ_FAILED")
 		return

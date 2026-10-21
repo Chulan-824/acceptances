@@ -22,7 +22,8 @@ func TestDeliveryMigrationBacksUpAndPreservesVersionTwoReviews(t *testing.T) {
 	}
 	// The pre-existing report/review schema remains untouched. Remove only
 	// empty delivery tables to reproduce an actual version-two archive.
-	if _, err = db.Exec(`DROP TABLE business_documents;
+	if _, err = db.Exec(`DROP TABLE run_consolidations; DROP TABLE run_moves;
+DROP TABLE business_documents;
 DROP TABLE delivery_events;
 DROP TABLE delivery_requests;
 DROP TABLE delivery_snapshots;

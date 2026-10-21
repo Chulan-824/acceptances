@@ -83,6 +83,17 @@ func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string
 		preview.RetainedDeliveries += deliveries
 		preview.RetainedDocuments += documents
 	}
+	if remove && kind == "runs" {
+		var grouped bool
+		if err := s.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM run_consolidations WHERE source_run_id=? OR primary_run_id=?)`, key, key).Scan(&grouped); err != nil {
+			fail(w, 500, "READ_FAILED")
+			return
+		}
+		if grouped {
+			fail(w, 409, "RUN_HAS_CONSOLIDATION")
+			return
+		}
+	}
 	if !remove {
 		respond(w, 200, preview)
 		return

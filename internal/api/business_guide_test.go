@@ -162,7 +162,8 @@ func TestDocumentKindMigrationPreservesLegacyBytesAndVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Restore the exact previous table shape to exercise the real migration.
-	_, err = db.Exec(`DROP TRIGGER immutable_successful_document; DROP TRIGGER immutable_document_input;
+	_, err = db.Exec(`DROP TABLE run_consolidations; DROP TABLE run_moves;
+DROP TRIGGER immutable_successful_document; DROP TRIGGER immutable_document_input;
 ALTER TABLE business_documents RENAME TO current_documents;
 CREATE TABLE business_documents(id TEXT PRIMARY KEY,delivery_id TEXT NOT NULL REFERENCES delivery_snapshots(id),version INTEGER NOT NULL,request_id TEXT NOT NULL UNIQUE,template_version TEXT NOT NULL,status TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 1,error TEXT NOT NULL DEFAULT '',content_hash TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL,completed_at TEXT NOT NULL DEFAULT '',UNIQUE(delivery_id,version));
 INSERT INTO business_documents SELECT id,delivery_id,version,request_id,template_version,status,attempts,error,content_hash,created_at,completed_at FROM current_documents;
