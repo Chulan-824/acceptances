@@ -7,7 +7,7 @@
   margin: 12px auto;
   padding: 12px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-default);
 }
 .campaign-delivery p {
   margin: 6px 0 0;
@@ -27,13 +27,13 @@
 }
 .delivery-progress p {
   color: var(--color-fg-muted);
-  font-size: 13px;
+  font-size: var(--text-caption);
 }
 .delivery-readiness,
 .delivery-notice {
   background: var(--color-warning-soft);
   border: 1px solid var(--color-warning-border);
-  border-radius: 6px;
+  border-radius: var(--radius-default);
   padding: 12px;
   margin: 12px 0;
 }
@@ -42,7 +42,7 @@
   margin: 8px 0 0;
 }
 .delivery-readiness li + li {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 @media (max-width: 640px) {
   .delivery-progress {
@@ -66,7 +66,7 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply grid grid-cols-1 gap-4;
   }
   .delivery-card {
-    @apply p-5;
+    @apply p-4;
   }
   .delivery-confirmation {
     @apply border-0 m-0 p-0;
@@ -79,7 +79,7 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply mx-0 my-3;
   }
   .delivery-confirmation img {
-    @apply max-w-full h-auto rounded-md;
+    @apply max-w-full h-auto rounded-default;
   }
   .ui-label.delivery-checkbox,
   label.delivery-checkbox,
@@ -87,7 +87,7 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply flex flex-row items-center gap-3 text-sm mb-0 cursor-pointer w-full;
   }
   .delivery-checkbox input {
-    @apply size-4 rounded border-border text-brand focus:ring-brand shrink-0 m-0 cursor-pointer;
+    @apply size-4 rounded-default border-border text-brand focus:ring-brand shrink-0 m-0 cursor-pointer;
   }
   .delivery-reason {
     @apply block my-2;
@@ -98,10 +98,10 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply mb-6 pb-4 border-b border-border;
   }
   .delivery-step-meta {
-    @apply text-xs font-semibold uppercase tracking-wider text-muted block mb-1;
+    @apply text-xs font-medium uppercase tracking-wider text-muted block mb-1;
   }
   .delivery-step-heading {
-    @apply text-xl font-bold text-fg m-0;
+    @apply text-xl font-medium text-fg m-0;
   }
   .delivery-step-desc {
     @apply text-sm text-muted mt-1.5 mb-0 leading-relaxed max-w-[72ch];
@@ -109,34 +109,34 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
 
   /* 步骤 1：受验代码与实际构建卡片 */
   .delivery-versions-card {
-    @apply my-4 p-4 rounded-lg bg-surface border border-border;
+    @apply my-4 p-4 rounded-default bg-surface border border-border;
   }
   .delivery-section-subtitle {
-    @apply text-xs font-semibold text-muted uppercase tracking-wider mb-3;
+    @apply text-xs font-medium text-muted uppercase tracking-wider mb-3;
   }
   .delivery-version-list {
-    @apply flex flex-col gap-2.5;
+    @apply flex flex-col gap-3;
   }
   .delivery-version-item {
-    @apply flex flex-wrap items-center justify-between gap-3 p-3 rounded-md bg-surface-subtle border border-border/60;
+    @apply flex flex-wrap items-center justify-between gap-3 p-3 rounded-default bg-surface-subtle border border-border/60;
   }
   .delivery-version-main {
     @apply flex items-center gap-3 flex-wrap;
   }
   .delivery-repo-title {
-    @apply text-sm font-semibold text-fg;
+    @apply text-sm font-medium text-fg;
   }
   .delivery-commit-pill {
-    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface border border-border text-xs font-mono;
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-default bg-surface border border-border text-xs font-mono;
   }
   .delivery-commit-prefix {
     @apply text-muted font-sans font-normal;
   }
   .delivery-build-card {
-    @apply my-4 p-3.5 rounded-lg bg-surface-subtle border border-border flex items-center gap-3 text-sm;
+    @apply my-4 p-3 rounded-default bg-surface-subtle border border-border flex items-center gap-3 text-sm;
   }
   .delivery-build-label {
-    @apply text-xs font-semibold text-muted uppercase tracking-wider shrink-0;
+    @apply text-xs font-medium text-muted uppercase tracking-wider shrink-0;
   }
   .delivery-build-value {
     @apply font-mono text-sm text-fg font-medium;
@@ -144,31 +144,31 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
 
   /* 步骤 2：需求地图与必验项卡片 */
   .delivery-missing-notice {
-    @apply my-4 p-4 rounded-lg bg-warning-soft border border-warning-border text-sm text-warning-dark;
+    @apply my-4 p-4 rounded-default bg-warning-soft border border-warning-border text-sm text-warning-dark;
   }
   .delivery-features-stack {
     @apply flex flex-col gap-4 my-4;
   }
   .delivery-feature-block {
-    @apply p-4 rounded-lg bg-surface border border-border;
+    @apply p-4 rounded-default bg-surface border border-border;
   }
   .delivery-feature-header {
     @apply flex items-center justify-between gap-3 pb-3 mb-3 border-b border-border;
   }
   .delivery-feature-info {
-    @apply flex items-center gap-2.5 flex-wrap;
+    @apply flex items-center gap-3 flex-wrap;
   }
   .delivery-feature-name {
-    @apply text-base font-semibold text-fg;
+    @apply text-base font-medium text-fg;
   }
   .delivery-feature-code {
-    @apply text-xs px-2 py-0.5 rounded bg-surface-subtle border border-border font-mono text-muted;
+    @apply text-xs px-2 py-0.5 rounded-default bg-surface-subtle border border-border font-mono text-muted;
   }
   .delivery-checks-table {
     @apply flex flex-col gap-2;
   }
   .delivery-check-row {
-    @apply p-3 rounded-md bg-surface-subtle/70 border border-border/50 text-sm;
+    @apply p-3 rounded-default bg-surface-subtle/70 border border-border/50 text-sm;
   }
   .delivery-check-header {
     @apply flex items-center justify-between gap-2 mb-1;
@@ -183,16 +183,16 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply text-xs text-muted flex items-baseline gap-1.5;
   }
   .delivery-expected-label {
-    @apply font-semibold text-fg-secondary shrink-0;
+    @apply font-medium text-fg-secondary shrink-0;
   }
   .delivery-expected-text {
     @apply text-fg-secondary;
   }
   .delivery-excluded-card {
-    @apply my-4 p-3 rounded-md bg-surface-subtle border border-border text-sm flex items-center gap-2;
+    @apply my-4 p-3 rounded-default bg-surface-subtle border border-border text-sm flex items-center gap-2;
   }
   .delivery-excluded-tag {
-    @apply text-xs font-semibold uppercase tracking-wider text-muted shrink-0;
+    @apply text-xs font-medium uppercase tracking-wider text-muted shrink-0;
   }
   .delivery-excluded-content {
     @apply text-fg-secondary;
@@ -204,15 +204,15 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply text-muted font-sans font-normal;
   }
   .delivery-digest-code {
-    @apply px-2 py-0.5 rounded bg-surface-subtle border border-border text-fg;
+    @apply px-2 py-0.5 rounded-default bg-surface-subtle border border-border text-fg;
   }
 
   /* 确认签名卡片 */
   .delivery-sign-panel {
-    @apply my-6 p-3.5 sm:px-4 sm:py-3.5 rounded-lg border border-border bg-surface-subtle transition-colors flex items-center;
+    @apply my-6 p-3 sm:px-4 sm:py-3 rounded-default border border-border bg-surface-subtle transition-colors flex items-center;
   }
   .delivery-sign-panel.is-confirmed {
-    @apply border-accent-border bg-accent-soft;
+    @apply border-success-border bg-success-soft;
   }
   .delivery-checkbox-label-text {
     @apply text-sm font-medium text-fg select-none leading-normal;
@@ -223,25 +223,25 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply flex flex-col gap-6 my-4;
   }
   .delivery-material-card {
-    @apply p-5 rounded-lg bg-surface border border-border;
+    @apply p-4 rounded-default bg-surface border border-border;
   }
   .delivery-material-top {
     @apply mb-4 pb-3 border-b border-border;
   }
   .delivery-material-title {
-    @apply text-lg font-bold text-fg m-0;
+    @apply text-lg font-medium text-fg m-0;
   }
   .delivery-material-summary {
     @apply text-sm text-fg-secondary mt-1.5 mb-0 leading-relaxed;
   }
   .delivery-material-meta-grid {
-    @apply grid grid-cols-1 md:grid-cols-3 gap-3 my-4 p-3.5 rounded-md bg-surface-subtle border border-border/70;
+    @apply grid grid-cols-1 md:grid-cols-3 gap-3 my-4 p-3 rounded-default bg-surface-subtle border border-border/70;
   }
   .delivery-meta-item {
     @apply flex flex-col gap-1;
   }
   .delivery-meta-label {
-    @apply text-xs font-semibold text-muted uppercase tracking-wider;
+    @apply text-xs font-medium text-muted uppercase tracking-wider;
   }
   .delivery-meta-value {
     @apply text-xs text-fg-secondary leading-normal;
@@ -253,16 +253,16 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply my-4;
   }
   .delivery-instructions-label {
-    @apply text-xs font-semibold text-muted uppercase tracking-wider mb-2.5;
+    @apply text-xs font-medium text-muted uppercase tracking-wider mb-3;
   }
   .delivery-instructions-list {
-    @apply list-none p-0 m-0 flex flex-col gap-2.5;
+    @apply list-none p-0 m-0 flex flex-col gap-3;
   }
   .delivery-instruction-item {
-    @apply flex items-start gap-3 p-3 rounded-md bg-surface-subtle/60 border border-border/50 text-sm;
+    @apply flex items-start gap-3 p-3 rounded-default bg-surface-subtle/60 border border-border/50 text-sm;
   }
   .delivery-step-index {
-    @apply size-5 rounded-full bg-brand text-brand-fg text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5;
+    @apply size-5 rounded-full bg-brand text-brand-fg text-xs font-medium flex items-center justify-center shrink-0 mt-0.5;
   }
   .delivery-instruction-content {
     @apply flex-1 min-w-0;
@@ -274,19 +274,19 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply text-xs text-fg-secondary m-0 flex items-baseline gap-1.5;
   }
   .delivery-expected-badge {
-    @apply px-1.5 py-0.5 rounded bg-surface border border-border text-xs font-medium text-muted shrink-0;
+    @apply px-1.5 py-0.5 rounded-default bg-surface border border-border text-xs font-medium text-muted shrink-0;
   }
   .delivery-figures-gallery {
     @apply grid grid-cols-1 md:grid-cols-2 gap-4 my-4;
   }
   .delivery-figure-item {
-    @apply m-0 rounded-lg border border-border bg-surface-subtle overflow-hidden;
+    @apply m-0 rounded-default border border-border bg-surface-subtle overflow-hidden;
   }
   .delivery-figure-img-wrap {
     @apply bg-canvas border-b border-border flex items-center justify-center p-2 min-h-48;
   }
   .delivery-figure-img-wrap img {
-    @apply max-h-72 object-contain rounded border-0;
+    @apply max-h-72 object-contain rounded-default border-0;
   }
   .delivery-figure-caption {
     @apply p-3 text-xs text-fg-secondary flex flex-col gap-1.5;
@@ -301,7 +301,7 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply text-muted font-normal;
   }
   .delivery-cid-badge {
-    @apply px-1.5 py-0.5 rounded bg-surface border border-border text-xs font-mono text-fg;
+    @apply px-1.5 py-0.5 rounded-default bg-surface border border-border text-xs font-mono text-fg;
   }
   .delivery-omission-text {
     @apply text-xs text-muted italic mt-3;
@@ -309,34 +309,34 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
 
   /* 步骤 4：最终冻结前置核查卡片 */
   .delivery-preflight-card {
-    @apply my-5 p-5 rounded-lg bg-surface border border-border;
+    @apply my-4 p-4 rounded-default bg-surface border border-border;
   }
   .delivery-preflight-header {
     @apply flex items-center justify-between gap-3 pb-3 mb-4 border-b border-border;
   }
   .delivery-preflight-title {
-    @apply text-base font-bold text-fg;
+    @apply text-base font-medium text-fg;
   }
   .delivery-preflight-meta {
     @apply text-xs text-muted flex items-center gap-1.5;
   }
   .delivery-preflight-meta code {
-    @apply px-2 py-0.5 rounded bg-surface-subtle border border-border text-fg font-mono;
+    @apply px-2 py-0.5 rounded-default bg-surface-subtle border border-border text-fg font-mono;
   }
   .delivery-preflight-grid {
     @apply grid grid-cols-1 sm:grid-cols-2 gap-3;
   }
   .delivery-check-status-box {
-    @apply p-3.5 rounded-md border flex items-center justify-between gap-3;
+    @apply p-3 rounded-default border flex items-center justify-between gap-3;
   }
   .delivery-check-status-box.is-ready {
-    @apply bg-accent-soft border-accent-border;
+    @apply bg-success-soft border-success-border;
   }
   .delivery-check-status-box.is-pending {
     @apply bg-warning-soft border-warning-border;
   }
   .delivery-status-box-label {
-    @apply text-sm font-semibold text-fg;
+    @apply text-sm font-medium text-fg;
   }
   .delivery-return-hint {
     @apply text-xs text-warning-dark mt-3 mb-0 font-medium;
@@ -344,16 +344,16 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
 
   /* 未通过项人工接受理由卡片 */
   .delivery-reasons-wrapper {
-    @apply my-6 p-5 rounded-lg bg-surface border border-border;
+    @apply my-6 p-4 rounded-default bg-surface border border-border;
   }
   .delivery-reasons-title-row {
     @apply flex items-center justify-between gap-3 mb-1;
   }
   .delivery-reasons-title {
-    @apply text-base font-bold text-fg m-0;
+    @apply text-base font-medium text-fg m-0;
   }
   .delivery-reasons-badge {
-    @apply text-xs font-semibold px-2 py-0.5 rounded-full bg-danger-soft text-danger-dark border border-danger-border;
+    @apply text-xs font-medium px-2 py-0.5 rounded-full bg-danger-soft text-danger-dark border border-danger-border;
   }
   .delivery-reasons-desc {
     @apply text-xs text-muted mb-4 leading-relaxed;
@@ -362,13 +362,13 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply flex flex-col gap-4;
   }
   .delivery-reason-item-card {
-    @apply p-4 rounded-md bg-surface-subtle border border-border;
+    @apply p-4 rounded-default bg-surface-subtle border border-border;
   }
   .delivery-reason-item-header {
-    @apply flex items-center justify-between gap-3 mb-2.5;
+    @apply flex items-center justify-between gap-3 mb-3;
   }
   .delivery-reason-check-title {
-    @apply text-sm font-semibold text-fg;
+    @apply text-sm font-medium text-fg;
   }
   .delivery-reason-item-card textarea {
     @apply bg-surface text-sm;
@@ -383,7 +383,7 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
     @apply py-4;
   }
   .business-preview iframe {
-    @apply w-full h-[70dvh] min-h-80 border border-border rounded-md bg-white;
+    @apply w-full h-[70dvh] min-h-80 border border-border rounded-default bg-white;
   }
   .delivery-page code {
     @apply break-all;

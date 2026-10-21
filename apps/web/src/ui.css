@@ -1,9 +1,11 @@
 @layer components {
   .ui-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-default border border-border-dark bg-surface-subtle text-fg-secondary px-4 py-[10px] cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 rounded-default border border-border-dark bg-surface-subtle text-fg-secondary px-3 py-2 cursor-pointer;
     font: inherit;
+    font-size: var(--text-ui);
+    line-height: 1.43;
   }
-  .ui-button:hover {
+  .ui-button:hover:not(:disabled) {
     @apply bg-surface-hover;
   }
   .ui-button:disabled {
@@ -12,7 +14,7 @@
   .ui-button-primary {
     @apply bg-brand text-brand-fg border-brand;
   }
-  .ui-button-primary:hover {
+  .ui-button-primary:hover:not(:disabled) {
     @apply bg-brand-hover;
   }
   .ui-button-destructive {
@@ -28,11 +30,11 @@
   .ui-button-link {
     @apply underline-offset-4;
   }
-  .ui-button-link:hover {
+  .ui-button-link:hover:not(:disabled) {
     @apply underline bg-transparent;
   }
   .ui-button-sm {
-    @apply text-[13px] px-3 py-2;
+    @apply text-caption px-3 py-2;
   }
   .ui-button-lg {
     @apply px-6 py-3;
@@ -50,7 +52,7 @@
   .ui-input,
   .ui-textarea,
   .ui-select-trigger {
-    @apply p-[10px] border border-border-dark rounded-default bg-surface text-fg max-w-full caret-brand;
+    @apply px-3 py-2 border border-border-dark rounded-default bg-surface text-fg max-w-full caret-brand;
     font: inherit;
   }
   .ui-input,
@@ -58,24 +60,24 @@
     @apply w-full;
   }
   .ui-textarea {
-    @apply min-h-[85px] resize-y;
+    @apply min-h-24 resize-y;
   }
   .ui-input::placeholder,
   .ui-textarea::placeholder {
     @apply text-muted opacity-100;
   }
   .ui-label {
-    @apply flex flex-col gap-[7px] mb-4;
+    @apply flex flex-col gap-2 mb-4;
   }
   .ui-card {
-    @apply bg-surface text-fg border border-border rounded-lg shadow-subtle;
+    @apply bg-surface text-fg border border-border rounded-default shadow-none;
   }
   .badge {
-    @apply inline-block py-1 px-[9px] rounded-sm bg-surface-subtle text-[13px] whitespace-nowrap;
+    @apply inline-block py-1 px-2 rounded-default bg-surface-subtle text-caption whitespace-nowrap;
   }
   .accepted,
   .passed {
-    @apply bg-accent-soft text-accent-dark;
+    @apply bg-success-soft text-success-dark;
   }
   .failed,
   .rejected,
@@ -100,7 +102,7 @@
     display: none;
   }
   .disclosure-trigger {
-    @apply w-full text-left cursor-pointer border-0 bg-transparent rounded-none px-4 py-[10px] text-fg-secondary border-border-dark;
+    @apply w-full text-left cursor-pointer border-0 bg-transparent rounded-none px-4 py-3 text-fg-secondary border-border-dark;
     font: inherit;
   }
   .disclosure-trigger:hover {
@@ -258,7 +260,7 @@
     }
   }
   .ui-alert {
-    @apply block my-3 p-[14px] rounded-default text-[14px] bg-warning-soft;
+    @apply block my-3 p-[14px] rounded-default text-ui bg-warning-soft;
   }
   .ui-alert-destructive {
     @apply bg-danger-soft border border-danger-border text-danger-dark;
@@ -267,10 +269,10 @@
     @apply w-auto min-w-48 p-2;
   }
   .delete-dialog {
-    @apply text-fg shadow-window;
+    @apply text-fg shadow-none;
   }
   .ui-tabs-list {
-    @apply inline-flex items-center gap-1 p-1 rounded-md;
+    @apply inline-flex items-center gap-1 p-1 rounded-default;
   }
   .ui-tabs-list-filled {
     @apply bg-surface-subtle;
@@ -280,7 +282,7 @@
     font: inherit;
   }
   .ui-tabs-trigger[data-state="active"] {
-    @apply bg-surface text-fg shadow-subtle;
+    @apply bg-surface text-fg shadow-none;
   }
   .ui-tabs-trigger:focus-visible {
     @apply outline-2 outline-brand outline-offset-2;
@@ -294,5 +296,38 @@
   .sr-only {
     @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
     clip-path: inset(50%);
+  }
+}
+
+@layer components {
+  .ui-button-destructive:hover:not(:disabled) {
+    @apply bg-danger-border;
+  }
+  .ui-button:active:not(:disabled) {
+    border-color: currentColor;
+  }
+  .ui-input[aria-invalid="true"],
+  .ui-textarea[aria-invalid="true"],
+  .ui-select-trigger[aria-invalid="true"] {
+    @apply border-danger-dark;
+  }
+  [data-slot="dropdown-menu-item"][data-highlighted],
+  [data-slot="select-item"][data-highlighted] {
+    @apply bg-accent text-accent-foreground;
+  }
+  [data-slot="dropdown-menu-item"][data-disabled],
+  [data-slot="select-item"][data-disabled] {
+    @apply opacity-50;
+  }
+  .ui-tabs-trigger[data-state="active"] {
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+  .ui-button,
+  .ui-input,
+  .ui-textarea,
+  .ui-select-trigger {
+    transition:
+      background-color 120ms ease-out,
+      border-color 120ms ease-out;
   }
 }

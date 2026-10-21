@@ -36,6 +36,9 @@ func TestBusinessDocumentOfflineSafeAndIndependentlyVersioned(t *testing.T) {
 	if strings.Contains(html, "<script>") || strings.Contains(html, "<img src=\"https:") || !strings.Contains(html, "&lt;script&gt;") || !strings.Contains(html, "data:image/png;base64,") || !strings.Contains(html, "受验提交") {
 		t.Fatal(html)
 	}
+	if !strings.Contains(html, "data:font/woff2;base64,") || strings.Contains(html, `url("/fonts/`) || !strings.Contains(html, "SIL OPEN FONT LICENSE") || !strings.Contains(w.Header().Get("Content-Security-Policy"), "font-src data:") || document["templateVersion"] != "business-html-v2-geist" {
+		t.Fatal("offline document must embed licensed Geist fonts and use the current template")
+	}
 	if fixtureDigest(html) != document["sha256"] {
 		t.Fatal("document digest mismatch")
 	}
@@ -122,7 +125,7 @@ func TestFailedDocumentRetriesSameVersionAndRestartRecoversGenerating(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec("INSERT INTO business_documents(id,delivery_id,version,request_id,template_version,status,created_at) VALUES('interrupted',?,2,'interrupted-request','business-html-v1','generating','2026-10-13T09:00:00Z')", deliveryID); err != nil {
+	if _, err = db.Exec("INSERT INTO business_documents(id,delivery_id,version,request_id,template_version,status,created_at) VALUES('interrupted',?,2,'interrupted-request',?,'generating','2026-10-13T09:00:00Z')", deliveryID, retried["templateVersion"]); err != nil {
 		t.Fatal(err)
 	}
 	if err = os.Mkdir(filepath.Join(dir, ".document-interrupted"), 0700); err != nil {

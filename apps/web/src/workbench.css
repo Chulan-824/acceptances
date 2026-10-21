@@ -5,7 +5,7 @@
     display: none !important;
   }
   .acceptance-workbench {
-    @apply text-[14px];
+    @apply text-ui;
   }
   .acceptance-workbench .workspace-deliveries,
   .acceptance-workbench .workspace-history {
@@ -33,13 +33,13 @@
     @apply pb-0 border-0;
   }
   .acceptance-workbench .campaign-heading :is(h1, h2) {
-    @apply text-[20px] mb-0;
+    @apply text-heading mb-0;
   }
   .acceptance-workbench .campaign-heading .prose {
-    @apply mt-4 mb-3 text-[14px];
+    @apply mt-4 mb-3 text-ui;
   }
   .campaign-status-line {
-    @apply flex items-center gap-3 mt-3 text-[12px];
+    @apply flex items-center gap-3 mt-3 text-meta;
   }
   .acceptance-workbench .workspace-home {
     @apply border-0 mb-2;
@@ -54,7 +54,7 @@
     @apply mb-2;
   }
   .acceptance-workbench .workspace-sidebar-heading h2 {
-    @apply flex items-center gap-2 text-[14px];
+    @apply flex items-center gap-2 text-ui;
   }
   .icon-button {
     @apply relative grid place-items-center shrink-0 w-8 h-8 p-0 border-0 rounded-default bg-transparent text-muted;
@@ -85,22 +85,22 @@
     @apply absolute top-1/2 left-3 -translate-y-1/2 text-muted pointer-events-none;
   }
   .acceptance-workbench .search-field input {
-    @apply pl-9 pr-3 py-2 text-[13px];
+    @apply pl-9 pr-3 py-2 text-caption;
   }
   .menu-content {
     @apply min-w-48 p-0;
   }
   .menu-content button {
-    @apply flex items-center gap-2 w-full text-left p-2 text-[13px] bg-transparent border-0;
+    @apply flex items-center gap-2 w-full text-left p-2 text-caption bg-transparent border-0;
   }
   .menu-content label {
-    @apply m-0 p-2 text-[13px];
+    @apply m-0 p-2 text-caption;
   }
   .menu-content .ui-select-trigger {
-    @apply w-full py-2 text-[13px];
+    @apply w-full py-2 text-caption;
   }
   .acceptance-workbench .workspace-deliveries > [role="status"] {
-    @apply text-[12px] mt-0 mb-2;
+    @apply text-meta mt-0 mb-2;
   }
   .acceptance-workbench .campaign-list-item {
     @apply flex-row items-center gap-2 py-3 px-2;
@@ -109,7 +109,7 @@
     @apply flex-1 min-w-0 truncate font-medium;
   }
   .campaign-list-item > time {
-    @apply shrink-0 text-[12px];
+    @apply shrink-0 text-meta;
   }
   .campaign-state {
     @apply relative block w-3 h-3 shrink-0 rounded-full border border-current bg-transparent;
@@ -118,7 +118,7 @@
     @apply text-warning-dark;
   }
   .campaign-state.accepted {
-    @apply text-accent-dark;
+    @apply text-success-dark;
   }
   .campaign-state.rejected {
     @apply text-danger-dark;
@@ -133,32 +133,32 @@
     @apply bg-surface-subtle border-border-dark;
   }
   .run-list-item > span:not(.section-heading) {
-    @apply text-[12px] leading-[1.7];
+    @apply text-meta leading-normal;
   }
   .run-list-item .section-heading {
     @apply justify-start flex-wrap gap-2;
   }
   .run-list-item .section-heading time {
-    @apply ml-auto text-[12px];
+    @apply ml-auto text-meta;
   }
   .run-list-item .badge {
-    @apply p-0 bg-transparent text-[12px];
+    @apply p-0 bg-transparent text-meta;
   }
   .panel-rail {
     @apply flex flex-col items-center pt-4 gap-4 bg-canvas min-w-0;
   }
   .panel-rail > span {
-    @apply text-muted text-[12px];
+    @apply text-muted text-meta;
     writing-mode: vertical-rl;
   }
   .report-version-line {
-    @apply flex flex-wrap items-center gap-4 text-muted text-[12px] mb-3;
+    @apply flex flex-wrap items-center gap-4 text-muted text-meta mb-3;
   }
   .report-version-line > span {
     @apply inline-flex items-center gap-2;
   }
   .report-version-line .badge {
-    @apply text-[12px] py-0.5;
+    @apply text-meta py-0.5;
   }
   .report-summary {
     @apply mt-0 mb-2 mx-auto;
@@ -167,10 +167,10 @@
     @apply my-3 mx-auto;
   }
   .report-summary .badge {
-    @apply text-[12px] py-0.5;
+    @apply text-meta py-0.5;
   }
   .report-summary > .disclosure-trigger {
-    @apply flex items-center gap-2 text-[12px] text-muted py-2 m-0 list-none;
+    @apply flex items-center gap-2 text-meta text-muted py-2 m-0 list-none;
   }
   .report-summary > .disclosure-trigger > svg {
     @apply ml-auto shrink-0;
@@ -188,16 +188,16 @@
     @apply m-0;
   }
   .report-summary-body h2 {
-    @apply text-[16px] font-semibold;
+    @apply text-body font-medium;
   }
   .report-summary-body dl {
-    @apply grid-cols-[120px_minmax(0,_1fr)] text-[13px];
+    @apply grid-cols-[120px_minmax(0,_1fr)] text-caption;
   }
   .report-summary-body .report-metrics {
-    @apply text-[12px];
+    @apply text-meta;
   }
   .tab-count {
-    @apply rounded-full bg-surface-subtle text-muted text-[12px] min-w-5 px-1.5 py-0.5 text-center tabular-nums;
+    @apply rounded-full bg-surface-subtle text-muted text-meta min-w-5 px-1.5 py-0.5 text-center tabular-nums;
   }
   .acceptance-workbench .report-panel section {
     @apply border-0;
@@ -206,7 +206,7 @@
     @apply gap-3 mb-3;
   }
   .acceptance-workbench .checklist-heading h2 {
-    @apply text-[14px] m-0;
+    @apply text-ui m-0;
   }
   .checklist-tools {
     @apply flex items-center gap-2;
@@ -218,16 +218,16 @@
     @apply m-0;
   }
   .checklist-tools .ui-select-trigger {
-    @apply py-2 px-3 text-[13px] bg-surface-subtle border-transparent;
+    @apply py-2 px-3 text-caption bg-surface-subtle border-transparent;
   }
   .report-panel [role="status"] {
-    @apply text-[12px];
+    @apply text-meta;
   }
   .acceptance-workbench .check-item > .disclosure-trigger {
     @apply flex items-center gap-2 py-4 list-none;
   }
   .acceptance-workbench .check-title {
-    @apply flex-1 min-w-0 font-medium text-[13px];
+    @apply flex-1 min-w-0 font-medium text-caption;
   }
   .check-item > .disclosure-trigger > svg {
     @apply shrink-0 text-muted;
@@ -236,16 +236,16 @@
     @apply rotate-90;
   }
   .acceptance-workbench .check-meta {
-    @apply gap-2 ml-0 text-muted text-[12px];
+    @apply gap-2 ml-0 text-muted text-meta;
   }
   .acceptance-workbench .check-meta .badge {
-    @apply p-0 bg-transparent text-[12px];
+    @apply p-0 bg-transparent text-meta;
   }
   .acceptance-workbench .check-body {
     @apply pl-5 pb-4;
   }
   .acceptance-workbench .check-body dl {
-    @apply grid-cols-[40px_minmax(0,_1fr)] gap-x-3 gap-y-2 text-[13px] text-fg-secondary mt-0 mb-4;
+    @apply grid-cols-[40px_minmax(0,_1fr)] gap-x-3 gap-y-2 text-caption text-fg-secondary mt-0 mb-4;
   }
   .acceptance-workbench .inline-evidence {
     @apply flex flex-col gap-3;
@@ -254,7 +254,7 @@
     @apply border-0 p-0;
   }
   .acceptance-workbench .inline-preview figcaption {
-    @apply text-[12px];
+    @apply text-meta;
   }
   .inline-preview:has(.text-evidence-disclosure) figcaption {
     @apply sr-only;
@@ -263,13 +263,13 @@
     @apply text-muted;
   }
   .acceptance-workbench .inline-preview .image-preview img {
-    @apply max-h-none rounded-md;
+    @apply max-h-none rounded-default;
   }
   .text-evidence-disclosure {
     @apply m-0 border border-border rounded-default;
   }
   .text-evidence-disclosure .disclosure-trigger {
-    @apply flex items-center gap-2 p-3 m-0 text-[12px] list-none;
+    @apply flex items-center gap-2 p-3 m-0 text-meta list-none;
   }
   .text-evidence-disclosure .disclosure-trigger > span {
     @apply min-w-0 flex-1 wrap-anywhere;
@@ -286,22 +286,22 @@
     @apply mt-4 pt-3 border-0 max-w-none;
   }
   .acceptance-workbench .check-review-form label {
-    @apply text-[13px];
+    @apply text-caption;
   }
   .acceptance-workbench .check-review-form textarea {
-    @apply min-h-28 text-[13px];
+    @apply min-h-28 text-caption;
   }
   .acceptance-workbench .check-review-form button {
-    @apply text-[12px] px-3 py-2;
+    @apply text-meta px-3 py-2;
   }
   .check-review-actions {
     @apply justify-end gap-2;
   }
   .acceptance-workbench .check-body > [data-slot="collapsible"] {
-    @apply mt-3 text-[12px];
+    @apply mt-3 text-meta;
   }
   .review-editor {
-    @apply bg-surface border border-border rounded-md p-4;
+    @apply bg-surface border border-border rounded-default p-4;
   }
   .review-editor .actions {
     @apply justify-end;
@@ -320,7 +320,7 @@
     @apply truncate;
   }
   .gallery-evidence figcaption > span {
-    @apply text-muted text-[12px];
+    @apply text-muted text-meta;
   }
   .gallery-evidence .image-preview {
     @apply order-1;
@@ -329,25 +329,25 @@
     @apply aspect-video max-h-40 object-contain;
   }
   .gallery-evidence .actions {
-    @apply order-3 mt-0 gap-2 text-[12px];
+    @apply order-3 mt-0 gap-2 text-meta;
   }
   .acceptance-workbench #run-feedback h2 {
-    @apply text-[14px] m-0;
+    @apply text-ui m-0;
   }
   .acceptance-workbench #run-feedback > .check-review-form {
     @apply mt-6;
   }
   .acceptance-workbench .review-bar {
-    @apply rounded-lg border border-border mx-6 bottom-4 px-4 py-3 gap-3;
+    @apply rounded-default border border-border mx-6 bottom-4 px-4 py-3 gap-3;
   }
   .acceptance-workbench .review-bar-title {
-    @apply whitespace-normal text-muted text-[12px];
+    @apply whitespace-normal text-muted text-meta;
   }
   .acceptance-workbench .review-bar .actions {
     @apply gap-2;
   }
   .acceptance-workbench .review-bar button {
-    @apply px-3 py-2 text-[12px];
+    @apply px-3 py-2 text-meta;
   }
   .workspace .workspace-resize {
     @apply relative w-px shrink-0 z-30 bg-border touch-none;
@@ -366,7 +366,7 @@
     @apply h-full;
   }
   .report-tabs[data-slot="tabs-list"] .ui-tabs-trigger {
-    @apply flex-none h-auto rounded-none bg-transparent border-0 border-b-2 border-transparent px-2 py-4 text-[13px] text-muted font-normal shadow-none;
+    @apply flex-none h-auto rounded-none bg-transparent border-0 border-b-2 border-transparent px-2 py-4 text-caption text-muted font-normal shadow-none;
   }
   .report-tabs[data-slot="tabs-list"] .ui-tabs-trigger[data-state="active"] {
     @apply border-brand text-fg;

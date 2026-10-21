@@ -19,7 +19,7 @@ const alertVariants = cva(
         destructive:
           "ui-alert-destructive border border-danger-border bg-danger-soft text-danger-dark",
         info: "border-border bg-surface-subtle text-fg-secondary",
-        success: "border-accent-border bg-accent-soft text-accent-dark",
+        success: "border-success-border bg-success-soft text-success-dark",
         warning: "border-warning-border bg-warning-soft text-warning-dark",
         invert: "border-brand bg-brand text-brand-fg",
       },

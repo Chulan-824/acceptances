@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"io"
 	"os"
+
+	webassets "github.com/Chulan-824/acceptances/apps/web"
 )
 
 type renderedScreenshot struct {
@@ -41,12 +43,27 @@ func verificationLabel(status string) string {
 	}
 }
 
-var businessTemplate = template.Must(template.New("business").Funcs(template.FuncMap{"verificationLabel": verificationLabel}).Parse(`<!doctype html>
+var businessTemplate = template.Must(template.New("business").Funcs(template.FuncMap{"verificationLabel": verificationLabel, "offlineTheme": func() template.CSS { return template.CSS(webassets.OfflineThemeCSS) }, "fontLicense": func() string { return webassets.FontLicense }}).Parse(`<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>{{.Snapshot.Payload.Campaign.Title}} · 业务说明</title>
 <style>
-body{font:16px/1.7 system-ui,-apple-system,"PingFang SC",sans-serif;color:#0f172a;background:#f8fafc;margin:0}main{max-width:960px;margin:auto;padding:32px 24px;background:white}h1{font-size:28px}h2{margin-top:40px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}h3{font-size:18px}p,li,td,code{overflow-wrap:anywhere}code{font:13px/1.5 monospace}nav{display:flex;gap:16px;flex-wrap:wrap}a{color:#334155}img{max-width:100%;height:auto;border:1px solid #e2e8f0}figure{margin:24px 0}figcaption,.metadata{font-size:14px;color:#475569}.notice{border-left:4px solid #a16207;background:#fefce8;padding:12px 16px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{border:1px solid #cbd5e1;padding:8px;text-align:left}.step{margin-bottom:16px}@media print{body,main{background:white}main{padding:0}section,figure{break-inside:avoid}}
+{{offlineTheme}}
+body{font:var(--text-body)/1.5 var(--font-sans);color:var(--color-fg);background:var(--color-canvas);margin:0}
+main{max-width:75ch;margin:auto;padding:32px 24px;background:var(--color-surface)}
+h1,h2{font-size:var(--text-heading);font-weight:var(--font-weight-display);line-height:1.5;letter-spacing:normal}
+h2{margin-top:40px;border-bottom:1px solid var(--color-border);padding-bottom:8px}
+h3{font-size:var(--text-body);font-weight:500;margin-top:24px}
+p,li,td,th,code{overflow-wrap:anywhere}
+code{font:var(--text-caption)/1.54 var(--font-mono)}
+nav{display:flex;gap:16px;flex-wrap:wrap}
+a{color:var(--color-fg-secondary);text-underline-offset:3px}a:hover{color:var(--color-fg)}
+img{max-width:100%;height:auto;border:1px solid var(--color-border);border-radius:var(--radius-default)}
+figure{margin:24px 0}figcaption,.metadata{font-size:var(--text-ui);color:var(--color-fg-muted)}
+.notice{border:1px solid var(--color-border);border-radius:var(--radius-default);background:var(--color-surface-subtle);padding:12px 16px}
+table{width:100%;border-collapse:collapse;font-size:var(--text-ui)}td,th{border:1px solid var(--color-border);padding:8px;text-align:left}th{font-weight:500}.step{margin-bottom:16px}
+@media(max-width:480px){main{padding:24px 16px}}
+@media print{body,main{background:var(--color-surface)}main{padding:0}section,figure{break-inside:avoid}}
 </style></head><body><main>
 <header><p class="metadata">{{.Snapshot.Payload.Project.Name}} · 交付 v{{.Snapshot.Version}} · 说明 v{{.Document.Version}}</p>
 <h1>{{.Snapshot.Payload.Campaign.Title}}</h1><p>{{.Snapshot.Payload.Campaign.Description}}</p>
@@ -68,7 +85,7 @@ body{font:16px/1.7 system-ui,-apple-system,"PingFang SC",sans-serif;color:#0f172
 <table><thead><tr><th>代码来源</th><th>受验提交</th></tr></thead><tbody>{{range .Snapshot.Payload.Run.Report.Versions}}<tr><td>{{.Repository}}</td><td><code>{{.Commit}}</code></td></tr>{{end}}</tbody></table>
 {{if eq .Snapshot.Payload.Manifest.Build.Kind "artifact"}}<p>实际构建：{{.Snapshot.Payload.Manifest.Build.ID}}<br>产物摘要：<code>{{.Snapshot.Payload.Manifest.Build.Artifact.SHA256}}</code></p>{{else}}<p>无需构建：{{.Snapshot.Payload.Manifest.Build.Reason}}</p>{{end}}
 <p class="metadata">交付快照：<code>{{.Snapshot.ID}}</code><br>快照内容摘要：<code>{{.Snapshot.SHA256}}</code><br>来源 Run：<code>{{.Snapshot.Payload.Run.ID}}</code><br>需求摘要：<code>{{.Snapshot.Payload.Manifest.Requirement.SHA256}}</code><br>地图摘要：<code>{{.Snapshot.Payload.Manifest.Map.SHA256}}</code><br>素材摘要：<code>{{.Snapshot.Payload.Manifest.Materials.SHA256}}</code><br>说明版本：{{.Document.Version}} · 模板：{{.Document.TemplateVersion}} · 创建时间：{{.Document.CreatedAt}}</p>
-</section></main></body></html>`))
+</section></main><template id="geist-font-license">{{fontLicense}}</template></body></html>`))
 
 func renderBusinessDocument(output io.Writer, root *os.Root, snapshot DeliverySnapshot, document BusinessDocument) error {
 	files, err := archiveFiles(root, snapshot.Payload.Run.Report.Evidence)

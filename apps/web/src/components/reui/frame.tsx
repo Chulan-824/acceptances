@@ -103,7 +103,7 @@ function FrameHeader({
 function FrameTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("text-sm font-semibold", className)}
+      className={cn("text-sm font-medium", className)}
       data-slot="frame-panel-title"
       {...props}
     />

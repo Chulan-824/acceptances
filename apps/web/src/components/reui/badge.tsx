@@ -18,7 +18,7 @@ const badgeVariants = cva(
         outline: "border-border bg-transparent dark:bg-input/32",
         secondary: "border-0",
         info: "bg-brand text-white",
-        success: "bg-accent text-white",
+        success: "bg-success text-white",
         warning: "bg-warning text-white",
         destructive: "bg-destructive text-white",
         focus: "bg-brand text-brand-fg",
@@ -28,7 +28,7 @@ const badgeVariants = cva(
         "warning-light":
           "border-warning/15 bg-warning/10 text-warning-dark dark:border-warning/25 dark:bg-warning/15 dark:text-warning",
         "success-light":
-          "border-accent/15 bg-accent/10 text-accent-dark dark:border-accent/25 dark:bg-accent/15 dark:text-accent",
+          "border-success/15 bg-success/10 text-success-dark dark:border-success/25 dark:bg-success/15 dark:text-success",
         "info-light":
           "border-brand/15 bg-brand/10 text-brand-fg dark:border-brand/25 dark:bg-brand/15 dark:text-brand",
         "destructive-light":
@@ -42,7 +42,7 @@ const badgeVariants = cva(
         "warning-outline":
           "bg-background border-border text-warning-dark dark:bg-input/30",
         "success-outline":
-          "bg-background border-border text-accent-dark dark:bg-input/30",
+          "bg-background border-border text-success-dark dark:bg-input/30",
         "info-outline":
           "bg-background border-border text-brand-fg dark:bg-input/30",
         "destructive-outline":
@@ -53,15 +53,15 @@ const badgeVariants = cva(
           "bg-background border-border text-brand-fg dark:bg-input/30",
       },
       size: {
-        xs: "px-1 py-0.25 text-[0.6rem] leading-none h-4 min-w-4 gap-1",
-        sm: "px-1 py-0.25 text-[0.625rem] leading-none h-4.5 min-w-4.5 gap-1",
+        xs: "px-1 py-0.25 text-meta leading-none h-4 min-w-4 gap-1",
+        sm: "px-1 py-0.25 text-meta leading-none h-4.5 min-w-4.5 gap-1",
         default: "",
         lg: "px-1.5 py-0.5 text-xs h-5.5 min-w-5.5 gap-1",
         xl: "px-2 py-0.75 text-sm h-6 min-w-6 gap-1.5",
       },
       /** `default`: active style radius. `full`: pill radius. */
       radius: {
-        default: "rounded-sm",
+        default: "rounded-default",
         full: "rounded-full",
       },
     },

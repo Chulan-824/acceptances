@@ -1,8 +1,8 @@
 # shadcn/ui 页面覆盖
 
-2026-10-15 起，基础控件继续使用 shadcn/ui，各页组合层使用经 Modern Slate 适配的 ReUI Frame、Timeline、Stepper 等，Slot 模式同样应用布局与主题样式。当前覆盖与维护见 [ReUI 页面组合层](reui.md)；下文保留 2026-10-12 的迁移记录。
+2026-10-15 起，基础控件继续使用 shadcn/ui，各页组合层使用经 Vercel 主题适配的 ReUI Frame、Timeline、Stepper 等，Slot 模式同样应用布局与主题样式。当前覆盖与维护见 [ReUI 页面组合层](reui.md)；下文保留 2026-10-12 的迁移记录。
 
-2026-10-12 将当前前端两个入口中的可替换组件统一迁移到 shadcn/ui，沿用既有 Tailwind 4 Modern Slate 主题。业务接口、人工判断规则和 Project → Campaign → Run 关系保持现有契约。
+2026-10-12 将当前前端两个入口中的可替换组件统一迁移到 shadcn/ui，使用 Tailwind 4，2026-10-19 已迁移为 Vercel 主题。业务接口、人工判断规则和 Project → Campaign → Run 关系保持现有契约。
 
 ## 页面清单
 
@@ -23,15 +23,17 @@
 
 - `apps/web/components.json` 配置官方 `new-york` 风格、Tailwind 4、组件目录及 `@/` 别名。Vite 与 TypeScript 使用同一别名。
 - `apps/web/src/components/ui/` 保存官方 [new-york-v4 registry](https://ui.shadcn.com/r/styles/new-york-v4/button.json) 的本地组件源码，按当前主题定制。原始 [MIT 许可证](../apps/web/src/components/ui/LICENSE.md) 随源码保留。
-- `apps/web/src/theme.css` 是两个入口共用的令牌来源。原有颜色、字体、圆角、阴影不重复定义另一套主题。
+- `apps/web/src/theme.css` 是两个入口共用的令牌来源。当前颜色、Geist 字体、圆角和细环不重复定义另一套主题。
 - `apps/web/src/ui.css` 定义组件默认样式与状态，页面样式继续定义实际布局和操作密度。工作台不新增 Preflight；Landing Page 的 `landing-base.css` 仅保留当前元素所需的浏览器重置，工具类由共享 Tailwind 4 生成。旧 CSSOM 快照、重复的基础控件样式、失效选择器和未使用的 FilterBar、Toggle、ToggleGroup 已移除。
-- 原有 `accent` 是通过绿、`muted` 是辅助文字灰，普通组件悬停使用 `surface-subtle`，不能套用 shadcn 默认的同名背景语义。
+- 业务通过色使用 `success`；shadcn `accent` 映射中性悬停表面。应用 `text-muted` 是辅助文字，原始 shadcn `--muted` 是次级表面，维护时核对各自映射。
 - `Disclosure` 封装 Collapsible 并处理检查项、评审历史的深链接展开；`ChoiceSelect` 统一 Select 的触发器及选项；`WorkspacePanels` 使用 Resizable 管理三栏边界、宽度、折叠与评审栏位置。
-- 添加组件可在 `apps/web` 运行 `pnpm dlx shadcn@latest add <component>`。现有组件已定制，升级或覆盖前先比较差异；升级后继续映射 Modern Slate 令牌并验证实际页面。
+- 添加组件可在 `apps/web` 运行 `pnpm dlx shadcn@latest add <component>`。现有组件已定制，升级或覆盖前先比较差异；升级后继续映射当前 Vercel 语义令牌并验证实际页面。
 
-## 验证范围
+## 2026-10-12 迁移与清理验证记录
 
-本次验证使用现有 5173 开发入口。既有项目和 Run 只读浏览，覆盖搜索、筛选、键盘菜单、标签页、深链接、按需文本、图片预览、删除预览取消及交付汇总取消。工作台检查 1120px/1440px/1920px，Landing Page 检查 390px/1440px、截图与主题五页签、复制、下载和弹窗焦点恢复。
+以下为 2026-10-12 的历史迁移与清理记录。2026-10-19 的 Vercel 主题验证另见 [验证记录](vercel-theme-verification.md)。
+
+当时验证使用 5173 开发入口。既有项目和 Run 只读浏览，覆盖搜索、筛选、键盘菜单、标签页、深链接、按需文本、图片预览、删除预览取消及交付汇总取消。工作台检查 1120px/1440px/1920px，Landing Page 检查 390px/1440px、截图与主题五页签、复制、下载和弹窗焦点恢复。
 
 写入行为在独立 8766 服务与 `.scratch/shadcn-ui/test-data` 数据库验证，覆盖项目/需求创建、创建失败保留输入并重试、逐项理由规则、评论、全量交付、作废和级联删除。创建失败使用一次 HTTP 503 注入，其余请求转发到真实测试 API。测试中的接受/拒绝属于合成夹具，不是对既有业务 Run 的人工验收。
 

@@ -3,7 +3,7 @@ package api
 // Delivery materials are ordinary immutable Run attachments. They deliberately
 // do not extend Report or silently reinterpret arbitrary evidence JSON.
 const deliveryManifestName = "delivery-manifest.json"
-const documentTemplateVersion = "business-html-v1"
+const documentTemplateVersion = "business-html-v2-geist"
 
 type ArtifactRef struct {
 	Path   string `json:"path"`

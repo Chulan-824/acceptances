@@ -2,7 +2,7 @@
 
 @layer components {
   .home-page {
-    @apply min-h-[100svh] text-[15px] leading-[1.7] antialiased;
+    @apply min-h-[100svh] text-ui leading-normal antialiased;
   }
   .home-container {
     @apply w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8;
@@ -11,29 +11,26 @@
     @apply sticky top-0 z-40 block m-0 bg-canvas/90 backdrop-blur-md border-b border-border;
   }
   .home-header-inner {
-    @apply flex items-center justify-between min-h-14 py-2 gap-3;
+    @apply flex items-center justify-between min-h-16 py-2 gap-3;
   }
   .home-brand,
   .home-intro {
-    @apply inline-flex items-center gap-[10px] no-underline;
+    @apply inline-flex items-center gap-3 no-underline;
   }
   .home-brand {
-    @apply font-semibold text-fg whitespace-nowrap;
+    @apply font-medium text-fg whitespace-nowrap;
   }
   .home-brand-mark {
-    @apply grid [place-items:center] shrink-0 bg-surface-subtle border border-border;
-  }
-  .home-brand-mark {
-    @apply w-7 h-7 border-border-dark rounded-default;
+    @apply grid [place-items:center] shrink-0;
   }
   .home-brand-mark svg {
     @apply w-[17px] h-[17px];
   }
   .home-brand-context {
-    @apply ml-1 [padding-left:12px] border-l border-border text-[12px] font-normal text-fg-secondary hidden sm:inline;
+    @apply ml-1 [padding-left:12px] border-l border-border text-meta font-normal text-fg-secondary hidden sm:inline;
   }
   .home-intro {
-    @apply min-h-11 pt-2 pr-[10px] pb-2 pl-[10px] rounded-default text-[13px] text-fg-secondary whitespace-nowrap;
+    @apply min-h-11 px-3 py-2 rounded-default text-meta text-fg-secondary whitespace-nowrap;
   }
   .home-intro:hover {
     @apply bg-surface-subtle;
@@ -51,16 +48,16 @@
     @apply min-w-0 m-0 p-0 border-0 rounded-none bg-transparent shadow-none;
   }
   .home-state {
-    @apply flex flex-col items-start justify-center gap-3 min-h-57 p-7 bg-surface border border-border rounded-lg wrap-anywhere;
+    @apply flex flex-col items-start justify-center gap-3 min-h-57 p-7 bg-surface border border-border rounded-default wrap-anywhere;
   }
   .home-state h3 {
-    @apply m-0 text-[16px] font-semibold;
+    @apply m-0 text-body font-medium;
   }
   .home-state p {
-    @apply m-0 max-w-[40ch] text-[13px];
+    @apply m-0 max-w-[40ch] text-caption;
   }
   .home-state button {
-    @apply flex items-center gap-2 min-h-11 text-[13px] bg-surface;
+    @apply flex items-center gap-2 min-h-11 text-caption bg-surface;
   }
   .home-state button:hover {
     @apply bg-surface-subtle;
@@ -69,10 +66,10 @@
     @apply w-5 h-5;
   }
   .home-create-panel {
-    @apply m-0 bg-surface border border-border rounded-lg;
+    @apply m-0 bg-surface border border-border rounded-default;
   }
   .home-create-panel .disclosure-trigger {
-    @apply flex items-center justify-between gap-4 min-h-[78px] m-0 p-5 rounded-lg list-none;
+    @apply flex items-center justify-between gap-4 min-h-16 m-0 p-4 rounded-default list-none;
   }
   .home-create-panel .disclosure-trigger:hover {
     @apply bg-surface-subtle;
@@ -85,13 +82,13 @@
     @apply hidden;
   }
   .home-create-title {
-    @apply block text-[16px] font-semibold;
+    @apply block text-ui font-medium;
   }
   .home-create-description {
-    @apply block mt-[2px] text-[12px] text-muted;
+    @apply block mt-[2px] text-meta text-muted;
   }
   .home-create-body {
-    @apply pt-0 pr-5 pb-5 pl-5;
+    @apply pt-0 px-4 pb-4;
   }
   .home-create-body form {
     @apply max-w-none border-t border-border pt-5;
@@ -100,14 +97,14 @@
     @apply min-w-0 border-0 p-0 m-0;
   }
   .home-create-body label {
-    @apply flex-row gap-1 mt-0 mr-0 mb-[6px] ml-0 text-[13px] text-fg-secondary;
+    @apply flex-row gap-1 mt-0 mr-0 mb-[6px] ml-0 text-caption text-fg-secondary;
   }
   .home-create-body label span {
-    @apply text-[12px] text-muted;
+    @apply text-meta text-muted;
   }
   .home-create-body input,
   .home-create-body textarea {
-    @apply block w-full min-h-11 pt-[10px] pr-3 pb-[10px] pl-3 text-[14px] leading-[1.7] text-fg caret-brand;
+    @apply block w-full min-h-11 pt-3 pr-3 pb-3 pl-3 text-ui leading-normal text-fg caret-brand;
   }
   .home-create-body textarea {
     @apply min-h-23;
@@ -116,34 +113,34 @@
     @apply border-2 border-danger-dark pt-[9px] pr-[11px] pb-[9px] pl-[11px];
   }
   .home-field-meta {
-    @apply flex justify-between flex-wrap gap-[4px_12px] mt-[6px] mb-5 text-[12px] text-muted;
+    @apply flex justify-between flex-wrap gap-[4px_12px] mt-[6px] mb-5 text-meta text-muted;
   }
   .home-field-meta span:last-child {
     @apply font-mono tabular-nums;
   }
   .home-field-error {
-    @apply mt-[-14px] mr-0 mb-5 ml-0 text-[12px];
+    @apply mt-[-14px] mr-0 mb-5 ml-0 text-meta;
   }
   .home-create-submit {
-    @apply flex items-center justify-center gap-2 w-full min-h-11 mt-[18px] text-[13px];
+    @apply flex items-center justify-center gap-2 w-full min-h-11 mt-4 text-caption;
   }
   .home-create-body fieldset:disabled :is(input, textarea, button) {
     @apply opacity-50 cursor-not-allowed;
   }
   .home-create-error {
-    @apply mt-[14px] mr-0 mb-0 ml-0 p-3 border border-danger-border rounded-default bg-danger-soft text-[13px] wrap-anywhere;
+    @apply mt-[14px] mr-0 mb-0 ml-0 p-3 border border-danger-border rounded-default bg-danger-soft text-caption wrap-anywhere;
   }
   .home-loading {
-    @apply flex items-center gap-[10px];
+    @apply flex items-center gap-3;
   }
   .home-loading-spinner {
     @apply w-4 h-4 animate-[home-spin_0.8s_linear_infinite] shrink-0;
   }
   .home-footer {
-    @apply flex justify-between flex-wrap gap-[8px_20px] mt-8 pt-[18px] border-t border-border text-[12px] text-muted;
+    @apply flex justify-between flex-wrap gap-[8px_20px] mt-8 pt-4 border-t border-border text-meta text-muted;
   }
   .home-skip {
-    @apply absolute top-[-100px] left-4 pt-[10px] pr-4 pb-[10px] pl-4 min-h-11 bg-surface border border-brand z-[20];
+    @apply absolute top-[-100px] left-4 pt-3 pr-4 pb-3 pl-4 min-h-11 bg-surface border border-brand z-[20];
   }
   .home-skip:focus {
     @apply top-3;
@@ -156,9 +153,6 @@
 }
 
 @layer components {
-  .home-page {
-    @apply text-[13px];
-  }
   .home-header-actions {
     @apply flex items-center gap-3;
   }
@@ -171,9 +165,6 @@
   .home-brand-mark {
     @apply w-6 h-6 bg-brand text-white border-0 text-xs rounded-default;
   }
-  .home-intro {
-    @apply text-xs;
-  }
   .home-stats {
     @apply grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6;
   }
@@ -184,10 +175,10 @@
     @apply flex justify-between items-center gap-2 text-xs text-muted mb-1.5;
   }
   .home-stat strong {
-    @apply block font-mono text-2xl leading-9 font-bold tabular-nums;
+    @apply block font-mono text-2xl leading-9 font-medium tabular-nums;
   }
   .home-stat.accepted strong {
-    @apply text-accent-dark;
+    @apply text-success-dark;
   }
   .home-stat.pending strong {
     @apply text-warning-dark;
@@ -196,7 +187,7 @@
     @apply text-danger-dark;
   }
   .home-stat p {
-    @apply m-0 mt-2 text-[11px] text-muted;
+    @apply m-0 mt-2 text-meta text-muted;
   }
   .home-sidebar {
     @apply flex flex-col gap-4 min-w-0;
@@ -205,7 +196,7 @@
     @apply p-4 min-w-0;
   }
   .home-side-card h2 {
-    @apply text-xs font-semibold m-0 mb-3 pb-3 border-b border-border;
+    @apply text-xs font-medium m-0 mb-3 pb-3 border-b border-border;
   }
   .home-project-filter {
     @apply flex flex-col gap-2 text-xs text-muted;
@@ -223,29 +214,29 @@
     @apply shrink-0;
   }
   .home-toolbar {
-    @apply bg-surface border border-border rounded-lg p-3 shadow-subtle flex flex-wrap items-center justify-between gap-3;
+    @apply bg-surface border border-border rounded-default p-3 shadow-none flex flex-wrap items-center justify-between gap-3;
   }
   .home-toolbar-title {
     @apply flex items-center gap-2;
   }
   .home-toolbar h2 {
-    @apply m-0 text-sm font-semibold;
+    @apply m-0 text-sm font-medium;
   }
   .home-toolbar-title > span {
-    @apply text-xs font-mono text-muted bg-surface-subtle rounded px-2 py-0.5;
+    @apply text-xs font-mono text-muted bg-surface-subtle rounded-default px-2 py-0.5;
   }
   .home-tools {
     @apply flex flex-wrap items-center gap-2 w-full;
   }
   .home-search {
-    @apply flex flex-1 items-center gap-1.5 min-w-48 bg-surface-subtle border border-border rounded-default px-2.5 text-muted;
+    @apply flex flex-1 items-center gap-1.5 min-w-48 bg-surface-subtle border border-border rounded-default px-3 text-muted;
   }
   .home-search input {
     @apply border-0 bg-transparent shadow-none text-xs min-w-0 w-full px-0;
   }
   .home-filters,
   .home-view {
-    @apply inline-flex items-center gap-0.5 bg-surface-subtle border border-border rounded-md p-0.5;
+    @apply inline-flex items-center gap-0.5 bg-surface-subtle border border-border rounded-default p-0.5;
   }
   .home-filters button {
     @apply px-2 text-xs h-8;
@@ -255,22 +246,22 @@
   }
   .home-filters [aria-pressed="true"],
   .home-view [aria-pressed="true"] {
-    @apply bg-surface shadow-subtle text-fg;
+    @apply bg-surface shadow-none text-fg;
   }
   .home-result-count {
-    @apply text-[11px] text-muted my-3;
+    @apply text-meta text-muted my-3;
   }
   .home-deliverables {
     @apply flex flex-col gap-4;
   }
   .home-delivery {
-    @apply flex flex-col gap-3 min-w-0 p-5 hover:border-border-dark;
+    @apply flex flex-col gap-3 min-w-0 p-4 hover:border-border-dark;
   }
   .home-delivery h3 {
-    @apply m-0 text-base font-semibold;
+    @apply m-0 text-base font-medium;
   }
   .home-delivery h3 a {
-    @apply flex items-start justify-between gap-2 no-underline text-fg hover:text-accent-dark wrap-anywhere;
+    @apply flex items-start justify-between gap-2 no-underline text-fg hover:text-fg wrap-anywhere;
   }
   .home-delivery h3 svg {
     @apply shrink-0 mt-1;
@@ -282,25 +273,25 @@
     @apply flex flex-wrap items-center gap-2 min-w-0 text-muted;
   }
   .home-project-tag {
-    @apply bg-surface-subtle rounded px-2 py-0.5 text-[11px] wrap-anywhere;
+    @apply bg-surface-subtle rounded-default px-2 py-0.5 text-meta wrap-anywhere;
   }
   .home-evidence-count {
-    @apply text-muted font-mono text-[11px];
+    @apply text-muted font-mono text-meta;
   }
   .home-delivery-description {
     @apply m-0 text-xs text-muted leading-relaxed wrap-anywhere;
   }
   .home-run-meta {
-    @apply flex flex-wrap items-center gap-2 m-0 text-[11px] text-muted;
+    @apply flex flex-wrap items-center gap-2 m-0 text-meta text-muted;
   }
   .home-run-meta time {
-    @apply m-0 text-[11px] font-mono;
+    @apply m-0 text-meta font-mono;
   }
   .home-check-counts {
-    @apply flex flex-wrap gap-3 font-mono text-[11px];
+    @apply flex flex-wrap gap-3 font-mono text-meta;
   }
   .home-page .passed {
-    @apply text-accent-dark;
+    @apply text-success-dark;
   }
   .home-page .failed {
     @apply text-danger-dark;
@@ -312,7 +303,7 @@
     @apply text-muted;
   }
   .home-mini-checks {
-    @apply grid grid-cols-1 sm:grid-cols-2 gap-2 list-none m-0 p-3 bg-surface-subtle border border-border rounded-md text-[11px];
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-2 list-none m-0 p-3 bg-surface-subtle border border-border rounded-default text-meta;
   }
   .home-mini-checks li {
     @apply flex gap-2 min-w-0;
@@ -327,7 +318,7 @@
     @apply flex flex-wrap justify-between items-center gap-3 pt-3 border-t border-border;
   }
   .home-versions {
-    @apply flex flex-col gap-1 text-[11px] text-muted min-w-0 flex-1;
+    @apply flex flex-col gap-1 text-meta text-muted min-w-0 flex-1;
   }
   .home-versions > span {
     @apply flex flex-wrap gap-2 min-w-0;
@@ -351,16 +342,7 @@
     @apply m-0 pl-4 space-y-2 text-xs text-fg-secondary;
   }
   .home-guide p {
-    @apply m-0 mt-3 pt-3 border-t border-border text-[11px] text-muted;
-  }
-  .home-create-panel .disclosure-trigger {
-    @apply min-h-16 p-4;
-  }
-  .home-create-title {
-    @apply text-sm;
-  }
-  .home-create-body {
-    @apply px-4 pb-4;
+    @apply m-0 mt-3 pt-3 border-t border-border text-meta text-muted;
   }
   @media (max-width: 480px) {
     .home-header-actions {

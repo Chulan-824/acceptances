@@ -178,7 +178,7 @@ function StepperTrigger({
       data-loading={isLoading || undefined}
       disabled={isDisabled || props.disabled}
       className={cn(
-        "inline-flex items-center gap-2.5 rounded-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-4",
+        "inline-flex items-center gap-3 rounded-default cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-4",
         className,
       )}
       onClick={(event) => {

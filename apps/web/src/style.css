@@ -10,7 +10,7 @@
 /* 保留现有浏览器默认样式，页面迁移前不加载 Preflight。 */
 @layer components {
   :root {
-    @apply font-sans text-fg bg-canvas;
+    @apply font-sans text-ui text-fg bg-canvas;
     font-synthesis: none;
   }
   * {
@@ -29,13 +29,13 @@
     @apply no-underline text-inherit;
   }
   h1 {
-    @apply text-[22px] mt-2 mr-0 mb-2 ml-0;
+    @apply text-heading font-display tracking-normal leading-normal mt-2 mr-0 mb-2 ml-0;
   }
   h2 {
-    @apply text-[20px] mt-0 mr-0 mb-[18px] ml-0;
+    @apply text-heading font-display tracking-normal leading-normal mt-0 mr-0 mb-4 ml-0;
   }
   h3 {
-    @apply text-[15px];
+    @apply text-body font-medium;
   }
   nav,
   .actions,
@@ -49,7 +49,7 @@
     @apply mb-6;
   }
   section {
-    @apply bg-surface border border-border rounded-lg p-6 mt-[18px] mr-0 mb-[18px] ml-0 shadow-card;
+    @apply bg-surface border border-border rounded-default p-6 mt-4 mr-0 mb-4 ml-0 shadow-none;
   }
   a:focus-visible {
     @apply outline-3 outline-solid outline-brand outline-offset-[3px];
@@ -58,7 +58,7 @@
     @apply max-w-165;
   }
   .muted {
-    @apply text-muted text-[14px] leading-[1.7];
+    @apply text-muted text-ui leading-normal;
   }
   .prose {
     @apply whitespace-pre-wrap wrap-anywhere;
@@ -67,7 +67,7 @@
     @apply bg-warning-soft p-[14px] rounded-default;
   }
   dl {
-    @apply grid grid-cols-[130px_1fr] gap-3 leading-[1.6];
+    @apply grid grid-cols-[130px_1fr] gap-3 leading-normal;
   }
   dt {
     @apply text-muted;
@@ -85,13 +85,13 @@
     @apply border-b-0;
   }
   time {
-    @apply text-[13px] ml-3 text-muted;
+    @apply text-caption ml-3 text-muted;
   }
   a {
     @apply text-fg-secondary;
   }
   figure {
-    @apply mt-5 mr-0 mb-5 ml-0 p-4 border border-border rounded-md;
+    @apply mt-5 mr-0 mb-5 ml-0 p-4 border border-border rounded-default;
   }
   figcaption {
     @apply mb-3 wrap-anywhere;
@@ -135,10 +135,10 @@
     @apply justify-between flex-nowrap gap-2 mt-[-16px] mr-[-12px] mb-4 ml-[-12px] p-3 border-b border-border;
   }
   .workspace-home a {
-    @apply inline-flex items-center gap-2 text-[14px] font-semibold no-underline whitespace-nowrap;
+    @apply inline-flex items-center gap-2 text-ui font-medium no-underline whitespace-nowrap;
   }
   .workspace-home button {
-    @apply relative shrink-0 pt-[6px] pr-2 pb-[6px] pl-2 text-[12px] min-h-8;
+    @apply relative shrink-0 pt-[6px] pr-2 pb-[6px] pl-2 text-meta min-h-8;
   }
   .workspace-home button::after {
     content: "";
@@ -148,20 +148,20 @@
     display: none;
   }
   .workspace-brand {
-    @apply grid [place-items:center] w-6 h-6 rounded-default bg-brand text-brand-fg text-[13px];
+    @apply grid [place-items:center] w-6 h-6 rounded-default bg-brand text-brand-fg text-caption;
   }
   .workspace-project-select {
-    @apply text-[12px] text-muted;
+    @apply text-meta text-muted;
   }
   .workspace-project-select .ui-select-trigger {
-    @apply w-full text-[13px] text-fg;
+    @apply w-full text-caption text-fg;
   }
   .workspace-sidebar-heading {
     @apply min-h-9 mb-3;
   }
   .workspace-deliveries h2,
   .workspace-history h2 {
-    @apply text-[16px] m-0;
+    @apply text-body m-0;
   }
   .workspace-main {
     @apply min-w-0 min-h-0 max-w-none w-full m-0 pt-2 pr-8 pb-15 pl-8 bg-surface border-x border-border overflow-y-auto scroll-pb-30;
@@ -175,16 +175,16 @@
     @apply my-0 pt-6 pr-0 pb-6 pl-0 border-0 border-b border-border rounded-none shadow-none;
   }
   .workspace-main h1 {
-    @apply text-[20px] font-bold wrap-anywhere;
+    @apply text-heading font-display tracking-normal leading-normal wrap-anywhere;
   }
   .workspace-main h2 {
-    @apply text-[16px] font-semibold wrap-anywhere;
+    @apply text-body font-medium wrap-anywhere;
   }
   .workspace-main h3 {
-    @apply text-[15px];
+    @apply text-body font-medium;
   }
   .workspace-main .prose {
-    @apply max-w-[75ch] leading-[1.7];
+    @apply max-w-[75ch] leading-normal;
   }
   .workspace-main > .muted,
   .workspace-main > [role="status"],
@@ -195,7 +195,7 @@
     @apply flex flex-col gap-[6px];
   }
   .navigation-item {
-    @apply flex flex-col items-start gap-2 w-full min-w-0 text-left wrap-anywhere border border-transparent bg-transparent p-3 text-[13px];
+    @apply flex flex-col items-start gap-2 w-full min-w-0 text-left wrap-anywhere border border-transparent bg-transparent p-3 text-caption;
   }
   .navigation-item:hover {
     @apply bg-surface-subtle;
@@ -210,10 +210,10 @@
     @apply m-0 tabular-nums;
   }
   .navigation-item .muted {
-    @apply text-[12px];
+    @apply text-meta;
   }
   .search-field {
-    @apply text-[13px] mb-3;
+    @apply text-caption mb-3;
   }
   .search-field input {
     @apply w-full min-w-0;
@@ -222,13 +222,13 @@
     @apply mt-0 border-b border-border scroll-mt-20;
   }
   .check-item .disclosure-trigger {
-    @apply pt-4 pr-0 pb-4 pl-0 m-0 leading-[1.6] wrap-anywhere;
+    @apply pt-4 pr-0 pb-4 pl-0 m-0 leading-normal wrap-anywhere;
   }
   .check-title {
-    @apply text-[15px] font-semibold;
+    @apply text-ui font-medium;
   }
   .check-title code {
-    @apply text-muted text-[12px] mr-[6px];
+    @apply text-muted text-meta mr-[6px];
   }
   .check-meta {
     @apply inline-flex flex-wrap items-center gap-2 ml-3;
@@ -243,7 +243,7 @@
     @apply min-w-0;
   }
   .evidence figcaption {
-    @apply flex flex-col gap-1 text-[13px];
+    @apply flex flex-col gap-1 text-caption;
   }
   .inline-preview {
     @apply m-0 p-3 rounded-default;
@@ -255,13 +255,13 @@
     @apply w-full max-h-70 object-contain m-0;
   }
   .image-preview-error {
-    @apply block p-2 text-[12px];
+    @apply block p-2 text-meta;
   }
   .text-evidence {
-    @apply max-h-65 overflow-auto whitespace-pre-wrap wrap-anywhere bg-surface-subtle border border-border rounded-default p-3 font-mono text-[12px] leading-[1.7];
+    @apply max-h-65 overflow-auto whitespace-pre-wrap wrap-anywhere bg-surface-subtle border border-border rounded-default p-3 font-mono text-meta leading-normal;
   }
   .evidence .actions {
-    @apply mt-3 text-[13px];
+    @apply mt-3 text-caption;
   }
   .image-viewer-overlay {
     @apply fixed inset-0 z-50 bg-brand/90;
@@ -308,10 +308,10 @@
     @apply size-5;
   }
   .image-viewer-controls output {
-    @apply min-w-12 text-center text-[13px] tabular-nums;
+    @apply min-w-12 text-center text-caption tabular-nums;
   }
   .image-viewer-error {
-    @apply text-brand-fg text-[14px];
+    @apply text-brand-fg text-ui;
   }
   @keyframes image-viewer-enter {
     from {
@@ -336,9 +336,6 @@
       animation: image-viewer-enter-reduced 120ms ease-out;
     }
   }
-  ::selection {
-    @apply text-accent-dark bg-accent-soft;
-  }
 }
 
 @layer components {
@@ -352,7 +349,7 @@
     @apply flex flex-wrap gap-[6px] tabular-nums;
   }
   .check-counts .badge {
-    @apply text-[12px];
+    @apply text-meta;
   }
   .report-metrics {
     @apply grid grid-cols-[minmax(0,_2fr)_minmax(0,_1fr)] gap-5;
@@ -364,10 +361,10 @@
     @apply col-[1_/_-1];
   }
   .review-bar {
-    @apply flex-wrap absolute inset-[auto_var(--workspace-right-width,_0px)_0_var(--workspace-left-width,_0px)] z-[30] flex justify-between items-center gap-4 [padding:12px_32px_calc(12px_+_env(safe-area-inset-bottom))] bg-surface border-t border-border-dark shadow-elevated;
+    @apply flex-wrap absolute inset-[auto_var(--workspace-right-width,_0px)_0_var(--workspace-left-width,_0px)] z-[30] flex justify-between items-center gap-4 [padding:12px_32px_calc(12px_+_env(safe-area-inset-bottom))] bg-surface border-t border-border-dark shadow-none;
   }
   .review-bar-context {
-    @apply flex items-center gap-2 min-w-0 text-[13px];
+    @apply flex items-center gap-2 min-w-0 text-caption;
   }
   .review-bar-context .badge {
     @apply shrink-0;
@@ -379,7 +376,7 @@
     @apply overflow-hidden text-ellipsis whitespace-nowrap;
   }
   .review-bar .actions {
-    @apply shrink-0 text-[13px];
+    @apply shrink-0 text-caption;
   }
   .review-dialog {
     @apply w-[min(640px,_calc(100%_-_32px))] max-h-[calc(100dvh_-_32px)] overflow-auto;

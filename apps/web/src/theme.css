@@ -1,24 +1,58 @@
-/* Modern Slate，来源与映射见 docs/design-reference.md。 */
+/* Acceptances · Vercel. Values and exceptions: DESIGN.md; font provenance: public/fonts/geist/SOURCE.md. */
+@font-face {
+  font-family: "Geist Sans";
+  src: url("/fonts/geist/Geist-Variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Sans";
+  src: url("/fonts/geist/Geist-Italic-Variable.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/geist/GeistMono-Variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/geist/GeistMono-Italic-Variable.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @theme static {
-  --color-canvas: #f8fafc;
+  --color-canvas: #fafafa;
   --color-surface: #ffffff;
-  --color-surface-subtle: #f1f5f9;
-  --color-surface-hover: #f8fafc;
-  --color-fg: #0f172a;
-  --color-fg-secondary: #334155;
-  --color-fg-muted: #64748b;
-  --color-muted: #64748b;
-  --color-fg-subtle: #94a3b8;
-  --color-border: #e2e8f0;
-  --color-border-dark: #cbd5e1;
-  --color-brand: #0f172a;
-  --color-brand-hover: #1e293b;
+  --color-surface-subtle: #fafafa;
+  --color-surface-hover: #ebebeb;
+  --color-fg: #171717;
+  --color-fg-secondary: #4d4d4d;
+  --color-fg-muted: #666666;
+  --color-muted: #666666;
+  --color-fg-subtle: #7d7d7d;
+  --color-border: #ebebeb;
+  --color-border-dark: #c9c9c9;
+  --color-brand: #171717;
+  --color-brand-hover: #4d4d4d;
   --color-brand-fg: #ffffff;
-  --color-topnav-bg: rgba(248, 250, 252, 0.88);
-  --color-accent: #059669;
-  --color-accent-soft: #ecfdf5;
-  --color-accent-border: #a7f3d0;
-  --color-accent-dark: #047857;
+  --color-topnav-bg: rgb(250 250 250 / 90%);
+  --color-disabled: #c9c9c9;
+  /* Business-state exceptions to the monochrome reference. */
+  --color-success: #059669;
+  --color-success-soft: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-success-dark: #047857;
   --color-warning: #d97706;
   --color-warning-soft: #fffbeb;
   --color-warning-border: #fde68a;
@@ -28,30 +62,72 @@
   --color-danger-border: #fecdd3;
   --color-danger-dark: #be123c;
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --radius-sm: 4px;
+    "Geist Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    "Geist Mono", "PingFang SC", "Microsoft YaHei", ui-monospace,
+    SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-weight-display: 450;
+  --text-display: 64px;
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.06em;
+  --text-display--font-weight: 450;
+  --text-heading-lg: 56px;
+  --text-heading-lg--line-height: 1;
+  --text-heading-lg--letter-spacing: -0.06em;
+  --text-heading-lg--font-weight: 450;
+  --text-heading: 30px;
+  --text-heading--line-height: 1.1;
+  --text-heading--letter-spacing: -0.05em;
+  --text-heading--font-weight: 450;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+  --text-ui: 14px;
+  --text-ui--line-height: 1.43;
+  --text-caption: 13px;
+  --text-caption--line-height: 1.54;
+  --text-meta: 12px;
+  --text-meta--line-height: 1.5;
+  --text-eyebrow: 11px;
+  --text-eyebrow--line-height: 1.5;
+  --text-eyebrow--letter-spacing: 0.071em;
+  --text-xs: 12px;
+  --text-xs--line-height: 1.5;
+  --text-sm: 14px;
+  --text-sm--line-height: 1.43;
+  --text-base: 16px;
+  --text-base--line-height: 1.5;
+  --text-lg: 16px;
+  --text-lg--line-height: 1.5;
+  --text-xl: 30px;
+  --text-xl--line-height: 1.1;
+  --text-2xl: 30px;
+  --text-2xl--line-height: 1.1;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 1.1;
+  --text-4xl: 30px;
+  --text-4xl--line-height: 1.1;
+  --text-5xl: 56px;
+  --text-5xl--line-height: 1.1;
+  --text-6xl: 64px;
+  --text-6xl--line-height: 1.1;
+  --radius-xs: 2px;
+  --radius-sm: 2px;
   --radius-default: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
   --radius-full: 9999px;
-  --shadow-subtle: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --shadow-card:
-    0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
-  --shadow-dropdown:
-    0 10px 15px -3px rgba(15, 23, 42, 0.08),
-    0 4px 6px -4px rgba(15, 23, 42, 0.04);
-  --shadow-elevated:
-    0 10px 15px -3px rgba(15, 23, 42, 0.08),
-    0 4px 6px -4px rgba(15, 23, 42, 0.04);
-  --shadow-window:
-    0 20px 25px -5px rgba(15, 23, 42, 0.1),
-    0 8px 10px -6px rgba(15, 23, 42, 0.06);
+  --shadow-subtle: 0 0 0 1px rgb(0 0 0 / 8%), 0 0 0 2px #fafafa;
+  --shadow-card: 0 0 0 1px #ebebeb;
+  --shadow-dropdown: 0 0 0 1px #ebebeb;
+  --shadow-elevated: 0 0 0 1px #ebebeb;
+  --shadow-window: 0 0 0 1px #ebebeb;
 }
 
 @theme inline {
-  --color-background: var(--color-surface);
+  --color-background: var(--color-canvas);
   --color-foreground: var(--color-fg);
   --color-card: var(--color-surface);
   --color-card-foreground: var(--color-fg);
@@ -62,16 +138,69 @@
   --color-secondary: var(--color-surface-subtle);
   --color-secondary-foreground: var(--color-fg-secondary);
   --color-muted-foreground: var(--color-muted);
+  --color-accent: var(--color-surface-hover);
   --color-accent-foreground: var(--color-fg);
   --color-destructive: var(--color-danger-dark);
   --color-input: var(--color-border-dark);
   --color-ring: var(--color-brand);
 }
 :root {
-  --background: var(--color-surface);
+  --background: var(--color-canvas);
   --foreground: var(--color-fg);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-fg);
   --popover: var(--color-surface);
   --popover-foreground: var(--color-fg);
+  --primary: var(--color-brand);
+  --primary-foreground: var(--color-brand-fg);
+  --secondary: var(--color-surface-subtle);
+  --secondary-foreground: var(--color-fg-secondary);
+  --muted: var(--color-surface-subtle);
+  --muted-foreground: var(--color-muted);
+  --accent: var(--color-surface-hover);
+  --accent-foreground: var(--color-fg);
+  --destructive: var(--color-danger-dark);
   --border: var(--color-border);
+  --input: var(--color-border-dark);
+  --ring: var(--color-brand);
   --radius: var(--radius-default);
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-fg);
+    background: var(--color-canvas);
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    scrollbar-color: var(--color-border-dark) var(--color-canvas);
+    scrollbar-width: thin;
+  }
+  body {
+    margin: 0;
+  }
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+  :where(button, input, textarea, select, a, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
+  }
+  :where(input, textarea, select) {
+    accent-color: var(--color-brand);
+  }
+  :where(h1, h2, h3, h4) {
+    text-wrap: balance;
+    font-weight: var(--font-weight-display);
+  }
+  ::selection {
+    color: var(--color-brand-fg);
+    background: var(--color-brand);
+  }
 }

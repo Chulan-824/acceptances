@@ -5,7 +5,7 @@
 .file-preview-dialog [data-slot="dialog-title"] {
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: var(--text-body);
 }
 .file-preview-viewer {
   display: flex;
@@ -25,7 +25,7 @@
   padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--text-meta);
 }
 .file-preview-toolbar [role="group"] {
   display: flex;
@@ -44,7 +44,7 @@
   padding: 12px 20px;
   background: var(--color-warning-soft);
   color: var(--color-warning-dark);
-  font-size: 13px;
+  font-size: var(--text-caption);
 }
 .file-preview-rich,
 .file-preview-raw {
@@ -65,7 +65,7 @@
 }
 .file-preview-page-body > .muted {
   padding: 8px 20px;
-  font-size: 12px;
+  font-size: var(--text-meta);
 }
 .file-preview-page-body > [role="alert"] {
   padding: 20px;
@@ -78,8 +78,8 @@
   margin: 0;
   padding: 16px 20px;
   font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: var(--text-caption);
+  line-height: 1.5;
   white-space: pre;
   min-width: fit-content;
   tab-size: 4;
@@ -111,15 +111,15 @@
   gap: 12px;
   padding: 12px 20px;
   border-top: 1px solid var(--border);
-  font-size: 12px;
+  font-size: var(--text-meta);
   font-variant-numeric: tabular-nums;
 }
 .file-preview-markdown {
-  max-width: 76ch;
+  max-width: 75ch;
   margin: 0 auto;
-  padding: 24px 28px 40px;
-  font-size: 15px;
-  line-height: 1.8;
+  padding: 24px 24px 40px;
+  font-size: var(--text-ui);
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 .file-preview-markdown h1,
@@ -130,13 +130,13 @@
   margin: 1.5em 0 0.6em;
 }
 .file-preview-markdown h1 {
-  font-size: 28px;
+  font-size: var(--text-heading);
 }
 .file-preview-markdown h2 {
-  font-size: 22px;
+  font-size: var(--text-heading);
 }
 .file-preview-markdown h3 {
-  font-size: 18px;
+  font-size: var(--text-body);
 }
 .file-preview-markdown > :first-child {
   margin-top: 0;
@@ -165,7 +165,7 @@
 .file-preview-markdown pre {
   overflow: auto;
   padding: 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-default);
   background: var(--color-surface-subtle);
 }
 .file-preview-markdown code {
@@ -213,17 +213,17 @@
   padding: 12px;
   border: 1px solid var(--border);
   color: var(--color-fg-muted);
-  font-size: 13px;
+  font-size: var(--text-caption);
 }
 @media (max-width: 767px) {
   .file-preview-toolbar,
   .file-preview-pagination {
-    padding: 10px 12px;
+    padding: 12px;
     gap: 8px;
   }
   .file-preview-pagination > span {
     text-align: center;
-    font-size: 12px;
+    font-size: var(--text-meta);
   }
   .file-preview-markdown {
     padding: 20px 16px;

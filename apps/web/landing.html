@@ -3,11 +3,25 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="preload"
+      href="/fonts/geist/Geist-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/geist/GeistMono-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <title>Acceptances · 本地优先的研发交付与多轮验收系统</title>
     <link rel="icon" href="data:," />
   </head>
   <body
-    class="bg-canvas text-fg font-sans antialiased selection:bg-accent-soft selection:text-accent-dark min-h-screen flex flex-col"
+    class="bg-canvas text-fg font-sans antialiased selection:bg-brand selection:text-brand-fg min-h-screen flex flex-col"
   >
     <div id="root" class="flex flex-col min-h-screen"></div>
     <script type="module" src="/src/landing/main.tsx"></script>

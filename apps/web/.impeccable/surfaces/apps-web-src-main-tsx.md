@@ -11,14 +11,14 @@ Mode: Operate
 
 ## Direction contract
 
-THESIS: 首页优先展示已有项目，创建项目作为可发现的次要入口，按用户已确认的 OpenDesign homepage-redesign.html 实现。
+THESIS: 首页优先展示真实需求交付看板，项目筛选与创建作为辅助入口；交付状态以最新 Run 与人工判断表达。
 
-OWN-WORLD: 沿用 Modern Slate 冷灰画布、白色表面、深色按钮、系统中文字体、细边框和轻圆角。首页局部标题为 28px，项目名称 18px。
+OWN-WORLD: 2026-10-19 全站迁移为 Refero Vercel 中性黑白、Geist Sans / Mono 自托管、6px 圆角、细边框与平面容器；业务状态保留彩色与文字，中文保留系统字体回退。数值以根 DESIGN.md 和 theme.css 为准。
 
 STORY: 用户进入首页后选择项目查看需求与验证记录，或填写名称与可选说明创建项目。创建成功自动进入新项目，失败保留输入。
 
-FIRST VIEWPORT: 1440px 时居中的 1120px 容器，两侧内边距 32px；紧凑 72px 顶栏，下方标题及说明，左侧项目卡片列表、右侧 320px 创建表单。非三栏页面适配响应式视口，小屏单列堆叠；32px 交互控件触控热区扩展至 44x44px。
+FIRST VIEWPORT: 最大 1280px 容器，64px 顶栏、统计与筛选、左侧需求交付卡片和右侧项目/创建面板；窄屏单列，图标控件保留 44px 热区。
 
-FORM: 用户已确认的 OpenDesign 独立设计稿，原生成 run 7e9412d8-aac0-48b3-822b-f6c048231147；不再生成候选。移除设计演示说明，所有操作连接当前真实接口。
+FORM: 保留现有看板和业务交互结构，视觉由 2026-10-19 用户明确授权的 Refero Vercel 全站主题替换。
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

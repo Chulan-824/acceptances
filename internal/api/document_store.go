@@ -106,7 +106,7 @@ func (s *Server) documentHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'")
+	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'")
 	if r.URL.Query().Get("download") == "1" {
 		w.Header().Set("Content-Disposition", `attachment; filename="business-document.html"`)
 	}

@@ -1,15 +1,15 @@
-/* ReUI compositions share Modern Slate tokens with the shadcn foundation. */
+/* ReUI compositions share Vercel tokens with the shadcn foundation. */
 @layer components {
   /* Frame owns layout and passes panel/bar spacing to its composed children.
      Slot changes only the element; every variant also applies with asChild. */
   .reui-frame {
     --frame-radius: var(--radius-lg);
-    --frame-gap: 3px;
-    --frame-px: 3px;
-    --frame-py: 3px;
+    --frame-gap: 4px;
+    --frame-px: 4px;
+    --frame-py: 4px;
     --frame-panel-bg: var(--color-surface);
     --frame-panel-border-color: var(--color-border);
-    --frame-panel-radius: calc(var(--frame-radius) - var(--frame-px) - 1px);
+    --frame-panel-radius: var(--frame-radius);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -68,7 +68,7 @@
     border-radius: var(--frame-panel-radius, var(--radius-lg));
     background: var(--frame-panel-bg, var(--color-surface));
     background-clip: padding-box;
-    box-shadow: var(--shadow-subtle);
+    box-shadow: none;
   }
   .reui-panel-flat,
   .reui-panel-divider {
@@ -186,7 +186,7 @@
   .evidence-file-name {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
   .evidence-file-name [data-slot="file-type"] {
     flex: none;
@@ -211,7 +211,7 @@
   }
   .delivery-wizard [data-slot="stepper-title"] {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--text-caption);
     text-align: left;
     line-height: 1.5;
   }
@@ -245,7 +245,7 @@
   @media (max-width: 640px) {
     .delivery-wizard [data-slot="stepper-title"] {
       max-width: 4em;
-      font-size: 12px;
+      font-size: var(--text-meta);
     }
     .delivery-wizard [data-slot="stepper-trigger"] {
       flex-direction: column;

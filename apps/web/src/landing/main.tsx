@@ -64,21 +64,21 @@ function Landing() {
   return (
     <>
       <header className="sticky top-0 z-40 bg-canvas/90 backdrop-blur-md border-b border-border transition-colors">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <a
               href="landing.html"
-              className="flex items-center gap-2.5 font-semibold text-base tracking-tight hover:opacity-90"
+              className="flex items-center gap-3 font-medium text-base tracking-tight hover:opacity-90"
             >
-              <div className="w-7 h-7 rounded-md bg-brand text-brand-fg flex items-center justify-center font-bold text-sm shadow-subtle">
+              <div className="w-7 h-7 rounded-default bg-brand text-brand-fg flex items-center justify-center font-medium text-sm shadow-none">
                 A
               </div>
               <span>Acceptances</span>
-              <span className="text-xs text-muted font-normal border-l border-border pl-2.5 hidden sm:inline">
+              <span className="text-xs text-muted font-normal border-l border-border pl-3 hidden sm:inline">
                 交付验证系统
               </span>
             </a>
-            <Badge className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-subtle border border-border text-xs text-muted font-mono">
+            <Badge className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-subtle border border-border text-xs text-muted font-mono">
               <span>个人本机使用</span>
             </Badge>
           </div>
@@ -120,7 +120,7 @@ function Landing() {
               <Button asChild variant="ghost">
                 <a
                   href="index.html"
-                  className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-subtle flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-default bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-none flex items-center gap-1.5"
                 >
                   <span>进入工作台</span>
                   <span className="text-xs">→</span>
@@ -132,30 +132,30 @@ function Landing() {
       </header>
 
       <section
-        className="pt-16 pb-14 px-6 relative overflow-hidden"
+        className="pt-24 pb-16 px-6 relative overflow-hidden"
         data-od-id="hero"
       >
         <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
-          <Badge className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-subtle border border-border text-xs text-fg-secondary font-mono mb-6 shadow-subtle">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+          <Badge className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-subtle border border-border text-xs text-fg-secondary font-mono mb-6 shadow-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-fg"></span>
             <span>LOCAL-FIRST · 研发交付与多轮验证系统</span>
           </Badge>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-fg leading-[1.15] mb-6">
+          <h1 className="text-heading sm:text-heading-lg lg:text-display font-display tracking-normal text-fg leading-[1.1] mb-6">
             保存验证事实与证据
             <br className="hidden sm:inline" />
-            <span className="text-muted font-bold">
+            <span className="text-fg-secondary font-display">
               构建清晰确凿的人工判断闭环
             </span>
           </h1>
-          <p className="text-lg text-muted max-w-2xl leading-relaxed mb-8">
+          <p className="text-body text-fg-secondary max-w-2xl leading-relaxed mb-8">
             Acceptances
             聚合真实运行结果、多模态证据与代码版本，让执行事实与人工裁决清晰分离。无需外部云端依赖，在本地即可构建完整、可追溯的需求验收与复验闭环。
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3.5">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Button asChild variant="ghost">
               <a
                 href="index.html"
-                className="px-5 py-2.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-card flex items-center gap-2"
+                className="px-5 py-3 rounded-default bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-none flex items-center gap-2"
               >
                 <span>打开交付验收工作台</span>
                 <span>→</span>
@@ -164,11 +164,11 @@ function Landing() {
             <Button
               variant="ghost"
               aria-label="复制启动命令"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface border border-border text-xs font-mono text-muted cursor-pointer hover:border-border-dark transition-all shadow-subtle group text-left whitespace-normal border-0 max-w-full h-auto"
+              className="flex items-center gap-2 px-3 py-2 rounded-default bg-surface border border-border text-xs font-mono text-muted cursor-pointer hover:border-border-dark transition-all shadow-none group text-left whitespace-normal border-0 max-w-full h-auto"
               onClick={() => void copyCommand(startupCommand)}
               title="点击复制命令"
             >
-              <span className="text-accent font-bold">$</span>
+              <span className="text-fg font-medium">$</span>
               <code className="text-fg break-words">{startupCommand}</code>
               <span
                 className="text-xs text-muted pl-1 border-l border-border group-hover:text-fg transition-colors"
@@ -186,19 +186,23 @@ function Landing() {
         </div>
       </section>
 
-      <section className="py-12 px-6" id="showcase" data-od-id="showcase">
+      <section
+        className="py-12 lg:py-16 px-6"
+        id="showcase"
+        data-od-id="showcase"
+      >
         <Tabs
           value={showcaseTab}
           onValueChange={setShowcaseTab}
           className="block"
         >
-          <div className="max-w-6xl mx-auto">
-            <FramePanel className="bg-surface border border-border rounded-2xl shadow-window overflow-hidden">
-              <div className="h-11 px-4 bg-surface-subtle/80 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-danger"></span>
-                  <span className="w-3 h-3 rounded-full bg-warning"></span>
-                  <span className="w-3 h-3 rounded-full bg-accent"></span>
+          <div className="max-w-7xl mx-auto">
+            <FramePanel className="bg-surface border border-border rounded-default shadow-none overflow-hidden">
+              <div className="min-h-11 px-4 py-3 lg:py-0 bg-surface-subtle border-b border-border flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-fg"></span>
+                  <span className="w-3 h-3 rounded-full bg-fg-subtle"></span>
+                  <span className="w-3 h-3 rounded-full bg-border-dark"></span>
                   <span className="ml-2 text-xs font-mono text-muted">
                     acceptances · 本地优先交付与验证工作台
                   </span>
@@ -206,23 +210,23 @@ function Landing() {
 
                 <TabsList
                   aria-label="产品全景"
-                  className="flex items-center gap-1 p-0.5 rounded-lg bg-canvas border border-border text-xs font-mono h-auto"
+                  className="order-last flex w-full lg:order-none lg:w-auto items-center justify-between gap-1 p-0.5 rounded-default bg-canvas border border-border text-xs font-mono h-auto"
                 >
                   <TabsTrigger
                     value="0"
-                    className="w-tab px-3 py-1 rounded-md transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-subtle h-auto flex-none text-xs"
+                    className="w-tab px-2 lg:px-3 py-1 rounded-default transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-none h-auto flex-none text-xs"
                   >
                     1. 历史工作台
                   </TabsTrigger>
                   <TabsTrigger
                     value="1"
-                    className="w-tab px-3 py-1 rounded-md transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-subtle h-auto flex-none text-xs"
+                    className="w-tab px-2 lg:px-3 py-1 rounded-default transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-none h-auto flex-none text-xs"
                   >
                     2. 历史详情
                   </TabsTrigger>
                   <TabsTrigger
                     value="2"
-                    className="w-tab px-3 py-1 rounded-md transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-subtle h-auto flex-none text-xs"
+                    className="w-tab px-2 lg:px-3 py-1 rounded-default transition-all text-muted hover:text-fg data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-none h-auto flex-none text-xs"
                   >
                     3. 历史报告
                   </TabsTrigger>
@@ -263,7 +267,7 @@ function Landing() {
                       className="w-full h-auto block"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                      <span className="px-3 py-1.5 rounded-md bg-brand/90 text-brand-fg text-xs font-mono border border-brand-fg/10 backdrop-blur-sm">
+                      <span className="px-3 py-1.5 rounded-default bg-brand/90 text-brand-fg text-xs font-mono border border-brand-fg/10 backdrop-blur-sm">
                         点击放大查看历史截图
                       </span>
                     </div>
@@ -315,15 +319,15 @@ function Landing() {
                 </div>
                 <div className="flex items-center gap-3 font-mono text-muted">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>
+                    <span className="w-2 h-2 rounded-full bg-border-dark"></span>
                     执行与评审双层解耦
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>
+                    <span className="w-2 h-2 rounded-full bg-border-dark"></span>
                     本机服务持久归档
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-accent"></span>
+                    <span className="w-2 h-2 rounded-full bg-border-dark"></span>
                     结构化审计决策记录
                   </span>
                 </div>
@@ -334,9 +338,9 @@ function Landing() {
       </section>
 
       <section className="py-16 px-6" id="features" data-od-id="features">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg mb-3">
+            <h2 className="text-heading font-display tracking-normal leading-normal text-fg mb-3">
               为高标准软件交付打造的确定性护栏
             </h2>
             <p className="text-muted text-sm leading-relaxed">
@@ -345,8 +349,8 @@ function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FramePanel className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
-              <div className="w-10 h-10 rounded-lg bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
+            <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none hover:border-border-dark transition-all">
+              <div className="w-10 h-10 rounded-default bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
                 <svg
                   width="20"
                   height="20"
@@ -358,21 +362,21 @@ function Landing() {
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
               </div>
-              <h3 className="text-base font-semibold text-fg mb-2">
+              <h3 className="text-base font-medium text-fg mb-2">
                 本地优先与持久归档 (Local-First)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
                 无需外部数据库或云端服务。报告与人工评审保存在本机
                 SQLite，附件保存在服务端数据目录，正式部署使用持久数据卷。
               </p>
-              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
+              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded-default border border-border">
                 ✓ 默认仅通过本机地址访问
                 <br />✓ 记录代码来源、提交版本与未提交改动标记
               </div>
             </FramePanel>
 
-            <FramePanel className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
-              <div className="w-10 h-10 rounded-lg bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
+            <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none hover:border-border-dark transition-all">
+              <div className="w-10 h-10 rounded-default bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
                 <svg
                   width="20"
                   height="20"
@@ -386,20 +390,20 @@ function Landing() {
                   <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
                 </svg>
               </div>
-              <h3 className="text-base font-semibold text-fg mb-2">
+              <h3 className="text-base font-medium text-fg mb-2">
                 多模态确定性证据链 (Evidence-First)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
                 测试不再只是抽象的通过统计，更完整内嵌高分辨率实测截图、网络抓包与控制台日志，杜绝无据可查的环境偏差与主观臆测。
               </p>
-              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
+              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded-default border border-border">
                 ✓ 像素级高清截图与录像留存
                 <br />✓ 运行时网络请求与异常追踪
               </div>
             </FramePanel>
 
-            <FramePanel className="bg-surface border border-border rounded-xl p-6 shadow-subtle hover:border-border-dark transition-all">
-              <div className="w-10 h-10 rounded-lg bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
+            <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none hover:border-border-dark transition-all">
+              <div className="w-10 h-10 rounded-default bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
                 <svg
                   width="20"
                   height="20"
@@ -411,13 +415,13 @@ function Landing() {
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
               </div>
-              <h3 className="text-base font-semibold text-fg mb-2">
+              <h3 className="text-base font-medium text-fg mb-2">
                 执行事实与人工裁决解耦 (Dual-Tier)
               </h3>
               <p className="text-muted text-xs leading-relaxed mb-4">
                 客观执行事实忠实归档，不替用户预设接受决定；支持逐项人工审阅与整轮全部人工通过，权属清晰，形成严密复验闭环。
               </p>
-              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded border border-border">
+              <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded-default border border-border">
                 ✓ 客观检验与主观判断权属分明
                 <br />✓ 逐项精准反馈驱动下轮修复
               </div>
@@ -431,9 +435,9 @@ function Landing() {
         id="workflow"
         data-od-id="workflow"
       >
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg mb-3">
+            <h2 className="text-heading font-display tracking-normal leading-normal text-fg mb-3">
               三步构建高效可靠的交付闭环
             </h2>
             <p className="text-muted text-sm">
@@ -444,10 +448,10 @@ function Landing() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             <div className="flex flex-col gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
+              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-medium text-sm flex items-center justify-center shadow-none">
                 1
               </div>
-              <h4 className="text-base font-semibold text-fg">
+              <h4 className="text-base font-medium text-fg">
                 启动服务并关联项目
               </h4>
               <p className="text-xs text-muted leading-relaxed">
@@ -455,17 +459,17 @@ function Landing() {
                 源码目录执行 make build 和 make install-skill，安装 CLI 与
                 acceptances-v1 skill，再到业务目录关联项目。
               </p>
-              <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
-                <span className="text-accent-border">$</span>
+              <div className="bg-brand text-brand-fg p-3 rounded-default font-mono text-xs overflow-x-auto shadow-none mt-1">
+                <span className="text-brand-fg">$</span>
                 acceptances link --project "项目名称"
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
+              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-medium text-sm flex items-center justify-center shadow-none">
                 2
               </div>
-              <h4 className="text-base font-semibold text-fg">
+              <h4 className="text-base font-medium text-fg">
                 执行验证并提交报告
               </h4>
               <p className="text-xs text-muted leading-relaxed">
@@ -473,17 +477,17 @@ function Landing() {
                 和截图、录像、日志等附件，再通过 CLI
                 整包归档。每次实际验证形成独立 Run。
               </p>
-              <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
-                <span className="text-accent-border">$</span>
+              <div className="bg-brand text-brand-fg p-3 rounded-default font-mono text-xs overflow-x-auto shadow-none mt-1">
+                <span className="text-brand-fg">$</span>
                 acceptances publish --bundle ./bundle --campaign "需求名称"
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-bold text-sm flex items-center justify-center shadow-subtle">
+              <div className="w-8 h-8 rounded-full bg-brand text-brand-fg font-mono font-medium text-sm flex items-center justify-center shadow-none">
                 3
               </div>
-              <h4 className="text-base font-semibold text-fg">
+              <h4 className="text-base font-medium text-fg">
                 逐项评审决策与闭环归档
               </h4>
               <p className="text-xs text-muted leading-relaxed">
@@ -491,8 +495,8 @@ function Landing() {
                 逐项评审或确认本轮全部人工通过，决定与评论保存到服务端。需要复验时，在业务聊天中授权
                 Agent 读取反馈、处理问题，并在同一需求下提交新 Run。
               </p>
-              <div className="bg-brand text-brand-fg p-3 rounded-lg font-mono text-xs overflow-x-auto shadow-subtle mt-1">
-                <span className="text-accent-border">$</span>
+              <div className="bg-brand text-brand-fg p-3 rounded-default font-mono text-xs overflow-x-auto shadow-none mt-1">
+                <span className="text-brand-fg">$</span>
                 acceptances feedback --campaign "需求名称"
               </div>
             </div>
@@ -505,9 +509,9 @@ function Landing() {
         id="specification"
         data-od-id="specification"
       >
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg mb-3">
+            <h2 className="text-heading font-display tracking-normal leading-normal text-fg mb-3">
               开放透明的数据规范与契约
             </h2>
             <p className="text-muted text-sm">
@@ -517,28 +521,28 @@ function Landing() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <FramePanel className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
+            <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
                 <span>上传包与服务端归档</span>
-                <span className="text-xs text-accent font-semibold">
+                <span className="text-xs text-fg font-medium">
                   Structured &amp; Versioned
                 </span>
               </div>
-              <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-lg bg-surface-subtle">
+              <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-default bg-surface-subtle">
                 {
                   "上传包（业务目录自选）\nbundle/\n├── report.json          # 验证事实与附件清单\n├── .submission-id       # CLI 自动生成，上传重试复用\n├── login.png            # 清单声明的附件\n└── browser.log\n\n归档位置（服务端数据目录）\n├── archive.db           # 项目、需求、报告与人工评审\n└── evidence/<Run ID>/   # 本轮附件"
                 }
               </pre>
             </FramePanel>
 
-            <FramePanel className="bg-surface border border-border rounded-xl p-5 shadow-subtle">
+            <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-border text-xs font-mono text-muted">
                 <span>逐项人工评审请求示例</span>
-                <span className="text-xs text-accent font-semibold">
+                <span className="text-xs text-fg font-medium">
                   Dual-Tier Verification
                 </span>
               </div>
-              <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-lg bg-surface-subtle">
+              <pre className="font-mono text-xs text-fg leading-relaxed overflow-x-auto p-3 rounded-default bg-surface-subtle">
                 {
                   'POST /api/v1/runs/<Run ID>/reviews\n\n{\n  "checkId": "c1",\n  "kind": "accepted",\n  "body": "已核对本项预期、实际结果与证据。"\n}'
                 }
@@ -560,7 +564,7 @@ function Landing() {
       >
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg mb-3">
+            <h2 className="text-heading font-display tracking-normal leading-normal text-fg mb-3">
               为什么选择 Acceptances？
             </h2>
             <p className="text-muted text-sm">
@@ -568,61 +572,61 @@ function Landing() {
             </p>
           </div>
 
-          <FramePanel className="bg-surface border border-border rounded-xl overflow-hidden shadow-subtle">
+          <FramePanel className="bg-surface border border-border rounded-default overflow-hidden shadow-none">
             <Table className="w-full text-left text-xs border-collapse">
               <TableHeader>
                 <TableRow className="bg-canvas border-b border-border text-muted font-mono">
-                  <TableHead className="p-3.5 font-medium">评估维度</TableHead>
-                  <TableHead className="p-3.5 font-medium text-danger-dark">
+                  <TableHead className="p-3 font-medium">评估维度</TableHead>
+                  <TableHead className="p-3 font-medium text-fg-secondary">
                     即时通讯 / 口头交接
                   </TableHead>
-                  <TableHead className="p-3.5 font-medium text-accent-dark bg-accent-soft/40">
+                  <TableHead className="p-3 font-medium text-fg bg-surface-subtle">
                     Acceptances (本地优先)
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-border text-fg-secondary">
                 <TableRow>
-                  <TableCell className="p-3.5 font-medium text-fg">
+                  <TableCell className="p-3 font-medium text-fg">
                     证据沉淀
                   </TableCell>
-                  <TableCell className="p-3.5 text-muted">
+                  <TableCell className="p-3 text-muted">
                     截图与聊天记录零散割裂，极易过期清理或遗漏
                   </TableCell>
-                  <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
+                  <TableCell className="p-3 font-medium text-fg bg-surface-subtle">
                     与需求交付深度绑定，多模态证据完整固化、持久可查
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="p-3.5 font-medium text-fg">
+                  <TableCell className="p-3 font-medium text-fg">
                     复验演进
                   </TableCell>
-                  <TableCell className="p-3.5 text-muted">
+                  <TableCell className="p-3 text-muted">
                     多次改动后难以对照历史轮次的证据差异
                   </TableCell>
-                  <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
+                  <TableCell className="p-3 font-medium text-fg bg-surface-subtle">
                     多轮验证与复验轨迹完整追溯，前后对比直观确凿
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="p-3.5 font-medium text-fg">
+                  <TableCell className="p-3 font-medium text-fg">
                     决策归属
                   </TableCell>
-                  <TableCell className="p-3.5 text-muted">
+                  <TableCell className="p-3 text-muted">
                     缺乏明确审阅依据，验收边界模糊
                   </TableCell>
-                  <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
+                  <TableCell className="p-3 font-medium text-fg bg-surface-subtle">
                     逐项审阅与裁决意见清晰存证，人机协同责任明确
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="p-3.5 font-medium text-fg">
+                  <TableCell className="p-3 font-medium text-fg">
                     使用成本
                   </TableCell>
-                  <TableCell className="p-3.5 text-muted">
+                  <TableCell className="p-3 text-muted">
                     需搭建重型云服务与配置账号权限，维护成本高
                   </TableCell>
-                  <TableCell className="p-3.5 font-medium text-fg bg-accent-soft/10">
+                  <TableCell className="p-3 font-medium text-fg bg-surface-subtle">
                     本机部署，无需账号、外部数据库或云端服务
                   </TableCell>
                 </TableRow>
@@ -632,9 +636,9 @@ function Landing() {
         </div>
       </section>
 
-      <section className="py-20 px-6 text-center" data-od-id="cta">
+      <section className="py-12 lg:py-16 px-6 text-center" data-od-id="cta">
         <div className="max-w-3xl mx-auto flex flex-col items-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg mb-4">
+          <h2 className="text-heading sm:text-heading-lg font-display tracking-normal leading-[1.1] text-fg mb-4">
             立即在您的项目中启用 Acceptances
           </h2>
           <p className="text-muted text-sm max-w-xl leading-relaxed mb-8">
@@ -645,7 +649,7 @@ function Landing() {
             <Button asChild variant="ghost">
               <a
                 href="index.html"
-                className="px-6 py-3 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-card"
+                className="px-6 py-3 rounded-default bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-none"
               >
                 进入交付验收工作台 →
               </a>
@@ -655,9 +659,9 @@ function Landing() {
       </section>
 
       <footer className="mt-auto py-8 px-6 border-t border-border bg-canvas text-xs text-muted">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="font-semibold text-fg">Acceptances</span>
+            <span className="font-medium text-fg">Acceptances</span>
             <span>·</span>
             <span>本地优先的研发交付与多轮验收系统</span>
           </div>
@@ -693,7 +697,7 @@ function Landing() {
           <img
             src={screenshots[Number(showcaseTab)]}
             alt="当前产品截图放大预览"
-            className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-window border border-brand-fg/10"
+            className="max-w-full max-h-[80vh] object-contain rounded-default shadow-none border border-brand-fg/10"
           />
         </DialogContent>
       </Dialog>

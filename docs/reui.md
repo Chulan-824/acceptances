@@ -1,6 +1,6 @@
 # ReUI 页面组合层
 
-2026-10-15，Web 的两个入口采用 shadcn/ui 基础控件和 ReUI 组合组件，继续使用 Modern Slate。ReUI 组件实际保存在 `apps/web/src/components/reui/`，不通过重新导出 shadcn 组件冒充接入。
+2026-10-15，Web 的两个入口采用 shadcn/ui 基础控件和 ReUI 组合组件，2026-10-19 起共享 Vercel 主题。ReUI 组件实际保存在 `apps/web/src/components/reui/`，不通过重新导出 shadcn 组件冒充接入。
 
 ## 来源与维护
 
@@ -30,9 +30,9 @@
 
 ## 本地适配
 
-- `theme.css` 令牌保持原值；`reui.css` 只处理组合布局。通用中性背景使用 `surface-subtle`，不用表示文字灰的 `muted` 或表示接受绿的 `accent`。Badge 默认保留原有状态类、无边框、400 字重和密度；Alert 的默认圆角与内边距沿用已有 ui-alert。
+- `theme.css` 统一 Vercel 数值；`reui.css` 只处理组合布局。通用中性背景使用 `surface-subtle` / `accent`，业务成功使用 `success`，不用文字灰作为底色。Badge 默认保留原有状态类、无边框、400 字重和密度；Alert 的默认圆角与内边距沿用已有 ui-alert。
 - Frame 保留 ReUI 的 Frame/Header/Panel/Footer 结构、父级间距变量、stacked 相邻面板与 dense 布局。样式迁入 `reui.css` 的 components 层，以现有令牌适配；这是本地适配版本，不是未经修改的上游源码。`asChild` 只切换宿主元素，所有组合样式与变体同样生效。
-- `ghost` Frame 配合 `spacing="none"` 管理工作台的平面内容流；项目设置使用 Header 和 flat Panel 分离标题操作及内容。默认 FramePanel 使用既有 12px 圆角和 `shadow-subtle`，恢复交付列表原有外观。`flat` 用于无卡片装饰的分区，`subtle` 用于摘要，`outline` 用于交付准备与证据，`divider` 用于说明版本列表。
+- `ghost` Frame 配合 `spacing="none"` 管理工作台的平面内容流；项目设置使用 Header 和 flat Panel 分离标题操作及内容。默认 FramePanel 使用 6px 圆角和 1px 边框，无投影。`flat` 用于无卡片装饰的分区，`subtle` 用于摘要，`outline` 用于交付准备与证据，`divider` 用于说明版本列表。
 - 首页统计、侧栏、需求卡片的公共背景、边框、圆角和阴影已从页面 CSS 移至 FramePanel；摘要外观、说明版本分隔线也由对应变体负责。页面 CSS 只保留业务布局、密度和必要的上下文覆盖。不要再按 `asChild` 关闭组件样式。
 - Timeline 历史项按内容高度排列，取消上游 `flex-1` 的均分拉伸。历史不使用位置推断业务通过状态，真实状态仍由文字 Badge 表达。反馈锚点和后续 Run 链接保留。
 - Stepper 使用实例唯一 ID、正确关联的 tablist/tabpanel、隐藏但保留的步骤内容和跳过禁用按钮的键盘导航；地图与素材步骤由明确勾选决定完成状态。分步浏览不自动勾选确认。
@@ -47,7 +47,9 @@
 
 最新 Run、本轮人工判断、有效冻结版本和业务说明分别展示。切换历史 Run 不改变 Campaign 交付概览，新的待审 Run 不抹除旧有效交付。没有修改 API、数据库和领域判断规则。
 
-## 本轮修复与验证
+## 2026-10-15 修复与验证记录
+
+2026-10-19 的 Vercel 主题验证另见 [验证记录](vercel-theme-verification.md)。
 
 2026-10-15 的审查指出 Slot 空包装、交付卡片主题偏移和 Landing 原生导航丢失。本轮已修复这三项。以下是修复后的验证，不能与首次迁移的历史记录混用。
 
