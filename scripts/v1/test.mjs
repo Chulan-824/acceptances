@@ -1,6 +1,11 @@
 import { execFileSync } from "node:child_process";
 const suite = process.argv[2] || "all";
 const targets = { all: "./...", http: "./internal/api", cli: "./internal/cli" };
+if (suite === "all" || suite === "web") {
+  execFileSync("node", ["--test", "apps/web/tests/*.test.mjs"], {
+    stdio: "inherit",
+  });
+}
 if (suite === "all" || suite === "services") {
   execFileSync(
     "node",
@@ -23,8 +28,11 @@ if (targets[suite]) {
   execFileSync("go", ["test", targets[suite], "-count=1", "-timeout=120s"], {
     stdio: "inherit",
   });
-} else if (suite === "services") {
-  // The lifecycle and development service tests already ran above.
+} else if (suite === "web" || suite === "services") {
+  // The selected Node tests already ran above.
+} else if (suite === "browser") {
+  execFileSync("make", ["build"], { stdio: "inherit" });
+  execFileSync("node", ["scripts/v1/browser-check.mjs"], { stdio: "inherit" });
 } else if (suite === "agent") {
   await import("./agent-check.mjs");
 } else if (suite === "platform") {
@@ -33,7 +41,7 @@ if (targets[suite]) {
   await import("./e2e-check.mjs");
 } else {
   console.error(
-    "可用 SUITE=all|services|http|cli|agent|platform|e2e；e2e 需要外部真实浏览器驱动。",
+    "可用 SUITE=all|web|services|browser|http|cli|agent|platform|e2e；browser 使用隔离服务，e2e 需要外部真实浏览器驱动。",
   );
   process.exit(2);
 }

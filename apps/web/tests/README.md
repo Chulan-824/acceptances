@@ -1,4 +1,36 @@
-# Run 定位浏览器验证
+# Web 回归验证
+
+## 统一执行入口
+
+```sh
+pnpm test:web
+pnpm test:browser
+# 只重跑相关分组；仍会先构建当前源码。
+BROWSER_GROUPS=review,media,preview pnpm test:browser
+# 查看分组，不启动服务或浏览器。
+node scripts/v1/browser-check.mjs --list
+```
+
+`pnpm check` 包含静态检查、Go 与 Web 单元测试和构建。真实浏览器回归单独执行，也可使用 `make test SUITE=browser`。项目固定 Playwright 开发依赖，默认使用系统 Chrome；需先安装 Chrome。`media` 分组另需 PATH 中有 ffmpeg，用于生成一秒合成视频。缺少依赖时命令失败，不把场景记为通过或跳过。
+
+统一运行器复制本轮构建到临时目录并校验摘要，避免其他任务重新构建时影响正在运行的检查。每组使用全新临时 Go 数据目录和随机本机端口，每个场景使用独立浏览器 context。拒绝日常端口 5173、8765，结束后等待服务退出并删除临时数据及构建副本。无需复制日常库，也不读取业务项目的关联配置。
+
+| 分组            | 既有检查                                                    | 证据边界                          |
+| --------------- | ----------------------------------------------------------- | --------------------------------- |
+| `layout`        | 报告摘要在 1120/1440/1920px、折叠和侧栏收起时居中           | 隔离 Go API                       |
+| `review`        | 通过、不通过后的连续审查、草稿和读取失败恢复                | 隔离 Go API，部分 HTTP 故障注入   |
+| `media`         | 图片优先、缩放、视频实际播放暂停、附件状态                  | 隔离 Go API，缺失引用注入         |
+| `preview`       | Markdown/文本/JSON/CSV/diff、UTF-8 分页、加载重试、冻结证据 | 隔离 Go API，部分请求失败注入     |
+| `navigation`    | 深链接、重复定位、历史、迟到响应等 12 项                    | 受控 HTTP，真实浏览器             |
+| `refresh`       | Campaign/Run 刷新生命周期 29 项                             | 受控 HTTP，真实浏览器             |
+| `lifecycle`     | 刷新及评审历史持久化 H01–H05                                | 隔离 Go API                       |
+| `deletion`      | 三类对象的删除、未知结果和迟到响应 30 项                    | 受控 HTTP，真实浏览器             |
+| `deletion-real` | 三类对象的真实删除及附件清理失败                            | 隔离 Go API，临时目录权限故障注入 |
+| `delivery`      | 正式交付、指南/报告、失效与离线文档                         | 隔离 Go API，部分响应丢失注入     |
+
+每轮输出到 `artifacts/browser/<时间-PID>/`。总回执为 `result.json`，各场景保存 JSON 结果、API 网络记录、截图及 `trace.zip`，各组另存服务日志。用 `pnpm exec playwright show-trace <trace.zip路径>` 查看 trace。失败返回非零并继续其余分组；Ctrl-C 中断后清理临时服务，结果记为失败。
+
+全部数据是平台合成数据；通过不代表业务需求验收、Docker 验证或完整 T1–T9 已完成。受控 HTTP 与隔离 Go API 分别标注，Go API 分组内的故障注入以各场景结果为准。已有逐项场景说明保留在下文。
 
 ## 检查项附件默认图片
 
@@ -8,7 +40,7 @@
 
 ## 检查项通过或不通过后连续审查
 
-`check-review-flow.mjs` 导出 `run(page, base, output)`，使用真实 Go API 和生产 Web。调用前设置 `ACCEPTANCES_TEST_ISOLATED=1`，以全新临时数据目录和随机本机端口启动服务，并创建专用 Playwright context。测试拒绝日常端口 5173、8765，且要求初始项目列表为空；不新增测试依赖。
+`check-review-flow.mjs` 导出 `run(page, base, output)`，使用真实 Go API 和生产 Web。调用前设置 `ACCEPTANCES_TEST_ISOLATED=1`，以全新临时数据目录和随机本机端口启动服务，并创建专用 Playwright context。测试拒绝日常端口 5173、8765，且要求初始项目列表为空。
 
 覆盖通过或不通过后收起、跳过已通过项、定位并展开下一待审或不通过项、末尾回跳、保留搜索与两种筛选、筛选内完成提示、不通过理由保存、隐藏通过项三个按钮及撤回恢复。两种判断均用受控 HTTP 故障验证拒绝和结果未知保留草稿，以及回读延迟、失败重试前不跳转。定位检查标题是否避开顶部固定标签栏和底部评审栏。提供 `output` 时保存截图，返回各场景结果；失败抛错，由调用方关闭浏览器和专用服务。结果仅证明平台合成交互。
 
@@ -16,11 +48,11 @@
 
 `delivery-real.mjs` 导出 `seed(base)` 和 `run(page, base, output, fixture)`，连接真实 Go API 与当前生产 Web，使用专用 Playwright context。调用前设置 `ACCEPTANCES_TEST_ISOLATED=1`，在 `127.0.0.1` 随机端口启动带全新临时数据目录的服务。seed 要求项目列表为空并拒绝日常端口 8765，创建的合成项目可被删除。
 
-场景包含独立冻结确认、异常项理由、两类文档分别生成与独立版本、业务指南导入、已提交但响应丢失后的原请求确认、sandbox 预览、演示样例及标注、展开大图和阅读勾选、改判失效、来源删除保留、窄屏与断网离线图片。产出 JSON 回执、截图和下载 HTML；失败抛错，调用方须在 finally 关闭 browser。使用机器已有 Playwright，不安装新依赖。它只证明平台合成流程，不代表业务需求验证通过。
+场景包含独立冻结确认、异常项理由、两类文档分别生成与独立版本、业务指南导入、已提交但响应丢失后的原请求确认、sandbox 预览、演示样例及标注、展开大图和阅读勾选、改判失效、来源删除保留、窄屏与断网离线图片。产出 JSON 回执、截图和下载 HTML；失败抛错，调用方须在 finally 关闭 browser。统一运行器使用项目固定的 Playwright。它只证明平台合成流程，不代表业务需求验证通过。
 
 ## 既有定位回归
 
-`run-target-navigation.mjs` 导出 `run(page, base, scenario)`，接收外部 Playwright 的真实 Page；不引入新测试依赖。`base` 默认 `http://127.0.0.1:15173`，需先在隔离端口启动 Vite。测试会拦截该 browser context 中所有 `/api/` 请求，使用内存中的 Project、Campaign、两个 Run 和 Feedback Response。它验证浏览器行为，不证明 Go 服务或日常数据的行为。
+`run-target-navigation.mjs` 导出 `run(page, base, scenario)`，接收 Playwright 的真实 Page。`base` 默认 `http://127.0.0.1:15173`，外部调用时需先启动隔离 Web；统一运行器使用当前生产 Web。测试会拦截该 browser context 中所有 `/api/` 请求，使用内存中的 Project、Campaign、两个 Run 和 Feedback Response。它验证浏览器行为，不证明 Go 服务或日常数据的行为。
 
 有外部 Playwright 驱动时，导入此文件，然后对专用 Page 分别调用 `run(page, base, "invalid")` 和 `run(page, base, "repeat")`。测试结束由调用者关闭专用 context。
 
@@ -53,7 +85,7 @@ for (const scenario of [
 }
 ```
 
-未知场景名会抛错，不会产生未执行但通过的结果。调用方应让抛出的错误导致验证失败。Vite 必须服务当前待验证 worktree；默认端口也可通过 `base` 覆盖。
+未知场景名会抛错，不会产生未执行但通过的结果。调用方应让抛出的错误导致验证失败。外部 Web 必须服务当前待验证 worktree；默认端口也可通过 `base` 覆盖。
 
 | 场景     | 可观察行为                                                                                     | 对应 User Stories |
 | -------- | ---------------------------------------------------------------------------------------------- | ----------------- |
@@ -78,11 +110,11 @@ viewport 检查等待目标实际可见，并检查目标顶部在固定评审�
 
 2026-10-13 刷新生命周期回归新增 `refresh`：从 `#check-target` 进入，明确提交一次评审，在响应暂缓时折叠目标并滚回顶部，然后释放写响应和 Run 回读。断言目标保持折叠、滚动位置不变；再次点击相同目标链接仍展开并定位。旧实现失败于 `Ordinary refresh must preserve collapsed target`（Red）；按 Run、定位意图和目标可用性记录已完成定位后通过（Green）。定位只有实际执行滚动后才完成，加载中的目标与被取消的动画帧仍可继续处理。
 
-本次 12 个场景通过独立 headless Chrome 和 15176 隔离 Vite 执行；HTTP 为受控 fixture，不代表真实 Go 接口验收。调用方可以从环境提供的 Playwright 包导入 `chromium`，创建独立 browser/context/page，运行上面的场景列表，并在 finally 关闭 browser。无需修改项目依赖。
+本次 12 个场景通过独立 headless Chrome 和 15176 隔离 Vite 执行；HTTP 为受控 fixture，不代表真实 Go 接口验收。现在可通过统一运行器的 `navigation` 分组重复执行，运行器负责创建和清理独立 browser/context/page。
 
 ## Campaign / Run 刷新交互
 
-`campaign-run-refresh.mjs` 导出 `scenarios` 和 `run(page, base, scenario)`。每项使用独立 Playwright browser context 和当前候选 Vite；所有 `/api/**` 均由受控 HTTP fixture 响应，不连接日常数据库。当前共 29 个场景，单独验证父级缺失重试时调用 `run(page, viteOrigin, "B15-parent-missing-retry")`。未知场景名直接失败。调用方为每项设置整体超时，失败不得记为 passed，并在 finally 关闭 context。
+`campaign-run-refresh.mjs` 导出 `scenarios` 和 `run(page, base, scenario)`。每项使用独立 Playwright browser context 和当前候选 Web；所有 `/api/**` 均由受控 HTTP fixture 响应，不连接日常数据库。当前共 29 个场景，单独验证父级缺失重试时调用 `run(page, viteOrigin, "B15-parent-missing-retry")`。未知场景名直接失败。调用方为每项设置整体超时，失败不得记为 passed，并在 finally 关闭 context。
 
 ```js
 import { run, scenarios } from "./campaign-run-refresh.mjs";

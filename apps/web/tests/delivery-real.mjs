@@ -1,4 +1,5 @@
 /** Real Web + isolated Go HTTP, using clearly synthetic platform fixtures only. */
+import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -6,9 +7,17 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const digest = (data) => createHash("sha256").update(data).digest("hex");
-const assert = (value, message) => {
-  if (!value) throw new Error(message);
-};
+async function reportImageDecodes(scope) {
+  return scope.locator("svg defs image").evaluate(async (element) => {
+    const image = new Image();
+    image.src = element.getAttribute("href");
+    await image.decode();
+    return (
+      image.naturalWidth > 0 &&
+      document.querySelectorAll("svg.screenshot use").length > 0
+    );
+  });
+}
 function crc32(bytes) {
   let crc = 0xffffffff;
   for (const byte of bytes) {
@@ -273,7 +282,22 @@ export async function run(page, base, output, fixture) {
     .getByRole("button", { name: "确认全部人工通过", exact: true })
     .click();
   await page.getByRole("button", { name: "确认需求交付", exact: true }).click();
+  const stepTabs = page.locator('[data-slot="stepper-trigger"]');
+  await stepTabs.first().waitFor();
+  assert.equal(
+    await stepTabs.count(),
+    4,
+    "Expected four delivery preparation steps",
+  );
+  for (const tab of await stepTabs.all()) {
+    assert(
+      await tab.isDisabled(),
+      "Step indicators must not bypass preparation",
+    );
+  }
+  assert.equal(await stepTabs.nth(0).getAttribute("aria-selected"), "true");
   await page.getByRole("button", { name: "下一步", exact: true }).click();
+  assert.equal(await stepTabs.nth(1).getAttribute("aria-selected"), "true");
   const next = page.getByRole("button", { name: "下一步", exact: true });
   await page.getByLabel("我确认所选地图版本及必验范围准确、完整。").check();
   await next.click();
@@ -337,12 +361,7 @@ export async function run(page, base, output, fixture) {
     (await frame.locator("script").count()) === 0,
     "Input script reached the preview DOM",
   );
-  assert(
-    await frame
-      .locator("img")
-      .evaluate((image) => image.complete && image.naturalWidth > 0),
-    "Embedded screenshot failed to load",
-  );
+  assert(await reportImageDecodes(frame), "Embedded screenshot failed to load");
   await record("sandbox-preview");
   assert(
     (await page.getByRole("dialog").boundingBox()).width >= 1000,
@@ -491,9 +510,7 @@ export async function run(page, base, output, fixture) {
   await page.goto(pathToFileURL(htmlPath).href);
   await page.getByRole("heading", { name: "示例导出", exact: true }).waitFor();
   assert(
-    await page
-      .locator("img")
-      .evaluate((image) => image.complete && image.naturalWidth > 0),
+    await reportImageDecodes(page),
     "Downloaded document cannot load images offline",
   );
   assert(

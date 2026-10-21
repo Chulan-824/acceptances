@@ -582,7 +582,7 @@ export async function run(page, base, output, dataDir) {
   );
   assert.equal(
     await page
-      .getByRole("link", { name: "下载离线 HTML v1", exact: true })
+      .getByRole("link", { name: "下载测试报告 HTML v1", exact: true })
       .count(),
     1,
   );

@@ -16,7 +16,9 @@
     "typecheck": "make typecheck",
     "build": "make build",
     "test": "make test",
-    "check": "make lint typecheck build"
+    "test:web": "make test SUITE=web",
+    "test:browser": "make test SUITE=browser",
+    "check": "make lint typecheck test build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -24,8 +26,9 @@
     "eslint": "10.9.1",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.12.0",
+    "playwright": "1.64.1",
+    "prettier": "3.9.9",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.69.0",
-    "prettier": "3.9.9"
+    "typescript-eslint": "8.69.0"
   }
 }

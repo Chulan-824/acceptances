@@ -205,6 +205,7 @@ export async function run(page, base, apiBase = base) {
   await open(latest);
   await bulk(latest);
   await open(first);
+  await judge(first, 1, "pending");
   await judge(first, 1, "rejected", "Historical reassessment");
   assert(
     (await getCampaign()).status === "accepted",
@@ -331,7 +332,7 @@ export async function run(page, base, apiBase = base) {
   state = await read(first.id);
   assert(
     state.status === "rejected" &&
-      state.reviews.length === 9 &&
+      state.reviews.length === 10 &&
       JSON.stringify(state.report) === original,
     "reload lost persisted history",
   );
