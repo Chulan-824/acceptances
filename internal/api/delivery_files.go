@@ -40,6 +40,9 @@ func (s *Server) publishBusinessDocument(ctx context.Context, snapshot DeliveryS
 			if document.Kind == BusinessGuideDocument {
 				return renderBusinessGuide(output, root, snapshot, document)
 			}
+			if document.TemplateVersion == testReportTemplateVersion {
+				return renderTestReport(output, root, snapshot, document)
+			}
 			return renderBusinessDocument(output, root, snapshot, document)
 		})
 		if err != nil {

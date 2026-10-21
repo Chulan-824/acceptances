@@ -4,6 +4,7 @@ package api
 // do not extend Report or silently reinterpret arbitrary evidence JSON.
 const deliveryManifestName = "delivery-manifest.json"
 const documentTemplateVersion = "business-html-v2-geist"
+const testReportTemplateVersion = "test-report-html-v1"
 const guideTemplateVersion = "business-guide-html-v1"
 
 type DocumentKind string
@@ -17,7 +18,11 @@ func (kind DocumentKind) templateVersion() string {
 	if kind == BusinessGuideDocument {
 		return guideTemplateVersion
 	}
-	return documentTemplateVersion
+	return testReportTemplateVersion
+}
+
+func supportedDocumentTemplate(kind DocumentKind, version string) bool {
+	return version == kind.templateVersion() || kind == TestReportDocument && version == documentTemplateVersion
 }
 
 type ArtifactRef struct {

@@ -36,7 +36,7 @@ func TestBusinessDocumentOfflineSafeAndIndependentlyVersioned(t *testing.T) {
 	if strings.Contains(html, "<script>") || strings.Contains(html, "<img src=\"https:") || !strings.Contains(html, "&lt;script&gt;") || !strings.Contains(html, "data:image/png;base64,") || !strings.Contains(html, "受验提交") {
 		t.Fatal(html)
 	}
-	if !strings.Contains(html, "data:font/woff2;base64,") || strings.Contains(html, `url("/fonts/`) || !strings.Contains(html, "SIL OPEN FONT LICENSE") || !strings.Contains(w.Header().Get("Content-Security-Policy"), "font-src data:") || document["templateVersion"] != "business-html-v2-geist" {
+	if !strings.Contains(html, "data:font/woff2;base64,") || strings.Contains(html, `url("/fonts/`) || !strings.Contains(html, "SIL OPEN FONT LICENSE") || !strings.Contains(w.Header().Get("Content-Security-Policy"), "font-src data:") || document["templateVersion"] != "test-report-html-v1" {
 		t.Fatal("offline document must embed licensed Geist fonts and use the current template")
 	}
 	if fixtureDigest(html) != document["sha256"] {

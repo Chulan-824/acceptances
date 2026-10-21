@@ -40,7 +40,7 @@ requestId 全局唯一，同标识同内容返回原快照 200，异内容返回
 | GET /documents/{id}/html                      | 成品预览；download=1 下载 business-guide-vN.html 或 test-report-vN.html                                 |
 | GET /deliveries/{id}/business-guide-materials | 下载最近成功指南的文稿 JSON；没有指南时从原说明素材整理初始文本，缺少页面或样例分类时明确提示待补充     |
 
-business_guide 面向业务人员，按涉及模块与页面、功能操作、状态说明、实际页面与演示样例、页面图示、业务确认与反馈组织内容。test_report 沿用原“业务说明”的固定模板和正文，本次不调整报告内容。两类分别从 v1 编号、生成、重试、预览和下载；需求概览中的 latestDocument 继续表示测试报告，latestGuide 表示业务指南。
+business_guide 面向业务人员，按涉及模块与页面、功能操作、状态说明、实际页面与演示样例、页面图示、业务确认与反馈组织内容。新 test_report 使用 test-report-html-v1，按测试结论摘要、测试范围与覆盖、测试环境与方法、详细测试结果、问题与复验、人工评审与交付确认、技术附录与附件索引七章生成。原始 expected/actual、结果状态、冻结时人工判断及异常理由分别呈现；统计取自最终冻结 Run，排除项不计为 skipped，不拼接历史 Run。已有成功报告保留原文件与摘要；business-html-v2-geist 失败版本重试仍使用原模板，新建报告才使用新结构。业务指南的模板和文稿规则不变。两类分别从 v1 编号、生成、重试、预览和下载；需求概览中的 latestDocument 继续表示测试报告，latestGuide 表示业务指南。
 
 指南文稿为 BusinessGuide 结构：schemaVersion=1、title、summary、modules、pages、sections、review、limitations，类型见 [API 客户端](../packages/api-client/src/delivery.ts)。sections.blocks 支持 heading/paragraph/note/quote/steps/confirmations/table/images。所有文字按纯文本转义，不接受 HTML 模板或脚本。图片只引用当前交付已保留的附件，kind 须明确为 actual 或 sample，crop 和 annotations 使用 0–100 的百分比范围。文稿不超过 1 MiB，图片累计不超过 128 次引用及 64 MiB。原素材没有样例类型时，不推断为实际页面。
 
@@ -50,7 +50,7 @@ business_guide 面向业务人员，按涉及模块与页面、功能操作、�
 
 显式 retry 和同 requestId 重试须确认 failed，先清理残留成品目录，再占用 generating 并增加 attempts。清理失败返回 500 READ_FAILED，原 status/attempts 保持不变；成功文件缺失或损坏仍在读取时报错，不自动重建。生成请求先保存 generating，文件同步发布后保存 succeeded 并返回 201；渲染失败返回 200 的 failed 记录及 error；状态保存失败返回 500，客户端须回读确认。服务重启将中断生成标成 failed，清理临时文件，允许原版本重试。
 
-仅 valid 交付允许新生成或失败重试，否则返回 409 DELIVERY_INACTIVE。历史成功文档仍可预览下载；未成功返回 409 DOCUMENT_NOT_READY，摘要不匹配返回 500 DOCUMENT_INTEGRITY_FAILED。文件固定模板、转义文本、内嵌栅格图片及许可字体，无外部脚本或 CDN；HTTP 使用 nosniff 与 sandbox CSP，Web 使用无许可 sandbox iframe。指南的目录、展开图示和阅读勾选不依赖脚本；勾选不保存，不提交人工验收。离线文件不自动随交付效力变化更新。
+仅 valid 交付允许新生成或失败重试，否则返回 409 DELIVERY_INACTIVE。历史成功文档仍可预览下载；未成功返回 409 DOCUMENT_NOT_READY，摘要不匹配返回 500 DOCUMENT_INTEGRITY_FAILED。文件固定模板、转义文本、内嵌栅格图片及许可字体，无外部脚本或 CDN；HTTP 使用 nosniff 与 sandbox CSP，Web 使用无许可 sandbox iframe。测试报告内嵌冻结的栅格截图，并按检查项关联原始附件，技术附录列出全部文件、大小、SHA-256 与关联项。文本附件每份预览最多 256 KiB、合计最多 4 MiB，截断明确提示，二进制原件在交付详情页读取。验证方式只按 actual 中明确的真实、受控或恢复描述作阅读标注，不从文件名推断；未声明的方法与步骤如实显示未记录。目录、展开检查项、原尺寸图示及文本预览不依赖脚本。指南的目录、展开图示和阅读勾选不依赖脚本；勾选不保存，不提交人工验收。离线文件不自动随交付效力变化更新。
 
 ## 持久化与迁移
 

@@ -136,7 +136,7 @@ func (s *Server) prepareDocument(ctx context.Context, deliveryID, requestID, ret
 	if generating != 0 {
 		return document, snapshot, false, documentProblem{"DOCUMENT_GENERATING", "已有说明正在生成，请等待或刷新状态。"}
 	}
-	if document.ID != "" && document.TemplateVersion != kind.templateVersion() {
+	if document.ID != "" && !supportedDocumentTemplate(kind, document.TemplateVersion) {
 		return document, snapshot, false, documentProblem{"DOCUMENT_TEMPLATE_CHANGED", "该失败版本的模板已不受支持，请创建新说明版本。"}
 	}
 	if document.ID != "" {
