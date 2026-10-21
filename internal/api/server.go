@@ -190,6 +190,7 @@ func (s *Server) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/projects/{id}/campaigns", s.campaigns)
 	m.HandleFunc("POST /api/v1/projects/{id}/campaigns", s.campaigns)
 	m.HandleFunc("GET /api/v1/campaigns/{id}", s.getCampaign)
+	m.HandleFunc("PATCH /api/v1/campaigns/{id}", s.updateCampaignDescription)
 	m.HandleFunc("POST /api/v1/campaigns/{id}/runs", s.submitRun)
 	m.HandleFunc("GET /api/v1/campaigns/{id}/runs", s.listRuns)
 	m.HandleFunc("GET /api/v1/runs/{id}", s.getRun)

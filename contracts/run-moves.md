@@ -36,3 +36,7 @@ acceptances move-run --run <Run-ID> --from-campaign <原需求-ID> \
 重复执行同一命令确认未知结果。CLI 回执链接使用 Run 当前需求。原 bundle 的上传重试仍使用最初发布时的 Campaign 参数和原 `.submission-id`；相同内容返回已迁移的同一个 Run，新 Campaign 参数或改动内容继续冲突，不创建伪验证轮次。
 
 数据库升级至 v5，迁移前自动保存一致 SQLite 备份，已有 Run 和评审不做重写。附件继续由 Run ID 寻址，无需复制或重命名。
+
+## 需求说明更正
+
+`PATCH /api/v1/campaigns/{id}` 仅接受 `{ "description": "当前需求说明" }`，最长 65536 字节，成功返回 200 Campaign；缺失字段或多余字段返回 400，需求不存在返回 404。用于同步迁移前的临时说明，不改标题、Project、最新 Run、状态、报告、人审或历史交付快照。
