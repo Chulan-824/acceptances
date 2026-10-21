@@ -2,6 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
+const apiOrigin = `http://127.0.0.1:${process.env.ACCEPTANCES_DEV_API_PORT || "8765"}`;
+
 export default defineConfig({
   envDir: false,
   resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
@@ -11,8 +13,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      "/api": { target: "http://127.0.0.1:8765", changeOrigin: false },
-      "/health": { target: "http://127.0.0.1:8765", changeOrigin: false },
+      "/api": { target: apiOrigin, changeOrigin: false },
+      "/health": { target: apiOrigin, changeOrigin: false },
     },
   },
   build: {
