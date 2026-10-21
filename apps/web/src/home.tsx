@@ -217,6 +217,12 @@ export function Home({
                       <RefreshCw size={14} />
                     </Button>
                   </div>
+                  <Button
+                    variant="default"
+                    onClick={() => navigate("/deliveries")}
+                  >
+                    交付版本 <ArrowRight size={14} />
+                  </Button>
                   <div className="home-tools">
                     <label className="home-search">
                       <Search size={14} />
@@ -411,6 +417,9 @@ function DeliveryCard({
 }) {
   const run = item.latestRun;
   const path = `/projects/${item.projectId}/campaigns/${item.id}${run ? `/runs/${run.id}` : ""}`;
+  const deliveryPath = item.delivery
+    ? `/deliveries/${encodeURIComponent(item.delivery.id)}`
+    : null;
   return (
     <FramePanel asChild>
       <article className="home-delivery">
@@ -497,12 +506,27 @@ function DeliveryCard({
                 </span>
               ))}
             </div>
-            <Button asChild size="sm" variant="default">
-              <a href={path} onClick={(e) => follow(e, path)}>
-                {run ? "查看报告" : "查看需求"}
-                <ArrowRight size={13} />
-              </a>
-            </Button>
+            <div className="home-delivery-actions">
+              <Button asChild size="sm" variant="default">
+                <a href={path} onClick={(e) => follow(e, path)}>
+                  {run ? "查看报告" : "查看需求"}
+                  <ArrowRight size={13} />
+                </a>
+              </Button>
+              {item.delivery && deliveryPath && (
+                <Button asChild size="sm" variant="outline">
+                  <a
+                    href={deliveryPath}
+                    onClick={(e) => follow(e, deliveryPath)}
+                  >
+                    {item.delivery.status === "valid"
+                      ? "查看交付"
+                      : "查看历史交付"}
+                    <ArrowRight size={13} />
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
         </FrameFooter>
       </article>

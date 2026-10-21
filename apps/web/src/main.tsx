@@ -7,7 +7,6 @@ import { CampaignRunProvider, useCampaignRun } from "./campaign-run";
 import { Project } from "./project";
 import { Home } from "./home";
 import { DeliveryWorkspace } from "./delivery-archive";
-import { Button } from "./components/ui/button";
 import { deletionCovers, deletionReturnPath } from "./deletion";
 import "./style.css";
 import "./home.css";
@@ -71,23 +70,16 @@ function Workspace({
             navigate={navigate}
           />
         ) : (
-          <>
-            <nav className="delivery-home-entry" aria-label="交付档案导航">
-              <Button variant="outline" onClick={() => navigate("/deliveries")}>
-                交付版本
-              </Button>
-            </nav>
-            <Home
-              projects={projects}
-              loadError={loadError}
-              onRetry={() => setRevision((r) => r + 1)}
-              navigate={navigate}
-              onCreated={(item) => {
-                setRevision((r) => r + 1);
-                navigate(`/projects/${item.id}`);
-              }}
-            />
-          </>
+          <Home
+            projects={projects}
+            loadError={loadError}
+            onRetry={() => setRevision((r) => r + 1)}
+            navigate={navigate}
+            onCreated={(item) => {
+              setRevision((r) => r + 1);
+              navigate(`/projects/${item.id}`);
+            }}
+          />
         )}
       </div>
     </>

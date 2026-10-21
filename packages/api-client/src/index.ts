@@ -199,6 +199,10 @@ export function evidenceURL(run: string, path: string) {
 
 export interface DashboardItem extends Campaign {
   projectName: string;
+  delivery: Pick<
+    import("./delivery").DeliverySummary,
+    "id" | "version" | "status"
+  > | null;
   latestRun: {
     id: string;
     status: Run["status"];

@@ -44,3 +44,54 @@ func TestDashboardLatestSummaryAndReviewBoundaries(t *testing.T) {
 		t.Fatal("deleted latest must not revive historical acceptance")
 	}
 }
+
+func TestDashboardDeliveryLinkFollowsDeliveryEffectNotReviewStatus(t *testing.T) {
+	app, pid, cid, _ := deliveryTestSetup(t)
+	get := func() map[string]any {
+		t.Helper()
+		items := request(t, app, "GET", "/api/v1/dashboard", "", 200)["items"].([]any)
+		return items[0].(map[string]any)
+	}
+	check := func(id, status string, version float64) {
+		t.Helper()
+		item := get()
+		if id == "" {
+			if item["delivery"] != nil {
+				t.Fatal(item)
+			}
+			return
+		}
+		delivery := item["delivery"].(map[string]any)
+		if delivery["id"] != id || delivery["status"] != status || delivery["version"] != version {
+			t.Fatal(item)
+		}
+	}
+	check("", "", 0)
+	f := newDeliveryFixture(t, pid, cid)
+	f.finalize(t)
+	firstRun := publishDeliveryFixture(t, app, cid, "dashboard-delivery-first", f)
+	request(t, app, "POST", "/api/v1/runs/"+firstRun+"/accept-all", `{}`, 200)
+	check("", "", 0) // Accepted is not a frozen delivery.
+	one := freezeFixture(t, app, firstRun, "dashboard-freeze-first")
+	firstID := one["id"].(string)
+	check(firstID, "valid", 1)
+	secondRun := publishDeliveryFixture(t, app, cid, "dashboard-delivery-second", f)
+	if get()["status"] != "pending" {
+		t.Fatal("new Run must await review")
+	}
+	check(firstID, "valid", 1)
+	request(t, app, "POST", "/api/v1/runs/"+secondRun+"/accept-all", `{}`, 200)
+	two := freezeFixture(t, app, secondRun, "dashboard-freeze-second")
+	secondID := two["id"].(string)
+	check(secondID, "valid", 2)
+	request(t, app, "POST", "/api/v1/runs/"+secondRun+"/reviews", `{"kind":"pending","checkId":"fixture-export--download"}`, 201)
+	check(secondID, "invalidated", 2) // Never resurrect the superseded first version.
+	request(t, app, "DELETE", "/api/v1/runs/"+secondRun, "", 204)
+	check(secondID, "invalidated", 2)
+	thirdRun := publishDeliveryFixture(t, app, cid, "dashboard-delivery-third", f)
+	request(t, app, "POST", "/api/v1/runs/"+thirdRun+"/accept-all", `{}`, 200)
+	three := freezeFixture(t, app, thirdRun, "dashboard-freeze-third")
+	thirdID := three["id"].(string)
+	request(t, app, "POST", "/api/v1/deliveries/"+thirdID+"/revoke", `{"reason":"Fixture revocation"}`, 200)
+	check(thirdID, "revoked", 3)
+}

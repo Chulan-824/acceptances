@@ -101,6 +101,8 @@ Host 仅接受 localhost 或回环 IP；浏览器 Origin 如存在必须与 Host
 
 `GET /dashboard` 返回 `{items: DashboardItem[]}`，按最新 Run 创建时间降序排列，无 Run 时按需求创建时间排列。同时间按需求 ID 排序。
 
+每项的 `delivery` 为 `{id, version, status}` 或 `null`：优先返回该需求当前有效交付，否则返回最新历史交付，无交付记录时为 `null`。卡片据此直达 `/deliveries/{id}`，有效交付显示“查看交付”，历史交付显示“查看历史交付”；不以需求人工评审状态推断交付是否存在，新 Run 不隐藏仍有效的旧交付。
+
 每项包含 Campaign 字段、`projectName` 和可空 `latestRun`。最新验证摘要包含 `id, status, createdAt, verifiedAt, scopeType, versions, counts, evidenceCount, checks`。`counts` 分别统计 passed、failed、blocked、skipped；`checks` 仅含前四项的 id、title、status。缺失范围归一化为 unknown。不返回完整报告、附件正文或评审历史。
 
 需求状态直接使用 Campaign 状态，不能由检查通过率或 Run 人工通过推导。作废最新 Run 仍显示其摘要；删除最新 Run 后返回 null，不回退到历史报告。根路由统计卡按所选项目计数，不随关键词或状态筛选变化。

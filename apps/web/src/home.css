@@ -326,7 +326,10 @@
   .home-versions > span > span:first-child {
     @apply truncate max-w-48;
   }
-  .home-delivery-footer > a {
+  .home-delivery-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .home-delivery-actions > a {
     @apply shrink-0 text-xs no-underline;
   }
   .is-compact {
