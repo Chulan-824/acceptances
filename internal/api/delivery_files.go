@@ -37,6 +37,9 @@ func (s *Server) publishBusinessDocument(ctx context.Context, snapshot DeliveryS
 		}
 		defer root.Close()
 		content, err := artifact.writeFile("business.html", func(output io.Writer) error {
+			if document.Kind == BusinessGuideDocument {
+				return renderBusinessGuide(output, root, snapshot, document)
+			}
 			return renderBusinessDocument(output, root, snapshot, document)
 		})
 		if err != nil {

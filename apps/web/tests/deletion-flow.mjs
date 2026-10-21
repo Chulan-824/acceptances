@@ -241,7 +241,7 @@ export async function run(page, base, scenario) {
     assert.equal(await page.getByRole("alertdialog").count(), 0);
   } else {
     const dialog = page.getByRole("alertdialog");
-    await dialog.getByText(/保留 1 份交付快照及 2 份业务说明/).waitFor();
+    await dialog.getByText(/保留 1 份交付快照及 2 份交付文档/).waitFor();
     if (outcome === "committed") {
       await dialog.getByRole("button", { name: "取消", exact: true }).click();
       await dialog.waitFor({ state: "detached" });

@@ -304,12 +304,14 @@ export async function run(page, base, output, fixture) {
   await confirm.click();
   await page.waitForURL(/\/deliveries\/[a-f0-9-]+$/);
   const deliveryID = new URL(page.url()).pathname.split("/").at(-1);
-  await page.getByRole("button", { name: "生成业务说明", exact: true }).click();
-  await page.getByRole("button", { name: "预览 v1", exact: true }).waitFor();
+  await page.getByRole("button", { name: "生成测试报告", exact: true }).click();
+  await page
+    .getByRole("button", { name: "预览测试报告 v1", exact: true })
+    .waitFor();
   await record("generated-document");
   const downloadEvent = page.waitForEvent("download");
   await page
-    .getByRole("link", { name: "下载离线 HTML v1", exact: true })
+    .getByRole("link", { name: "下载测试报告 HTML v1", exact: true })
     .click();
   const download = await downloadEvent;
   const htmlPath = join(output, "business-document-v1.html");
@@ -326,8 +328,10 @@ export async function run(page, base, output, fixture) {
     documents.items.length === 1 && digest(html) === documents.items[0].sha256,
     "Document version/digest mismatch",
   );
-  await page.getByRole("button", { name: "预览 v1", exact: true }).click();
-  const frame = page.frameLocator('iframe[title="业务说明预览"]');
+  await page
+    .getByRole("button", { name: "预览测试报告 v1", exact: true })
+    .click();
+  const frame = page.frameLocator('iframe[title="测试报告预览"]');
   await frame.getByRole("heading", { name: "示例导出", exact: true }).waitFor();
   assert(
     (await frame.locator("script").count()) === 0,
@@ -347,14 +351,25 @@ export async function run(page, base, output, fixture) {
   await page.keyboard.press("Escape");
   assert(
     await page
-      .getByRole("button", { name: "预览 v1", exact: true })
+      .getByRole("button", { name: "预览测试报告 v1", exact: true })
       .evaluate((button) => document.activeElement === button),
     "Preview close did not restore focus",
   );
   await page
-    .getByRole("button", { name: "生成新的说明版本", exact: true })
+    .getByRole("button", { name: "生成新版测试报告", exact: true })
     .click();
-  await page.getByRole("button", { name: "预览 v2", exact: true }).waitFor();
+  await page
+    .getByRole("button", { name: "预览测试报告 v2", exact: true })
+    .waitFor();
+  const guidePath = await verifyBusinessGuide(
+    page,
+    base,
+    output,
+    deliveryID,
+    api,
+    record,
+  );
+
   await page.goto(
     base +
       "/projects/" +
@@ -407,9 +422,11 @@ export async function run(page, base, output, fixture) {
   );
   await record("new-run-keeps-frozen-version");
   await page
-    .getByRole("button", { name: "查看交付与业务说明", exact: true })
+    .getByRole("button", { name: "查看交付与文档", exact: true })
     .click();
-  await page.getByRole("button", { name: "预览 v2", exact: true }).waitFor();
+  await page
+    .getByRole("button", { name: "预览测试报告 v2", exact: true })
+    .waitFor();
   await api("/runs/" + fixture.run.id + "/reviews", "POST", {
     checkId: "fixture-export--download",
     kind: "pending",
@@ -421,7 +438,7 @@ export async function run(page, base, output, fixture) {
     .waitFor();
   assert(
     !(await page
-      .getByRole("button", { name: "生成新的说明版本", exact: true })
+      .getByRole("button", { name: "生成新版测试报告", exact: true })
       .isEnabled()),
     "Inactive delivery can generate",
   );
@@ -430,7 +447,7 @@ export async function run(page, base, output, fixture) {
     "/projects/" + fixture.project.id + "/delete-preview",
   );
   assert(
-    preview.retainedDeliveries === 1 && preview.retainedDocuments === 2,
+    preview.retainedDeliveries === 1 && preview.retainedDocuments === 3,
     "Deletion omitted retained artifacts",
   );
   const archiveURL = page.url();
@@ -438,7 +455,7 @@ export async function run(page, base, output, fixture) {
   await page.getByRole("button", { name: "删除项目", exact: true }).click();
   await page
     .getByRole("alertdialog")
-    .getByText(/保留 1 份交付快照及 2 份业务说明/)
+    .getByText(/保留 1 份交付快照及 3 份交付文档/)
     .waitFor();
   const deleted = page.waitForResponse(
     (response) =>
@@ -459,7 +476,7 @@ export async function run(page, base, output, fixture) {
   await record("deleted-source-retention");
   await page.getByRole("button", { name: "交付版本", exact: true }).click();
   await page
-    .getByRole("button", { name: "查看交付与业务说明", exact: true })
+    .getByRole("button", { name: "查看交付与文档", exact: true })
     .first()
     .waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -484,6 +501,19 @@ export async function run(page, base, output, fixture) {
     "Offline document contains executable input script",
   );
   await record("offline-html");
+  await page.goto(pathToFileURL(guidePath).href);
+  await page
+    .getByRole("heading", { name: "订单业务使用指南", exact: true })
+    .waitFor();
+  await page.locator("#page-1 > summary").click();
+  assert(
+    await page
+      .locator("#page-1 img")
+      .first()
+      .evaluate((image) => image.complete && image.naturalWidth > 0),
+    "Offline guide image failed",
+  );
+  await record("offline-business-guide");
   await page.context().setOffline(false);
   assert(errors.length === 0, "Browser errors: " + errors.join("; "));
   assert(
@@ -504,4 +534,165 @@ export async function run(page, base, output, fixture) {
     JSON.stringify(receipt, null, 2),
   );
   return receipt;
+}
+
+async function verifyBusinessGuide(
+  page,
+  base,
+  output,
+  deliveryID,
+  api,
+  record,
+) {
+  const source = {
+    schemaVersion: 1,
+    title: "订单业务使用指南",
+    summary: "了解订单入口、状态与操作方法。",
+    modules: [{ title: "订单管理", description: "查看订单处理进度。" }],
+    pages: [
+      {
+        audience: "业务人员",
+        title: "订单列表",
+        entry: "工作台 → 订单",
+        instruction: "查看状态列。",
+        images: [
+          {
+            path: "screen.png",
+            caption: "合成状态页面",
+            kind: "sample",
+            annotations: [
+              { x: 10, y: 10, width: 20, height: 20, label: "状态列" },
+            ],
+          },
+        ],
+      },
+    ],
+    sections: [
+      {
+        title: "查看状态",
+        summary: "通过演示样例确认展示效果。",
+        blocks: [
+          { kind: "steps", items: ["打开订单列表，查看状态列。"] },
+          {
+            kind: "table",
+            columns: ["状态", "含义"],
+            rows: [
+              ["等待中", "订单正在等待处理。"],
+              ["已完成", "订单处理完成。"],
+            ],
+          },
+          { kind: "note", text: "演示样例只供确认展示。" },
+        ],
+      },
+    ],
+    review: ["状态名称是否清楚？"],
+    limitations: ["本次只查看展示，不发起实际处理。"],
+  };
+  await page.getByText("整理或更新指南内容", { exact: true }).click();
+  await page.getByLabel("导入指南素材 JSON", { exact: true }).setInputFiles({
+    name: "business-guide.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(source)),
+  });
+  await page.getByText(/待生成素材：business-guide.json/).waitFor();
+  let lost = false;
+  const pattern = "**/api/v1/deliveries/" + deliveryID + "/documents";
+  const handler = async (route) => {
+    if (
+      route.request().method() === "POST" &&
+      route.request().postDataJSON()?.kind === "business_guide" &&
+      !lost
+    ) {
+      lost = true;
+      const response = await route.fetch();
+      assert(
+        response.status() === 201,
+        "Guide generation did not commit before lost response",
+      );
+      await route.abort("failed");
+    } else await route.continue();
+  };
+  await page.route(pattern, handler);
+  await page.getByRole("button", { name: "生成业务指南", exact: true }).click();
+  await page
+    .getByRole("button", { name: "确认上次生成结果", exact: true })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "确认上次生成结果", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "生成新版业务指南", exact: true })
+    .waitFor();
+  await page.unroute(pattern, handler);
+  const guides = await api(
+    "/deliveries/" + deliveryID + "/documents?kind=business_guide",
+  );
+  const reports = await api(
+    "/deliveries/" + deliveryID + "/documents?kind=test_report",
+  );
+  assert(
+    guides.items.length === 1 &&
+      guides.items[0].version === 1 &&
+      reports.items.length === 2 &&
+      reports.items[0].version === 2,
+    "Guide/report versions mixed or lost-response request duplicated",
+  );
+  const downloading = page.waitForEvent("download");
+  await page
+    .getByRole("link", { name: "下载业务指南 HTML v1", exact: true })
+    .click();
+  const download = await downloading;
+  assert(
+    download.suggestedFilename() === "business-guide-v1.html",
+    "Guide download filename incorrect",
+  );
+  const path = join(output, "business-guide-v1.html");
+  await download.saveAs(path);
+  const html = await readFile(path, "utf8");
+  assert(
+    digest(html) === guides.items[0].sha256 &&
+      !html.includes("验证依据") &&
+      !html.includes("代码来源"),
+    "Guide has report metadata or incorrect digest",
+  );
+  await page
+    .getByRole("button", { name: "预览业务指南 v1", exact: true })
+    .click();
+  const frame = page.frameLocator('iframe[title="业务指南预览"]');
+  await frame
+    .getByRole("heading", { name: "订单业务使用指南", exact: true })
+    .waitFor();
+  await frame.getByText("等待中", { exact: true }).waitFor();
+  await frame.locator("#page-1 > summary").click();
+  await frame.getByText("演示样例", { exact: true }).waitFor();
+  await frame
+    .getByText("放大查看完整页面（可横向滚动）", { exact: true })
+    .click();
+  assert(
+    await frame
+      .locator(".image-zoom[open] img")
+      .evaluate((image) => image.complete && image.naturalWidth > 0),
+    "Guide enlarged screenshot failed",
+  );
+  await frame
+    .getByRole("checkbox", { name: "状态名称是否清楚？", exact: true })
+    .check();
+  await record("business-guide-preview");
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert(
+    await frame
+      .locator("body")
+      .evaluate((el) => el.scrollWidth <= window.innerWidth + 1),
+    "Guide overflows narrow viewport",
+  );
+  await record("business-guide-mobile");
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole("button", { name: "关闭预览", exact: true }).click();
+  assert(
+    await page
+      .getByRole("button", { name: "预览业务指南 v1", exact: true })
+      .evaluate((el) => el === document.activeElement),
+    "Guide preview focus not restored",
+  );
+  return path;
 }

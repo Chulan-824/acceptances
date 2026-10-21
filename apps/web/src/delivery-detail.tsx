@@ -96,7 +96,7 @@ export function DeliveryDetail({
       </p>
       {data.status !== "valid" && (
         <Alert role="note">
-          此交付已失效、撤销或被替代。快照与已有说明仅作为历史保留，不代表当前有效交付。
+          此交付已失效、撤销或被替代。快照与已有文档仅作为历史保留，不代表当前有效交付。
         </Alert>
       )}
       {!data.sourceRunAvailable && (

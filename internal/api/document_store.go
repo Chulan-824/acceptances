@@ -3,6 +3,8 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -11,8 +13,12 @@ import (
 
 func (s *Server) document(key string) (BusinessDocument, error) {
 	var document BusinessDocument
-	err := s.db.QueryRow("SELECT id,delivery_id,version,request_id,template_version,status,attempts,error,content_hash,created_at,completed_at FROM business_documents WHERE id=?", key).Scan(
-		&document.ID, &document.DeliveryID, &document.Version, &document.RequestID, &document.TemplateVersion, &document.Status, &document.Attempts, &document.Error, &document.SHA256, &document.CreatedAt, &document.CompletedAt)
+	var rawGuide string
+	err := s.db.QueryRow("SELECT kind,guide,id,delivery_id,version,request_id,template_version,status,attempts,error,content_hash,created_at,completed_at FROM business_documents WHERE id=?", key).Scan(
+		&document.Kind, &rawGuide, &document.ID, &document.DeliveryID, &document.Version, &document.RequestID, &document.TemplateVersion, &document.Status, &document.Attempts, &document.Error, &document.SHA256, &document.CreatedAt, &document.CompletedAt)
+	if err == nil && rawGuide != "" {
+		err = json.Unmarshal([]byte(rawGuide), &document.Guide)
+	}
 	return document, err
 }
 
@@ -34,7 +40,12 @@ func (s *Server) listDocuments(w http.ResponseWriter, r *http.Request) {
 		lookupFailure(w, r, err, "DELIVERY_NOT_FOUND")
 		return
 	}
-	rows, err := s.db.QueryContext(r.Context(), "SELECT id FROM business_documents WHERE delivery_id=? ORDER BY version DESC", r.PathValue("id"))
+	kind := DocumentKind(r.URL.Query().Get("kind"))
+	if kind != "" && kind != TestReportDocument && kind != BusinessGuideDocument {
+		deliveryFailure(w, 400, "DOCUMENT_KIND_INVALID", "未知的文档类型。")
+		return
+	}
+	rows, err := s.db.QueryContext(r.Context(), "SELECT id FROM business_documents WHERE delivery_id=? AND (?='' OR kind=?) ORDER BY created_at DESC,version DESC", r.PathValue("id"), kind, kind)
 	if err != nil {
 		fail(w, 500, "READ_FAILED")
 		return
@@ -108,7 +119,11 @@ func (s *Server) documentHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'")
 	if r.URL.Query().Get("download") == "1" {
-		w.Header().Set("Content-Disposition", `attachment; filename="business-document.html"`)
+		filename := fmt.Sprintf("test-report-v%d.html", document.Version)
+		if document.Kind == BusinessGuideDocument {
+			filename = fmt.Sprintf("business-guide-v%d.html", document.Version)
+		}
+		w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
 	}
 	http.ServeContent(w, r, "business.html", info.ModTime(), file)
 }

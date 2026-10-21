@@ -69,11 +69,13 @@ export function CampaignDelivery({
                 </p>
               </li>
               <li>
-                <strong>业务说明</strong>
+                <strong>交付文档</strong>
                 <p>
                   {snapshot ? (
                     <>
-                      交付 v{snapshot.version}：{presentation.document}
+                      {presentation.guide}
+                      <br />
+                      {presentation.document}
                     </>
                   ) : (
                     "确认交付后可生成"
@@ -144,7 +146,7 @@ export function CampaignDelivery({
                   variant="outline"
                   onClick={() => navigate("/deliveries/" + snapshot.id)}
                 >
-                  查看交付与业务说明
+                  查看交付与文档
                 </Button>
               )}
               <Button variant="ghost" onClick={() => navigate("/deliveries")}>
@@ -152,7 +154,7 @@ export function CampaignDelivery({
               </Button>
             </div>
             <p className="muted">
-              本轮人工验收与需求交付分别记录。确认交付会保存版本、范围、人工判断和证据副本；业务说明需在交付详情中生成。
+              本轮人工验收与需求交付分别记录。确认交付会保存版本、范围、人工判断和证据副本；业务指南与测试报告可在交付详情中分别生成。
             </p>
           </>
         )}

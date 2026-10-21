@@ -36,9 +36,12 @@ export function describeCampaignDelivery(data: CampaignDeliveryOverview) {
       : next;
   const doc = data.latestDocument;
   const document = doc
-    ? `说明 v${doc.version} · ${documentLabels[doc.status]}`
-    : "尚未生成业务说明";
-  return { review, next, label, document, sameRun };
+    ? `测试报告 v${doc.version} · ${documentLabels[doc.status]}`
+    : "尚未生成测试报告";
+  const guide = data.latestGuide
+    ? `业务指南 v${data.latestGuide.version} · ${documentLabels[data.latestGuide.status]}`
+    : "尚未生成业务指南";
+  return { review, next, label, document, guide, sameRun };
 }
 const deliveryEffectLabels = {
   valid: "有效",

@@ -85,7 +85,7 @@ export function DeleteButton({
                   <span className="block">
                     保留 {preview.retainedDeliveries} 份交付快照及{" "}
                     {preview.retainedDocuments ?? 0}{" "}
-                    份业务说明。对应交付将失效，仍可从交付版本查看历史及复制证据。
+                    份交付文档。对应交付将失效，仍可从交付版本查看历史及复制证据。
                   </span>
                 )}
               </AlertDialogDescription>

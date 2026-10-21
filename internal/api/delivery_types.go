@@ -4,6 +4,21 @@ package api
 // do not extend Report or silently reinterpret arbitrary evidence JSON.
 const deliveryManifestName = "delivery-manifest.json"
 const documentTemplateVersion = "business-html-v2-geist"
+const guideTemplateVersion = "business-guide-html-v1"
+
+type DocumentKind string
+
+const (
+	TestReportDocument    DocumentKind = "test_report"
+	BusinessGuideDocument DocumentKind = "business_guide"
+)
+
+func (kind DocumentKind) templateVersion() string {
+	if kind == BusinessGuideDocument {
+		return guideTemplateVersion
+	}
+	return documentTemplateVersion
+}
 
 type ArtifactRef struct {
 	Path   string `json:"path"`
@@ -146,15 +161,18 @@ type DeliverySummary struct {
 	SuccessorID   string `json:"successorId"`
 }
 type BusinessDocument struct {
-	ID              string `json:"id"`
-	DeliveryID      string `json:"deliveryId"`
-	Version         int    `json:"version"`
-	RequestID       string `json:"requestId"`
-	TemplateVersion string `json:"templateVersion"`
-	Status          string `json:"status"`
-	Attempts        int    `json:"attempts"`
-	Error           string `json:"error"`
-	SHA256          string `json:"sha256"`
-	CreatedAt       string `json:"createdAt"`
-	CompletedAt     string `json:"completedAt"`
+	Kind DocumentKind `json:"kind"`
+	// Guide is the immutable authoring input. It is omitted from list responses.
+	Guide           *BusinessGuide `json:"-"`
+	ID              string         `json:"id"`
+	DeliveryID      string         `json:"deliveryId"`
+	Version         int            `json:"version"`
+	RequestID       string         `json:"requestId"`
+	TemplateVersion string         `json:"templateVersion"`
+	Status          string         `json:"status"`
+	Attempts        int            `json:"attempts"`
+	Error           string         `json:"error"`
+	SHA256          string         `json:"sha256"`
+	CreatedAt       string         `json:"createdAt"`
+	CompletedAt     string         `json:"completedAt"`
 }

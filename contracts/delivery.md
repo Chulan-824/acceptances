@@ -1,6 +1,6 @@
-# 交付快照与业务说明 API
+# 交付快照、业务指南与测试报告 API
 
-与原报告归档 API 共用 /api/v1 和本机 Host/Origin 限制，无新增账号或身份隔离。Report schema 保持不变；素材作为平铺 evidence 随真实 Run 发布，格式以[正式交付材料](../skills/acceptances-v1/references/delivery.md)为唯一说明来源。
+与原报告归档 API 共用 /api/v1 和本机 Host/Origin 限制，无新增账号或身份隔离。Report schema 保持不变；素材作为平铺 evidence 随真实 Run 发布，冻结材料格式见[正式交付材料](../skills/acceptances-v1/references/delivery.md)。业务指南的独立文稿见下文。
 
 ## 准备与明确冻结
 
@@ -29,29 +29,32 @@ requestId 全局唯一，同标识同内容返回原快照 200，异内容返回
 
 删除预览新增 retainedDeliveries/retainedDocuments，明确保留数量。原 Project/Campaign/Run 及其附件仍删除，但交付复制证据和文档独立保留，来源不可读时返回 sourceRunAvailable=false。
 
-## 独立说明版本
+## 独立文档版本
 
-| 方法与路径                      | 输入或结果                                                                                         |
-| ------------------------------- | -------------------------------------------------------------------------------------------------- |
-| GET /deliveries/{id}/documents  | 说明版本 items，按 version 倒序                                                                    |
-| POST /deliveries/{id}/documents | requestId，按冻结材料生成                                                                          |
-| GET /documents/{id}             | id/deliveryId/version/requestId/templateVersion/status/attempts/error/sha256/createdAt/completedAt |
-| POST /documents/{id}/retry      | 空对象，失败版本原地重试生成状态，不增加 version                                                   |
-| GET /documents/{id}/html        | 成品预览，download=1 下载离线 HTML                                                                 |
+| 方法与路径                                    | 输入或结果                                                                                              |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| GET /deliveries/{id}/documents                | 文档 items，可按 kind=business_guide 或 test_report 过滤，按创建时间和版本倒序                          |
+| POST /deliveries/{id}/documents               | requestId、kind、可选 guide；kind 省略兼容原接口，生成 test_report                                      |
+| GET /documents/{id}                           | kind/id/deliveryId/version/requestId/templateVersion/status/attempts/error/sha256/createdAt/completedAt |
+| POST /documents/{id}/retry                    | 空对象，失败版本原地重试，保留原内容与 version                                                          |
+| GET /documents/{id}/html                      | 成品预览；download=1 下载 business-guide-vN.html 或 test-report-vN.html                                 |
+| GET /deliveries/{id}/business-guide-materials | 下载最近成功指南的文稿 JSON；没有指南时从原说明素材整理初始文本，缺少页面或样例分类时明确提示待补充     |
 
-同 requestId 生成成功返回既有版本 200；同标识用于其他交付返回 409 DOCUMENT_REQUEST_CONFLICT。失败重试保留 id/version，attempts 增加。新的明确 requestId 创建新版本。成功版本不重写。生成中重复操作返回 409 DOCUMENT_GENERATING，不引入队列。
+business_guide 面向业务人员，按涉及模块与页面、功能操作、状态说明、实际页面与演示样例、页面图示、业务确认与反馈组织内容。test_report 沿用原“业务说明”的固定模板和正文，本次不调整报告内容。两类分别从 v1 编号、生成、重试、预览和下载；需求概览中的 latestDocument 继续表示测试报告，latestGuide 表示业务指南。
 
-显式 retry 和同 requestId 再次生成均在既有生成资格检查通过后，确认当前版本为 failed，先清理残留成品目录，再占用 generating 并增加 attempts。清理失败返回 500 READ_FAILED，原版本的 status/attempts 保持不变；条件恢复后可再次明确重试。成功版本即使文件缺失或损坏也不重建、不重写，仍在读取成品时报错。
+指南文稿为 BusinessGuide 结构：schemaVersion=1、title、summary、modules、pages、sections、review、limitations，类型见 [API 客户端](../packages/api-client/src/delivery.ts)。sections.blocks 支持 heading/paragraph/note/quote/steps/confirmations/table/images。所有文字按纯文本转义，不接受 HTML 模板或脚本。图片只引用当前交付已保留的附件，kind 须明确为 actual 或 sample，crop 和 annotations 使用 0–100 的百分比范围。文稿不超过 1 MiB，图片累计不超过 128 次引用及 64 MiB。原素材没有样例类型时，不推断为实际页面。
 
-生成在请求内执行。status 先持久保存 generating，再生成临时文件，成品同步保存完成才变 succeeded 并返回 201。可处理的渲染失败返回 200 的 failed 记录及 error；生成状态自身保存失败为 500，客户端需重新读取确认。服务重启将中断 generating 标成 failed，清理临时文件，允许重试。
+新指南可通过 guide 提交独立文稿；省略时沿用最近成功文稿，首次使用现有说明素材整理文本。文稿与该文档版本一起不可变保存，失败重试也使用原文稿。更新文稿须创建新版本，不修改来源 Run、冻结材料或成功成品，也无需补挂附件或新造 Run。指南文字是使用说明，不替代原验证结论。首次整理后应核对业务措辞、页面入口及样例类型。
 
-仅 valid 快照允许新生成或失败重试，失效/撤销/替代返回 409 DELIVERY_INACTIVE。已成功说明继续可作为历史预览和下载；未成功的 HTML 返回 409 DOCUMENT_NOT_READY。文件摘要不匹配返回 500 DOCUMENT_INTEGRITY_FAILED。
+同 requestId 生成成功返回既有版本 200；同标识用于其他交付、其他文档类型或不同显式指南文稿返回 409 DOCUMENT_REQUEST_CONFLICT。新的明确 requestId 创建同类型的新版本。成功版本不重写。同类型生成中返回 409 DOCUMENT_GENERATING；两类生成互不占用资格，不引入队列。
 
-HTML 由固定模板和转义后的纯文本生成，只内嵌实际栅格图片，带来源摘要，没有外部脚本、字体或 CDN。HTTP 设置 nosniff 与 sandbox CSP，Web 用无许可 sandbox iframe 预览。离线文件不会随后续改判自动更新，当前交付效力以平台为准。
+显式 retry 和同 requestId 重试须确认 failed，先清理残留成品目录，再占用 generating 并增加 attempts。清理失败返回 500 READ_FAILED，原 status/attempts 保持不变；成功文件缺失或损坏仍在读取时报错，不自动重建。生成请求先保存 generating，文件同步发布后保存 succeeded 并返回 201；渲染失败返回 200 的 failed 记录及 error；状态保存失败返回 500，客户端须回读确认。服务重启将中断生成标成 failed，清理临时文件，允许原版本重试。
+
+仅 valid 交付允许新生成或失败重试，否则返回 409 DELIVERY_INACTIVE。历史成功文档仍可预览下载；未成功返回 409 DOCUMENT_NOT_READY，摘要不匹配返回 500 DOCUMENT_INTEGRITY_FAILED。文件固定模板、转义文本、内嵌栅格图片及许可字体，无外部脚本或 CDN；HTTP 使用 nosniff 与 sandbox CSP，Web 使用无许可 sandbox iframe。指南的目录、展开图示和阅读勾选不依赖脚本；勾选不保存，不提交人工验收。离线文件不自动随交付效力变化更新。
 
 ## 持久化与迁移
 
-数据库版本增至 3，既有当前版本 2 人审保持不变。迁移前以 VACUUM INTO 保存 archive.before-v3.*.db 一致备份。旧版逐项人审迁移规则仍单独适用，不将历史整轮决定推断为新冻结交付。
+数据库版本增至 4。v3→v4 前以 VACUUM INTO 保存 archive.before-v4.*.db 一致备份；旧文档标为 test_report，保留 id、版本、状态、摘要及 HTML 原始字节，唯一版本键调整为 delivery_id/kind/version。更早版本仍依次执行已有迁移及备份。旧版逐项人审迁移规则仍单独适用，不将历史整轮决定推断为新冻结交付。
 
 交付副本位于 deliveries/<id>/evidence，说明成品位于 documents/<id>/business.html。交付表不依赖来源记录的级联删除；数据库触发器保护冻结内容、事件及成功说明状态。数据库决定可见性，启动清理无归属目录及中断临时产物。
 
@@ -59,6 +62,6 @@ HTML 由固定模板和转义后的纯文本生成，只内嵌实际栅格图片
 
 ## Web 入口与状态
 
-需求顶部展示交付准备、阻塞原因及下一步。完整范围评审、本轮人工验收、交付版本和业务说明分别表达；本轮批量操作使用“全部人工通过”，完成后显示“本轮已验收”。“查看交付准备”允许未满足条件的报告进入审阅，最终“确认交付并保存快照”仍须满足全部既有门槛。
+需求顶部展示交付准备、阻塞原因及下一步。完整范围评审、本轮人工验收、交付版本和两类文档分别表达；本轮批量操作使用“全部人工通过”，完成后显示“本轮已验收”。“查看交付准备”允许未满足条件的报告进入审阅，最终“确认交付并保存快照”仍须满足全部既有门槛。
 
-需求级概览复用冻结准备校验，只读取 campaign.latest_run_id，不回退历史报告。人工评审、作废、删除和刷新报告后并行回读概览；概览读取失败单独提示，不映射为尚未交付，也不延长本轮审核锁。概览同时保留当前有效交付与最新报告的独立进度；最新说明始终关联所展示的交付版本。无最新报告时 preparation=null，已冻结历史继续可读。
+需求级概览复用冻结准备校验，只读取 campaign.latest_run_id，不回退历史报告。人工评审、作废、删除和刷新报告后并行回读概览；概览读取失败单独提示，不映射为尚未交付，也不延长本轮审核锁。概览同时保留当前有效交付与最新报告的独立进度；两类最新文档均关联所展示的交付版本。无最新报告时 preparation=null，已冻结历史继续可读。

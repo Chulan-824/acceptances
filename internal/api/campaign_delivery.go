@@ -22,6 +22,7 @@ type CampaignDeliveryOverview struct {
 	CurrentDelivery *DeliverySummary   `json:"currentDelivery"`
 	LatestDelivery  *DeliverySummary   `json:"latestDelivery"`
 	LatestDocument  *BusinessDocument  `json:"latestDocument"`
+	LatestGuide     *BusinessDocument  `json:"latestGuide"`
 }
 
 func (s *Server) campaignDelivery(w http.ResponseWriter, r *http.Request) {
@@ -63,19 +64,26 @@ func (s *Server) campaignDelivery(w http.ResponseWriter, r *http.Request) {
 		source = view.LatestDelivery
 	}
 	if source != nil {
-		var key string
-		err = s.db.QueryRowContext(r.Context(), "SELECT id FROM business_documents WHERE delivery_id=? ORDER BY version DESC LIMIT 1", source.ID).Scan(&key)
-		if err == nil {
-			document, readErr := s.document(key)
-			if readErr != nil {
+		for _, kind := range []DocumentKind{TestReportDocument, BusinessGuideDocument} {
+			var key string
+			err = s.db.QueryRowContext(r.Context(), "SELECT id FROM business_documents WHERE delivery_id=? AND kind=? ORDER BY version DESC LIMIT 1", source.ID, kind).Scan(&key)
+			if err == nil {
+				document, readErr := s.document(key)
+				if readErr != nil {
+					fail(w, 500, "READ_FAILED")
+					return
+				}
+				if kind == BusinessGuideDocument {
+					view.LatestGuide = &document
+				} else {
+					view.LatestDocument = &document
+				}
+			} else if err != sql.ErrNoRows {
 				fail(w, 500, "READ_FAILED")
 				return
 			}
-			view.LatestDocument = &document
-		} else if err != sql.ErrNoRows {
-			fail(w, 500, "READ_FAILED")
-			return
 		}
 	}
+
 	respond(w, 200, view)
 }

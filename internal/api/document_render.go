@@ -88,17 +88,8 @@ table{width:100%;border-collapse:collapse;font-size:var(--text-ui)}td,th{border:
 </section></main><template id="geist-font-license">{{fontLicense}}</template></body></html>`))
 
 func renderBusinessDocument(output io.Writer, root *os.Root, snapshot DeliverySnapshot, document BusinessDocument) error {
-	files, err := archiveFiles(root, snapshot.Payload.Run.Report.Evidence)
-	if err != nil {
+	if err := verifyFrozenDocumentEvidence(root, snapshot); err != nil {
 		return err
-	}
-	if len(files) != len(snapshot.Payload.Files) {
-		return fmt.Errorf("frozen evidence integrity failure")
-	}
-	for index := range files {
-		if files[index] != snapshot.Payload.Files[index] {
-			return fmt.Errorf("frozen evidence changed: %s", files[index].Path)
-		}
 	}
 	materials := map[string]DocumentationFeature{}
 	for _, feature := range snapshot.Payload.Materials.Features {
@@ -133,4 +124,20 @@ func renderBusinessDocument(output io.Writer, root *os.Root, snapshot DeliverySn
 		view.Features = append(view.Features, rendered)
 	}
 	return businessTemplate.Execute(output, view)
+}
+
+func verifyFrozenDocumentEvidence(root *os.Root, snapshot DeliverySnapshot) error {
+	files, err := archiveFiles(root, snapshot.Payload.Run.Report.Evidence)
+	if err != nil {
+		return err
+	}
+	if len(files) != len(snapshot.Payload.Files) {
+		return fmt.Errorf("frozen evidence integrity failure")
+	}
+	for index := range files {
+		if files[index] != snapshot.Payload.Files[index] {
+			return fmt.Errorf("frozen evidence changed: %s", files[index].Path)
+		}
+	}
+	return nil
 }

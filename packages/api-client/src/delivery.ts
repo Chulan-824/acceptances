@@ -90,6 +90,7 @@ export interface CampaignDeliveryOverview {
   currentDelivery: DeliverySummary | null;
   latestDelivery: DeliverySummary | null;
   latestDocument: BusinessDocument | null;
+  latestGuide: BusinessDocument | null;
 }
 export interface FreezeDeliveryInput {
   requestId: string;
@@ -144,7 +145,9 @@ export interface DeliverySummary {
   runId: string;
   successorId: string;
 }
+export type DocumentKind = "business_guide" | "test_report";
 export interface BusinessDocument {
+  kind: DocumentKind;
   id: string;
   deliveryId: string;
   version: number;
@@ -156,4 +159,50 @@ export interface BusinessDocument {
   sha256: string;
   createdAt: string;
   completedAt: string;
+}
+
+export interface GuideRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export interface GuideImage {
+  path: string;
+  caption: string;
+  kind: "actual" | "sample";
+  crop?: GuideRegion;
+  annotations?: (GuideRegion & { label: string })[];
+}
+export interface GuideBlock {
+  kind:
+    | "heading"
+    | "paragraph"
+    | "note"
+    | "quote"
+    | "steps"
+    | "confirmations"
+    | "table"
+    | "images";
+  text?: string;
+  items?: string[];
+  columns?: string[];
+  rows?: string[][];
+  images?: GuideImage[];
+}
+export interface BusinessGuide {
+  schemaVersion: 1;
+  title: string;
+  summary: string;
+  modules: { title: string; description: string }[];
+  pages: {
+    audience: string;
+    title: string;
+    entry: string;
+    instruction: string;
+    images: GuideImage[];
+  }[];
+  sections: { title: string; summary: string; blocks: GuideBlock[] }[];
+  review: string[];
+  limitations: string[];
 }

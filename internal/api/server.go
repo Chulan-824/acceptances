@@ -68,9 +68,9 @@ func Open(dir string) (*Server, error) {
 		db.Close()
 		return nil, err
 	}
-	if version > 3 {
+	if version > 4 {
 		db.Close()
-		return nil, fmt.Errorf("database schema version %d is newer than supported version 3", version)
+		return nil, fmt.Errorf("database schema version %d is newer than supported version 4", version)
 	}
 	if version == 0 {
 		if _, err = db.Exec(`BEGIN;
@@ -90,6 +90,10 @@ func Open(dir string) (*Server, error) {
 		return nil, err
 	}
 	if err = s.migrateDeliveries(version != 0); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err = s.migrateDocumentKinds(version != 0); err != nil {
 		db.Close()
 		return nil, err
 	}

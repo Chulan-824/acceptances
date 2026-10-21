@@ -13,6 +13,7 @@ const base = {
   currentDelivery: null,
   latestDelivery: null,
   latestDocument: null,
+  latestGuide: null,
 };
 test("partial acceptance remains incomplete requirement delivery", () => {
   assert.equal(describeCampaignDelivery(base).label, "待完整验证");
@@ -31,7 +32,7 @@ test("new pending Run preserves valid old delivery and source document", () => {
   assert.equal(view.sameRun, false);
   assert.equal(view.label, "已交付 v1 · 最新一轮尚未交付");
   assert.equal(view.review, "最新一轮待评审");
-  assert.equal(view.document, "说明 v2 · 生成失败");
+  assert.equal(view.document, "测试报告 v2 · 生成失败");
 });
 test("inactive frozen version is historical, not an undelivered requirement", () => {
   const view = describeCampaignDelivery({
@@ -50,4 +51,14 @@ test("no latest Run does not pretend an older report is awaiting delivery", () =
   });
   assert.equal(view.label, "已交付 v1 · 当前无最新报告");
   assert.equal(view.review, "暂无最新验证记录");
+});
+
+test("business guide and test report keep independent versions", () => {
+  const view = describeCampaignDelivery({
+    ...base,
+    latestGuide: { version: 1, status: "succeeded" },
+    latestDocument: { version: 3, status: "failed" },
+  });
+  assert.equal(view.guide, "业务指南 v1 · 已生成");
+  assert.equal(view.document, "测试报告 v3 · 生成失败");
 });

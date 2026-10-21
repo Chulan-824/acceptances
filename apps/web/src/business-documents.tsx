@@ -5,6 +5,8 @@ import {
   request,
   RequestError,
   type BusinessDocument,
+  type BusinessGuide,
+  type DocumentKind,
   type DeliverySnapshot,
 } from "@acceptances/api-client";
 import { Load, message, Status, useResource } from "./client";
@@ -22,6 +24,36 @@ export function BusinessDocuments({
 }: {
   delivery: DeliverySnapshot;
 }) {
+  return (
+    <>
+      <DocumentPanel
+        key={delivery.id + "-guide"}
+        delivery={delivery}
+        kind="business_guide"
+      />
+      <DocumentPanel
+        key={delivery.id + "-report"}
+        delivery={delivery}
+        kind="test_report"
+      />
+    </>
+  );
+}
+
+function DocumentPanel({
+  delivery,
+  kind,
+}: {
+  delivery: DeliverySnapshot;
+  kind: DocumentKind;
+}) {
+  const isGuide = kind === "business_guide";
+  const label = isGuide ? "业务指南" : "测试报告";
+  const [source, setSource] = useState<BusinessGuide>();
+  const [sourceName, setSourceName] = useState("");
+  const [readingSource, setReadingSource] = useState(false);
+  const pendingRetry = useRef<BusinessDocument | undefined>(undefined);
+  const [uncertainRequest, setUncertainRequest] = useState(false);
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +64,7 @@ export function BusinessDocuments({
   const previewClose = useRef<HTMLButtonElement | null>(null);
   const path = "/deliveries/" + encodeURIComponent(delivery.id) + "/documents";
   const { data, error: loadError } = useResource<{ items: BusinessDocument[] }>(
-    path,
+    path + "?kind=" + kind,
     revision,
     true,
   );
@@ -43,8 +75,11 @@ export function BusinessDocuments({
     const interval = window.setInterval(() => setRevision((r) => r + 1), 1500);
     return () => window.clearInterval(interval);
   }, [generating]);
-  async function generate(retry?: BusinessDocument) {
-    if (submitting.current || delivery.status !== "valid") return;
+  async function generate(selectedRetry?: BusinessDocument) {
+    const retry = selectedRetry ?? pendingRetry.current;
+    if (submitting.current || readingSource || delivery.status !== "valid")
+      return;
+    pendingRetry.current = retry;
     submitting.current = true;
     setBusy(true);
     setError("");
@@ -53,21 +88,35 @@ export function BusinessDocuments({
       const document = await request<BusinessDocument>(
         retry ? "/documents/" + encodeURIComponent(retry.id) + "/retry" : path,
         "POST",
-        retry ? {} : { requestId: requestId.current },
+        retry
+          ? {}
+          : {
+              requestId: requestId.current,
+              kind,
+              ...(isGuide && source ? { guide: source } : {}),
+            },
       );
       requestId.current = null;
+      setUncertainRequest(false);
+      pendingRetry.current = undefined;
       setRevision((r) => r + 1);
       if (document.status === "failed") setError(document.error);
     } catch (failure) {
       const uncertain =
-        failure instanceof RequestError && failure.phase !== "response";
+        failure instanceof RequestError &&
+        (failure.phase !== "response" ||
+          failure.code === "DOCUMENT_GENERATING");
       setError(
         uncertain
-          ? "生成结果未知，请刷新说明列表；再次生成会使用原提交标识。" +
+          ? "生成结果未知，请刷新文档列表；再次生成会使用原提交标识，确认结果后才能更换指南素材。" +
               message(failure)
           : message(failure),
       );
-      if (!uncertain) requestId.current = null;
+      setUncertainRequest(uncertain);
+      if (!uncertain) {
+        requestId.current = null;
+        pendingRetry.current = undefined;
+      }
       setRevision((r) => r + 1);
     } finally {
       submitting.current = false;
@@ -78,29 +127,100 @@ export function BusinessDocuments({
     <Frame asChild spacing="none">
       <section className="business-documents bg-surface px-6">
         <FrameHeader className="section-heading">
-          <h2>业务说明</h2>
+          <h2>{label}</h2>
           <div className="actions">
             <Button
-              disabled={busy || generating || delivery.status !== "valid"}
+              disabled={
+                !data ||
+                !!loadError ||
+                busy ||
+                readingSource ||
+                generating ||
+                delivery.status !== "valid"
+              }
               onClick={() => void generate()}
             >
               {busy
                 ? "正在生成…"
-                : data?.items.some((item) => item.status === "succeeded")
-                  ? "生成新的说明版本"
-                  : "生成业务说明"}
+                : uncertainRequest
+                  ? "确认上次生成结果"
+                  : data?.items.some((item) => item.status === "succeeded")
+                    ? `生成新版${label}`
+                    : `生成${label}`}
             </Button>
             <Button variant="outline" onClick={() => setRevision((r) => r + 1)}>
-              刷新说明状态
+              刷新{label}状态
             </Button>
           </div>
         </FrameHeader>
         <p className="muted">
-          根据冻结材料确定性生成，不调用 LLM。HTML
-          内嵌图片，可离线阅读。生成不修改验证记录或交付快照。
+          {isGuide
+            ? "面向业务人员，按模块、页面入口、操作步骤和截图说明功能，可查看状态样例并对照业务确认清单。"
+            : "保留当前报告正文，包含检查项、验证依据、代码与构建来源等内容。"}
+          两类文档分别生成和保存版本，均可预览、下载离线 HTML。
         </p>
+        {isGuide && delivery.status === "valid" && (
+          <details className="guide-materials">
+            <summary>整理或更新指南内容</summary>
+            <p className="muted">
+              首次生成使用已有说明素材；再次生成沿用最近成功的指南内容。可下载素材，补充页面入口、状态含义和截图标注后导入。图片须来自当前交付，样例须明确标为演示数据。
+            </p>
+            <a
+              href={
+                "/api/v1" +
+                "/deliveries/" +
+                encodeURIComponent(delivery.id) +
+                "/business-guide-materials"
+              }
+            >
+              下载当前指南素材 JSON
+            </a>
+            <label className="field">
+              导入指南素材 JSON
+              <input
+                type="file"
+                accept=".json,application/json"
+                disabled={
+                  busy || readingSource || generating || uncertainRequest
+                }
+                onChange={async (event) => {
+                  const file = event.currentTarget.files?.[0];
+                  if (!file) return;
+                  setError("");
+                  setReadingSource(true);
+                  try {
+                    if (file.size > 1024 * 1024)
+                      throw new Error("指南素材不能超过 1 MiB。");
+                    const value: unknown = JSON.parse(await file.text());
+                    if (
+                      !value ||
+                      typeof value !== "object" ||
+                      !("schemaVersion" in value) ||
+                      value.schemaVersion !== 1
+                    )
+                      throw new Error(
+                        "请导入 schemaVersion 为 1 的指南素材 JSON。",
+                      );
+                    setSource(value as BusinessGuide);
+                    setSourceName(file.name);
+                    requestId.current = null;
+                  } catch (failure) {
+                    setError(message(failure));
+                  } finally {
+                    setReadingSource(false);
+                  }
+                }}
+              />
+            </label>
+            {sourceName && (
+              <p role="status">
+                待生成素材：{sourceName}。点击“生成{label}”后保存为新版本。
+              </p>
+            )}
+          </details>
+        )}
         {delivery.status !== "valid" && (
-          <p>交付已非有效状态，停止新生成；已有说明仍可作为历史预览与下载。</p>
+          <p>交付已非有效状态，停止新生成；已有文档仍可作为历史预览与下载。</p>
         )}
         {error && (
           <Alert variant="destructive" role="alert">
@@ -121,7 +241,7 @@ export function BusinessDocuments({
                 <li>
                   <div className="section-heading">
                     <p>
-                      说明 v{document.version} ·{" "}
+                      {label} v{document.version} ·{" "}
                       <Status value={document.status} context="document" /> ·
                       尝试 {document.attempts} 次
                     </p>
@@ -134,7 +254,7 @@ export function BusinessDocuments({
                             setPreview(document);
                           }}
                         >
-                          预览 v{document.version}
+                          预览{label} v{document.version}
                         </Button>
                         <a
                           href={
@@ -143,18 +263,22 @@ export function BusinessDocuments({
                             "/html?download=1"
                           }
                         >
-                          下载离线 HTML v{document.version}
+                          下载{label} HTML v{document.version}
                         </a>
                       </div>
                     )}
                     {document.status === "failed" && (
                       <Button
                         disabled={
-                          busy || generating || delivery.status !== "valid"
+                          busy ||
+                          readingSource ||
+                          generating ||
+                          uncertainRequest ||
+                          delivery.status !== "valid"
                         }
                         onClick={() => void generate(document)}
                       >
-                        重试说明 v{document.version}
+                        重试{label} v{document.version}
                       </Button>
                     )}
                   </div>
@@ -171,11 +295,11 @@ export function BusinessDocuments({
         ) : (
           <EmptyState
             compact
-            title="尚未生成业务说明"
+            title={`尚未生成${label}`}
             description={
               delivery.status === "valid"
-                ? "审阅冻结材料后，可在上方生成说明。"
-                : "该交付当前非有效状态，不能生成新说明。"
+                ? `可在上方生成${label}，已有版本会保留。`
+                : `该交付当前非有效状态，不能生成新${label}。`
             }
           />
         )}
@@ -198,19 +322,21 @@ export function BusinessDocuments({
             }}
           >
             <div className="section-heading">
-              <DialogTitle>业务说明 v{preview?.version}</DialogTitle>
+              <DialogTitle>
+                {label} v{preview?.version}
+              </DialogTitle>
               <Button ref={previewClose} onClick={() => setPreview(undefined)}>
                 关闭预览
               </Button>
             </div>
             <DialogDescription>
               {delivery.status === "valid"
-                ? "本说明对应此交付的冻结版本。"
-                : "历史说明，关联交付当前已非有效状态。"}
+                ? `本${label}对应此交付，下载文件可离线阅读。`
+                : `历史${label}，关联交付当前已非有效状态。`}
             </DialogDescription>
             {preview && (
               <iframe
-                title="业务说明预览"
+                title={`${label}预览`}
                 sandbox=""
                 src={
                   "/api/v1/documents/" +

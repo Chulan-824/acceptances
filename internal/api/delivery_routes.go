@@ -13,6 +13,7 @@ func (s *Server) registerDeliveries(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/deliveries/{id}/revoke", s.revokeDelivery)
 	m.HandleFunc("GET /api/v1/deliveries/{id}/documents", s.listDocuments)
 	m.HandleFunc("POST /api/v1/deliveries/{id}/documents", s.generateDocument)
+	m.HandleFunc("GET /api/v1/deliveries/{id}/business-guide-materials", s.downloadBusinessGuideMaterials)
 	m.HandleFunc("GET /api/v1/documents/{id}", s.getDocument)
 	m.HandleFunc("POST /api/v1/documents/{id}/retry", s.retryDocument)
 	m.HandleFunc("GET /api/v1/documents/{id}/html", s.documentHTML)

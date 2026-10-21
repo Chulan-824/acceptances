@@ -127,7 +127,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
                 {item.projectName} · {new Date(item.createdAt).toLocaleString()}
               </p>
               <Button onClick={() => navigate("/deliveries/" + item.id)}>
-                查看交付与业务说明
+                查看交付与文档
               </Button>
             </FramePanel>
           ))}
