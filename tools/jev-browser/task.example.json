@@ -1,0 +1,9 @@
+{
+  "url": "http://127.0.0.1:5173/",
+  "goal": "检查首页，确认页面中可见“项目”文字；不要创建或修改数据。",
+  "values": {},
+  "allowed_write_labels": [],
+  "max_steps": 20,
+  "max_seconds": 120,
+  "expect": { "text": ["项目"] }
+}

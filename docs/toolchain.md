@@ -32,7 +32,11 @@
 
 旧 DTO、OpenAPI 和 sqlc 生成流程已移除。未知测试分组返回非零，不将未运行标记为通过。
 
-`pnpm check` 执行 lint、类型检查、Go/Web 测试和构建。`pnpm test:browser` 单独运行已有浏览器场景，可用 `BROWSER_GROUPS=review,preview pnpm test:browser` 选择分组。依赖、覆盖范围、隔离与产物说明见 [Web 回归验证](../apps/web/tests/README.md)。
+`pnpm check` 执行 lint、类型检查、Go/Web 测试和构建，不启动 Playwright 浏览器。日常浏览器回归使用用户指定的 Codex `@Chrome`、Claude in Chrome 或 `ego-browser`，按 [Agent 浏览器约定](../AGENTS.md#browser-regression) 执行；验证失败或工具不可用时不自动切换到 Playwright。
+
+上表 `make test SUITE=browser` 及其别名 `pnpm test:browser` 是保留的 Playwright 脚本入口，仅在用户明确要求执行此类脚本回归时运行。届时可用 `BROWSER_GROUPS=review,preview pnpm test:browser` 选择分组。不要因一般的浏览器回归请求或 Jev 接入自动启动这些入口。依赖、覆盖范围、隔离与产物说明见 [Web 回归验证](../apps/web/tests/README.md)。
+
+用户选择真实 Chrome + Jev 时，通过 `make jev-config` 创建根目录 `.env`，启动器将 Jev 配置注入执行进程。宿主机使用 `make jev-setup`、`make jev-doctor`、`make jev-inspect URL=...`、`make jev-run TASK=...`；可选 Docker 执行器使用对应的 `jev-docker-build`、`jev-docker-doctor`、`jev-docker-inspect`、`jev-docker-run`。两者通过 CDP 连接宿主机真实 Chrome，使用 `TYPESAFE_API_KEY` 调用官方 Jev API。`make jev-check` 只运行离线检查。配置、任务合同和证据边界见 [Jev 接入](agents/jev-browser.md)。这些可选命令不纳入 `pnpm check`，不启动 Playwright，也不会启动或重建日常应用、数据库。
 
 构建前执行 `pnpm install --frozen-lockfile --ignore-scripts`。Make 使用精确 `GOTOOLCHAIN`，Go 缓存位于 `.cache`。首次构建可能下载工具链和依赖。
 

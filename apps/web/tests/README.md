@@ -1,9 +1,16 @@
 # Web 回归验证
 
-## 统一执行入口
+## 默认浏览器回归
+
+日常浏览器回归由 Agent 使用用户指定的 Codex `@Chrome`、Claude in Chrome 或 `ego-browser` 完成，沿用获授权的真实页面和登录状态。具体规则见 [Agent 浏览器约定](../../../AGENTS.md#browser-regression)。Jev 辅助操作也使用所选工具公开的接口，不因此启动 Playwright。
+
+本文件下述 Playwright 脚本是保留的可选验证能力，仅在用户明确要求执行这类脚本时运行。一般的“浏览器回归”请求、工具不可用或验证失败，都不应触发 Playwright 或 Playwright MCP。真实页面验证与静态、单元、脚本结果分别报告，未执行项明确标注。
+
+## 已有脚本入口
 
 ```sh
 pnpm test:web
+# 以下浏览器脚本仅在用户明确要求执行时运行。
 pnpm test:browser
 # 只重跑相关分组；仍会先构建当前源码。
 BROWSER_GROUPS=review,media,preview pnpm test:browser

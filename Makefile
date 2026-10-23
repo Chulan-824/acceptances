@@ -83,3 +83,46 @@ install-skill:
 
 replace-skill:
 	python3 scripts/v1/install-skill.py --replace
+
+# Optional real-Chrome/Jev toolchain; never starts the Playwright suite.
+JEV_PYTHON := $(CURDIR)/tools/jev-browser/.venv/bin/python
+JEV_RUFF := $(CURDIR)/tools/jev-browser/.venv/bin/ruff
+FORMAT_PATHS += docs/agents/jev-browser.md tools/jev-browser/task.example.json
+JEV_LAUNCH := python3 tools/jev-browser/launch.py
+.PHONY: jev-setup jev-config jev-doctor jev-inspect jev-run jev-check jev-docker-build jev-docker-doctor jev-docker-inspect jev-docker-run
+
+jev-setup:
+	UV_CACHE_DIR="$(CURDIR)/.cache/uv" UV_PYTHON_INSTALL_DIR="$(CURDIR)/.cache/uv-python" uv sync --project tools/jev-browser --locked --python 3.12
+
+jev-doctor:
+	$(JEV_LAUNCH) doctor
+
+jev-config:
+	$(JEV_LAUNCH) config
+
+jev-inspect:
+	@test -n "$(URL)" || (echo '用法: make jev-inspect URL=http://127.0.0.1:5173'; exit 1)
+	$(JEV_LAUNCH) inspect "$(URL)"
+
+jev-run:
+	@test -n "$(TASK)" || (echo '用法: make jev-run TASK=/绝对路径/task.json'; exit 1)
+	$(JEV_LAUNCH) run "$(TASK)"
+
+jev-docker-build:
+	$(JEV_LAUNCH) docker build
+
+jev-docker-doctor:
+	$(JEV_LAUNCH) docker doctor
+
+jev-docker-inspect:
+	@test -n "$(URL)" || (echo '用法: make jev-docker-inspect URL=http://127.0.0.1:5173'; exit 1)
+	$(JEV_LAUNCH) docker inspect "$(URL)"
+
+jev-docker-run:
+	@test -n "$(TASK)" || (echo '用法: make jev-docker-run TASK=/绝对路径/task.json'; exit 1)
+	$(JEV_LAUNCH) docker run "$(TASK)"
+
+jev-check:
+	"$(JEV_RUFF)" format --check tools/jev-browser
+	"$(JEV_RUFF)" check tools/jev-browser
+	"$(JEV_PYTHON)" -m unittest discover -s tools/jev-browser -p 'test_*.py' -v

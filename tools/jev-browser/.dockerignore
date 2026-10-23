@@ -1,0 +1,6 @@
+**
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!jev_browser.py
+!chrome.py

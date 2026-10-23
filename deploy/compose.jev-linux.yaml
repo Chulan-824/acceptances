@@ -1,0 +1,4 @@
+# Native Linux uses the host network to reach Chrome's loopback-only CDP listener.
+services:
+  jev-runner:
+    network_mode: host

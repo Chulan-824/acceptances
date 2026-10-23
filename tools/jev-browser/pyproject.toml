@@ -1,0 +1,17 @@
+[project]
+name = "acceptances-jev-browser"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "jev-ultrafast @ git+https://github.com/browser-use/jev-ultrafast.git@1231850a0bf1a0c0341fe408ef1668dbbfdfac46",
+]
+
+[dependency-groups]
+dev = ["ruff>=0.14,<1"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

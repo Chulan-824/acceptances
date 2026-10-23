@@ -1,0 +1,28 @@
+services:
+  jev-runner:
+    profiles: [jev]
+    image: acceptances-jev:local
+    build:
+      context: "${JEV_BUILD_CONTEXT:-../tools/jev-browser}"
+      dockerfile: Dockerfile
+    init: true
+    user: "${JEV_UID:-10001}:${JEV_GID:-10001}"
+    environment:
+      TYPESAFE_API_KEY: "${TYPESAFE_API_KEY:-}"
+      TYPESAFE_MODEL: "${TYPESAFE_MODEL:-jev-1.13.0}"
+      JEV_CHROME_CDP_URL: "${JEV_CHROME_CDP_URL:-}"
+      JEV_STATE_DIR: /tmp/jev-harness
+      JEV_OUTPUT_DIR: /evidence
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - type: bind
+        source: "${JEV_EVIDENCE_DIR:-../artifacts/jev-browser}"
+        target: /evidence
+      - type: bind
+        source: "${JEV_TASK_FILE:-../tools/jev-browser/task.example.json}"
+        target: /task.json
+        read_only: true

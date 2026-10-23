@@ -8,6 +8,9 @@ dist/
 build/
 artifacts/
 secrets/
+/.env
+/.env.*
+!/.env.example
 
 # Local planning and verification records stay outside Git.
 /.scratch/
