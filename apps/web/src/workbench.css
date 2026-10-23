@@ -250,6 +250,12 @@
   .acceptance-workbench .inline-evidence {
     @apply flex flex-col gap-3;
   }
+  .acceptance-workbench .more-evidence-disclosure {
+    @apply mt-1;
+  }
+  .acceptance-workbench .more-evidence-disclosure .inline-preview {
+    @apply p-3 border border-border rounded-default bg-surface-subtle/40;
+  }
   .acceptance-workbench .inline-preview {
     @apply border-0 p-0;
   }

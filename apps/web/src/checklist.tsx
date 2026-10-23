@@ -353,9 +353,18 @@ function CheckItem({
               ))}
               {others.length > 0 && (
                 <Disclosure
+                  className="more-evidence-disclosure"
                   open={moreExpanded}
                   onOpenChange={setMoreExpanded}
-                  title={<>更多附件（{others.length}）</>}
+                  title={
+                    <>
+                      <span className="more-evidence-title">
+                        <Icon name="file" />
+                        更多附件（{others.length}）
+                      </span>
+                      <Icon name="chevron" />
+                    </>
+                  }
                 >
                   {moreExpanded && (
                     <div className="inline-evidence">

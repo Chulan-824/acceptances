@@ -239,6 +239,32 @@
   .inline-evidence {
     @apply grid grid-cols-[repeat(auto-fit,_minmax(min(100%,_240px),_1fr))] gap-3;
   }
+  .more-evidence-disclosure {
+    @apply col-span-full border border-border rounded-default bg-surface overflow-hidden;
+  }
+  .more-evidence-disclosure > .disclosure-trigger {
+    @apply flex items-center justify-between w-full py-2.5 px-3 text-caption font-medium text-fg-secondary bg-surface-subtle transition-colors list-none cursor-pointer;
+  }
+  .more-evidence-disclosure > .disclosure-trigger:hover {
+    @apply bg-surface-hover text-fg;
+  }
+  .more-evidence-title {
+    @apply flex items-center gap-2;
+  }
+  .more-evidence-title > svg {
+    @apply text-muted shrink-0;
+  }
+  .more-evidence-disclosure > .disclosure-trigger > svg:last-child {
+    @apply shrink-0 text-muted transition-transform duration-150;
+  }
+  .more-evidence-disclosure[data-state="open"]
+    > .disclosure-trigger
+    > svg:last-child {
+    @apply rotate-90;
+  }
+  .more-evidence-disclosure [data-slot="collapsible-content"] {
+    @apply border-t border-border p-3;
+  }
   .evidence {
     @apply min-w-0;
   }
