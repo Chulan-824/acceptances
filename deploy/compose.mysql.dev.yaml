@@ -1,0 +1,6 @@
+services:
+  mysql:
+    environment:
+      MYSQL_DATABASE: acceptances_dev
+    ports:
+      - "127.0.0.1:3307:3306"

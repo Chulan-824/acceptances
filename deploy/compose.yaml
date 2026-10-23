@@ -1,4 +1,6 @@
 name: acceptances
+include:
+  - compose.mysql.yaml
 services:
   app:
     build:
@@ -9,6 +11,13 @@ services:
     environment:
       ACCEPTANCES_DATA_DIR: /var/lib/acceptances
       ACCEPTANCES_PUBLIC_ORIGIN: http://127.0.0.1:8765
+      ACCEPTANCES_DB_DRIVER: mysql
+      ACCEPTANCES_MYSQL_DSN_FILE: /run/secrets/mysql_dsn
+    secrets:
+      - mysql_dsn
+    depends_on:
+      mysql:
+        condition: service_healthy
     read_only: true
     tmpfs:
       - /tmp
@@ -18,3 +27,6 @@ services:
       - app-data:/var/lib/acceptances
 volumes:
   app-data:
+secrets:
+  mysql_dsn:
+    file: ../.cache/mysql/docker.dsn

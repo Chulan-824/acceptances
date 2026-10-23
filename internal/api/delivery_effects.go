@@ -37,7 +37,7 @@ func transitionDeliveries(ctx context.Context, tx *sql.Tx, where string, args []
 		if err != nil {
 			return err
 		}
-		if _, err = tx.ExecContext(ctx, "INSERT INTO delivery_events VALUES(?,?,?,?,?,?)", id(), key, kind, reason, reference, at); err != nil {
+		if _, err = tx.ExecContext(ctx, "INSERT INTO delivery_events(id,delivery_id,kind,reason,reference,created_at) VALUES(?,?,?,?,?,?)", id(), key, kind, reason, reference, at); err != nil {
 			return err
 		}
 	}

@@ -151,3 +151,7 @@ for (const scenario of scenarios) {
 | B15  | `B15-parent-missing-retry`                                                             | 父级 404 后，500 / 网络失败仍保持缺失与禁写；同一父级 GET 200 后恢复，全程 0 写请求           |
 
 场景返回请求顺序和写请求信息供保存证据。写入和读取顺序通过显式响应释放控制；驱动结果仅证明受控 HTTP 下的真实前端行为。真实 Go 验证另见 [campaign-run-real.md](campaign-run-real.md)。
+
+## Docker MySQL 回归
+
+先运行 `make mysql-up`，再使用 `ACCEPTANCES_BROWSER_DATABASE=mysql BROWSER_GROUPS=layout,review,media,preview,lifecycle,deletion-real,delivery pnpm test:browser`。每组使用随机 `acceptances_test_` 数据库与独立文件目录，停止服务后只删除该组创建的数据库。总回执记录 `databaseEngine`，真实 Go API 和受控 HTTP 场景的证据分类保持不变。默认浏览器回归仍使用隔离 SQLite；它不能代替 MySQL 回归。

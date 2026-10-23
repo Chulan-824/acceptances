@@ -331,6 +331,7 @@ export async function startIsolatedServer({
   logPath,
   signals = true,
   onStop = () => {},
+  environment = {},
 }) {
   const directory = await mkdtemp(
     directoryPrefix || join(tmpdir(), "acceptances-check-"),
@@ -353,11 +354,14 @@ export async function startIsolatedServer({
       binary,
       ["--listen", "127.0.0.1:0", "--data-dir", data, "--web-dir", web],
       {
-        env: Object.fromEntries(
-          Object.entries(process.env).filter(
-            ([key]) => !key.startsWith("ACCEPTANCES_"),
+        env: {
+          ...Object.fromEntries(
+            Object.entries(process.env).filter(
+              ([key]) => !key.startsWith("ACCEPTANCES_"),
+            ),
           ),
-        ),
+          ...environment,
+        },
         logPath,
       },
     );

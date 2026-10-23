@@ -2,26 +2,24 @@
 
 个人本机使用的验证报告归档工具。Agent 在业务目录执行验证，通过 CLI 保存报告与证据；用户在 Web 查看 Project → Campaign → Run，逐项人工评审、评论或作废。
 
-Go 同时提供 API 和 React Web。SQLite 和附件使用一个持久卷，不需要账号、token、外部数据库或对象存储。全部检查项人工通过才整轮通过；只有最新完整范围 Run 全部人工通过，需求才整体通过。保存成功与 Agent 检查通过分别显示，局部复验不合并历史结果。
+Go 同时提供 API 和 React Web，MySQL 保存元数据，本地持久卷保存证据与离线文档。本地开发由 Docker 提供 MySQL，不需要产品账号、token 或对象存储。全部检查项人工通过才整轮通过；只有最新完整范围 Run 全部人工通过，需求才整体通过。保存成功与 Agent 检查通过分别显示，局部复验不合并历史结果。
 
 ## 本机启动
 
 首次使用时在仓库根执行。已有本地运行库升级先按下方说明核对目标并保存一致备份，再运行启动命令：
 
 ```sh
-docker compose -f deploy/compose.yaml up --build -d
+make docker-up
 ```
 
-打开 <http://127.0.0.1:8765> 创建 Project。首次启动自动初始化和迁移，服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；数据保存在 `acceptances_app-data` 卷中。普通重启或 `down` 保留数据，不要使用 `down -v`，除非确实要删除该项目全部记录。
+打开 <http://127.0.0.1:8765> 创建 Project。全新数据首次启动自动初始化，旧 SQLite 卷先按 [MySQL 迁移说明](docs/mysql-storage.md) 停写、备份并运行 `make docker-migrate`。服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；文件保存在 `acceptances_app-data`，数据库保存在 `acceptances_mysql-data`。普通重启或 `down` 保留数据，不要使用 `down -v`，除非确实要删除该项目全部记录。
 
 ```sh
 curl --fail http://127.0.0.1:8765/health/ready
 docker compose -f deploy/compose.yaml restart app
 ```
 
-本次逐项评审升级会增量迁移当前本地 SQLite，保留报告、证据和旧评审。旧整轮接受、拒绝只作历史，已有非作废 Run 的各项从待审开始，作废状态保持不变；以后重启不会重复清空人工判断。
-
-升级日常运行库前，先核对容器的 Compose 项目标签和挂载卷，停止应用写入，备份完整的 `/var/lib/acceptances` 数据目录，包括 SQLite 相关文件、`evidence`、`deliveries` 和 `documents`，再启动新版。库版本 3 迁移前另自动保存一致 SQLite 备份，但该数据库备份不能代替整个目录备份。保留可恢复备份，不删除或重建持久卷。具体核对步骤见[实施交接](docs/v1-implementation-handoff.md)和[交付能力交接](docs/delivery-implementation-handoff.md)。更早的旧架构协议与数据导入仍不支持；业务仓库不挂载进容器。
+现有开发数据按 `make dev-stop` → `make mysql-migrate` → `make dev-up` 迁移。导入前自动备份整个数据目录，逐表校验并保留原 SQLite；不会重置已有人工判断。数据库、附件与凭据须配套备份，完整步骤见 [MySQL 存储与迁移](docs/mysql-storage.md)。
 
 ## 关联业务项目
 
@@ -66,29 +64,30 @@ Agent 使用 `acceptances feedback --campaign <标题或ID>` 读取反馈，`acc
 工具版本由 `toolchain.lock.json`、`go.mod` 和 `pnpm-lock.yaml` 固定。
 
 ```sh
-make dev                  # 前台启动，Ctrl-C 清理
+make dev                  # 自动启动 Docker MySQL，前台启动 Go/Vite，Ctrl-C 清理应用
 # 或 make dev-up 后台启动；make dev-status 查询；make dev-stop 停止
 make fmt
 make lint typecheck build
 make test
+make test SUITE=mysql
 make test SUITE=agent
 make test SUITE=platform
 ```
 
-开发 Web 为 <http://127.0.0.1:5173>，API 为 <http://127.0.0.1:8765>，开发数据默认在 `.cache/dev-data`。开发时在业务目录首次关联使用 `acceptances link --url http://127.0.0.1:5173 --project <项目名称>`，与 Web 共用 Vite 代理入口；后续命令复用关联中保存的 URL。生产构建输出 `build/server`、`build/acceptances` 和 `apps/web/dist`。
+开发 Web 为 <http://127.0.0.1:5173>，API 为 <http://127.0.0.1:8765>，附件默认在 `.cache/dev-data`，数据库使用 `127.0.0.1:3307/acceptances_dev` 的 Docker MySQL。开发时在业务目录首次关联使用 `acceptances link --url http://127.0.0.1:5173 --project <项目名称>`，与 Web 共用 Vite 代理入口；后续命令复用关联中保存的 URL。生产构建输出 `build/server`、`build/acceptances` 和 `apps/web/dist`。
 
 `make test` 执行隔离 Go 测试、Web 单元及服务生命周期回归。`make services-status` 查询受管开发/验证服务，`make services-stop` 停止它们（会中断验证）；真实开发启动/退出烟测使用 `make test SUITE=services`。`pnpm test:browser` 构建当前源码，再执行已有真实浏览器回归；分组与证据边界见 [Web 回归验证](apps/web/tests/README.md)。这些检查不能代替真实业务及 Docker 验收。命令边界见 [工具链](docs/toolchain.md)，T1–T9 验证步骤见 [实现交接](docs/v1-implementation-handoff.md)。
 
 ## 目录
 
-| 目录                        | 职责                               |
-| --------------------------- | ---------------------------------- |
-| cmd/server、cmd/acceptances | 服务和 CLI 入口                    |
-| internal                    | 报告、SQLite、本地证据与 HTTP 实现 |
-| apps/web                    | React Web                          |
-| packages/api-client         | Web 使用的 HTTP 客户端与类型       |
-| deploy                      | 单容器构建和 Compose               |
-| skills/acceptances-v1       | 宿主机 Agent 接入                  |
+| 目录                        | 职责                                     |
+| --------------------------- | ---------------------------------------- |
+| cmd/server、cmd/acceptances | 服务和 CLI 入口                          |
+| internal                    | 报告、MySQL/SQLite、本地证据与 HTTP 实现 |
+| apps/web                    | React Web                                |
+| packages/api-client         | Web 使用的 HTTP 客户端与类型             |
+| deploy                      | 应用与 MySQL 的构建和 Compose            |
+| skills/acceptances-v1       | 宿主机 Agent 接入                        |
 
 领域词汇见 [GLOSSARY](GLOSSARY.md)，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md) 和[逐项评审决策](docs/adr/0002-per-check-human-review.md)。旧 V1 文档及 Git 历史保留为历史依据，不用于补回已删除能力。
 

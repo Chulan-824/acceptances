@@ -25,3 +25,7 @@ Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved.
 ## 2026-10-09 本地精简版
 
 当前代码与历史范围见 [复核记录](docs/licensing/current-v1-review.md)。新版 skill、报告存储与 Web 的当前原创文件已按 MIT 清单授权。新增 SQLite 驱动链、Go 标准库、React/React DOM/scheduler 与 Vite 的原许可保存在 LICENSES/runtime，逐项版本与摘要见 docs/licensing/runtime-materials.json。其原始版权人保持不变，本通知不将这些材料重新授权为项目 MIT。
+
+## 2026-10-22 MySQL 存储
+
+新增 Go MySQL Driver v1.9.3 和 filippo.io/edwards25519 v1.1.0，精确上游许可保存在 LICENSES/runtime，对应来源归档和摘要已追加到 docs/licensing/runtime-materials.json。Go MySQL Driver 使用 MPL-2.0；本次按原样依赖上游模块，其源码可由清单中的精确归档取得。独立 MySQL 服务采用固定摘要的官方镜像，本次仅在本机使用，保留镜像内通知，不包含于原应用镜像的历史核查范围。

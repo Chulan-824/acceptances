@@ -335,7 +335,8 @@ func TestStorageFailureDoesNotPublishPartialRun(t *testing.T) {
 }
 
 // An unavailable archive is a server failure, not a missing user resource.
-// Exercise the HTTP contract after the public server lifecycle closes storage.
+// Exercise storage lookup failures independently of server shutdown, which now
+// rejects new requests before they can touch the archive directory.
 func TestStorageFailureIsNotResourceNotFound(t *testing.T) {
 	app, pid, cid := setup(t)
 	run := upload(t, app, cid, "storage-failure", report, map[string]string{"log.txt": "evidence"}, 201)
@@ -358,7 +359,7 @@ func TestStorageFailureIsNotResourceNotFound(t *testing.T) {
 		path := strings.NewReplacer(pid, "missing", cid, "missing", rid, "missing").Replace(endpoint.path)
 		request(t, app, endpoint.method, "/api/v1"+path, endpoint.body, 404)
 	}
-	if err := app.Close(); err != nil {
+	if err := api.CloseArchiveDatabaseForTest(app); err != nil {
 		t.Fatal(err)
 	}
 	for _, endpoint := range endpoints {

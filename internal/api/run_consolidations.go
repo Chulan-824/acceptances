@@ -64,7 +64,7 @@ func (s *Server) consolidateRun(w http.ResponseWriter, r *http.Request) {
 		var sourceRaw, primaryRaw, sourceCampaign, primaryCampaign, sourceProject, primaryProject, sourceStatus, primaryStatus string
 		var sourceOrder, primaryOrder int64
 		read := func(key string, raw, campaign, project, status *string, order *int64) error {
-			return tx.QueryRowContext(r.Context(), `SELECT r.report,r.campaign_id,c.project_id,r.status,r.rowid FROM runs r JOIN campaigns c ON c.id=r.campaign_id WHERE r.id=?`, key).Scan(raw, campaign, project, status, order)
+			return tx.QueryRowContext(r.Context(), `SELECT r.report,r.campaign_id,c.project_id,r.status,r.`+s.orderColumn()+` FROM runs r JOIN campaigns c ON c.id=r.campaign_id WHERE r.id=?`, key).Scan(raw, campaign, project, status, order)
 		}
 		if err = read(in.SourceRunID, &sourceRaw, &sourceCampaign, &sourceProject, &sourceStatus, &sourceOrder); err == nil {
 			err = read(primaryID, &primaryRaw, &primaryCampaign, &primaryProject, &primaryStatus, &primaryOrder)
@@ -120,7 +120,7 @@ func (s *Server) consolidateRun(w http.ResponseWriter, r *http.Request) {
 			fail(w, 500, "READ_FAILED")
 			return
 		}
-		err = tx.QueryRowContext(r.Context(), `SELECT EXISTS(SELECT 1 FROM runs WHERE json_extract(report,'$.followUp.sourceRunId') IN (?,?))`, in.SourceRunID, primaryID).Scan(&conflict)
+		err = tx.QueryRowContext(r.Context(), `SELECT EXISTS(SELECT 1 FROM runs WHERE `+s.followUpSourceSQL()+` IN (?,?))`, in.SourceRunID, primaryID).Scan(&conflict)
 		if err != nil {
 			fail(w, 500, "READ_FAILED")
 			return
@@ -136,7 +136,7 @@ func (s *Server) consolidateRun(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if sourceCampaign != primaryCampaign {
-			_, _, err = applyRunMove(r.Context(), tx, in.SourceRunID, MoveRunInput{RequestID: id(), FromCampaignID: sourceCampaign, ToCampaignID: primaryCampaign, Reason: in.Reason})
+			_, _, err = s.applyRunMove(r.Context(), tx, in.SourceRunID, MoveRunInput{RequestID: id(), FromCampaignID: sourceCampaign, ToCampaignID: primaryCampaign, Reason: in.Reason})
 			if err != nil {
 				fail(w, 500, "SAVE_FAILED")
 				return
@@ -145,10 +145,10 @@ func (s *Server) consolidateRun(w http.ResponseWriter, r *http.Request) {
 		c = RunConsolidation{ID: id(), RequestID: in.RequestID, SourceRunID: in.SourceRunID, PrimaryRunID: primaryID, FromCampaignID: sourceCampaign, Reason: in.Reason, CreatedAt: now()}
 		_, err = tx.ExecContext(r.Context(), `INSERT INTO run_consolidations(id,request_id,source_run_id,primary_run_id,from_campaign_id,reason,created_at) VALUES(?,?,?,?,?,?,?)`, c.ID, c.RequestID, c.SourceRunID, c.PrimaryRunID, c.FromCampaignID, c.Reason, c.CreatedAt)
 		if err == nil {
-			err = refreshCampaignAfterMove(r.Context(), tx, sourceCampaign)
+			err = s.refreshCampaignAfterMove(r.Context(), tx, sourceCampaign)
 		}
 		if err == nil && sourceCampaign != primaryCampaign {
-			err = refreshCampaignAfterMove(r.Context(), tx, primaryCampaign)
+			err = s.refreshCampaignAfterMove(r.Context(), tx, primaryCampaign)
 		}
 		created = true
 	}
@@ -194,7 +194,7 @@ func consolidationCoverageMatches(source, primary Report) bool {
 }
 
 func (s *Server) loadRunConsolidations(v *Run) error {
-	rows, err := s.db.Query(`SELECT c.id,c.request_id,c.source_run_id,c.primary_run_id,c.from_campaign_id,c.reason,c.created_at,r.report FROM run_consolidations c JOIN runs r ON r.id=c.source_run_id WHERE c.source_run_id=? OR c.primary_run_id=? ORDER BY c.rowid`, v.ID, v.ID)
+	rows, err := s.db.Query(`SELECT c.id,c.request_id,c.source_run_id,c.primary_run_id,c.from_campaign_id,c.reason,c.created_at,r.report FROM run_consolidations c JOIN runs r ON r.id=c.source_run_id WHERE c.source_run_id=? OR c.primary_run_id=? ORDER BY c.`+s.orderColumn(), v.ID, v.ID)
 	if err != nil {
 		return err
 	}

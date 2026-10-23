@@ -54,6 +54,10 @@ func (s *Server) acceptAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	if err = s.lockArchiveRow(r.Context(), tx, "runs", v.ID); err != nil {
+		fail(w, 500, "SAVE_FAILED")
+		return
+	}
 	for _, review := range added {
 		if _, err = tx.ExecContext(r.Context(), "INSERT INTO reviews(id,run_id,kind,body,created_at,check_id,legacy) VALUES(?,?,?,?,?,?,0)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt, review.CheckID); err != nil {
 			break

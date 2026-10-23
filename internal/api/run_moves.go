@@ -54,7 +54,7 @@ func (s *Server) moveRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	move, created, err := applyRunMove(r.Context(), tx, r.PathValue("id"), in)
+	move, created, err := s.applyRunMove(r.Context(), tx, r.PathValue("id"), in)
 	if err != nil {
 		var failure *moveFailure
 		if errors.As(err, &failure) {
@@ -84,7 +84,7 @@ func (s *Server) moveRun(w http.ResponseWriter, r *http.Request) {
 	}{move, run})
 }
 
-func applyRunMove(ctx context.Context, tx *sql.Tx, runID string, in MoveRunInput) (RunMove, bool, error) {
+func (s *Server) applyRunMove(ctx context.Context, tx *sql.Tx, runID string, in MoveRunInput) (RunMove, bool, error) {
 	var move RunMove
 	err := tx.QueryRowContext(ctx, `SELECT id,run_id,request_id,from_campaign_id,to_campaign_id,reason,created_at FROM run_moves WHERE request_id=?`, in.RequestID).Scan(&move.ID, &move.RunID, &move.RequestID, &move.FromCampaignID, &move.ToCampaignID, &move.Reason, &move.CreatedAt)
 	if err == nil {
@@ -138,7 +138,7 @@ func applyRunMove(ctx context.Context, tx *sql.Tx, runID string, in MoveRunInput
 		return move, false, err
 	}
 	var referenced bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM runs WHERE json_extract(report,'$.followUp.sourceRunId')=?)`, runID).Scan(&referenced); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM runs WHERE `+s.followUpSourceSQL()+`=?)`, runID).Scan(&referenced); err != nil {
 		return move, false, err
 	}
 	if doc.FollowUp != nil || referenced {
@@ -152,17 +152,17 @@ func applyRunMove(ctx context.Context, tx *sql.Tx, runID string, in MoveRunInput
 		return move, false, err
 	}
 	for _, campaignID := range []string{current, in.ToCampaignID} {
-		if err = refreshCampaignAfterMove(ctx, tx, campaignID); err != nil {
+		if err = s.refreshCampaignAfterMove(ctx, tx, campaignID); err != nil {
 			return move, false, err
 		}
 	}
 	return move, true, nil
 }
 
-func refreshCampaignAfterMove(ctx context.Context, tx *sql.Tx, campaignID string) error {
+func (s *Server) refreshCampaignAfterMove(ctx context.Context, tx *sql.Tx, campaignID string) error {
 	var latest, raw, status string
 	// Publication order is unchanged by moving an existing row.
-	err := tx.QueryRowContext(ctx, `SELECT id,report,status FROM runs WHERE campaign_id=? AND NOT EXISTS(SELECT 1 FROM run_consolidations c WHERE c.source_run_id=runs.id) ORDER BY rowid DESC LIMIT 1`, campaignID).Scan(&latest, &raw, &status)
+	err := tx.QueryRowContext(ctx, `SELECT id,report,status FROM runs WHERE campaign_id=? AND NOT EXISTS(SELECT 1 FROM run_consolidations c WHERE c.source_run_id=runs.id) ORDER BY `+s.orderColumn()+` DESC LIMIT 1`, campaignID).Scan(&latest, &raw, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		latest = ""
 		status = "pending"
@@ -182,7 +182,7 @@ func refreshCampaignAfterMove(ctx context.Context, tx *sql.Tx, campaignID string
 }
 
 func (s *Server) runMoves(runID string) ([]RunMove, error) {
-	rows, err := s.db.Query(`SELECT id,run_id,request_id,from_campaign_id,to_campaign_id,reason,created_at FROM run_moves WHERE run_id=? ORDER BY rowid`, runID)
+	rows, err := s.db.Query(`SELECT id,run_id,request_id,from_campaign_id,to_campaign_id,reason,created_at FROM run_moves WHERE run_id=? ORDER BY `+s.orderColumn(), runID)
 	if err != nil {
 		return nil, err
 	}

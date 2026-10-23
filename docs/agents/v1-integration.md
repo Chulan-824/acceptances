@@ -55,7 +55,11 @@ Agent 读取 API 返回的 `checkReviews` 当前判断、`reviewCounts` 计数�
 
 CLI 原样传递 API JSON，`publish` 原样上传报告并添加回执 `webUrl`，现有命令无需新增参数。字段细节和执行顺序见 [反馈处理](../../skills/acceptances-v1/references/feedback.md)。
 
-## 当前 SQLite 升级
+## 存储升级
+
+当前日常服务使用 Docker MySQL。原 SQLite 保留数据迁移、备份和回退边界见 [MySQL 存储](../mysql-storage.md)，不改变 CLI/skill 的 HTTP 协议。
+
+### 历史 SQLite 逐项评审升级
 
 逐项评审使用增量迁移，报告和附件保留原样。旧整轮接受、拒绝保留为历史，各项开始待审并重算 Run 和 Campaign；作废保持作废。迁移版本保证重启不会再次清空新增人审。旧报告缺少 `scopeType` 仍可提交，视为范围未知，原包重试继续使用原内容。
 

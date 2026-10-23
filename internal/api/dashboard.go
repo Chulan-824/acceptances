@@ -46,7 +46,7 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
  LEFT JOIN runs r ON r.id=c.latest_run_id AND r.campaign_id=c.id
  LEFT JOIN delivery_snapshots d ON d.id=(
  SELECT id FROM delivery_snapshots WHERE campaign_id=c.id
- ORDER BY (status='valid') DESC,created_at DESC,rowid DESC LIMIT 1)
+ ORDER BY (status='valid') DESC,created_at DESC,`+s.orderColumn()+` DESC LIMIT 1)
  ORDER BY COALESCE(r.created_at,c.created_at) DESC,c.id`)
 	if err != nil {
 		fail(w, 500, "READ_FAILED")

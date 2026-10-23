@@ -1,5 +1,5 @@
-# 本地 SQLite 数据
+# 归档数据库
 
-服务启动时自动创建 `archive.db`，根据 SQLite `user_version` 执行初始化；未知未来版本拒绝启动。当前版本为 2，迁移与服务实现一起维护。逐项判断保存在 `reviews.check_id`，旧整轮决定通过 `legacy` 标记；一键交付追加逐项判断，沿用当前结构，无需迁移或清空既有判断。
+日常开发与应用容器使用 MySQL。结构源为 [001_archive.sql](migrations/mysql/001_archive.sql)，由 `embed.go` 随服务打包，`schema_migrations` 保存校验和与迁移状态。业务关系、字段和迁移方式见 [MySQL 存储](../docs/mysql-storage.md)。
 
-记录与证据位于同一专用数据目录。报告完整保存后才能查询，删除记录时级联清理反馈与附件；启动清理中断上传及无归属附件。旧 PostgreSQL 数据不迁移。
+SQLite v6 作为旧数据迁移源和默认隔离测试实现保留。迁移保留原报告、证据、评审、冻结档案与顺序，不删除源库。MySQL 的元数据与本地证据目录必须绑定、配套备份，交付档案按现有保留规则独立于原始 Run。旧 PostgreSQL 数据不在此导入协议内。

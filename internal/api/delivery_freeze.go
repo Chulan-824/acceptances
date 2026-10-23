@@ -112,7 +112,7 @@ func (s *Server) freezeDelivery(w http.ResponseWriter, r *http.Request) {
 	contentHash := digestBytes(raw)
 	err = s.db.QueryRowContext(r.Context(), "SELECT id FROM delivery_snapshots WHERE source_run_id=? AND content_hash=? AND status='valid'", prep.Run.ID, contentHash).Scan(&existingID)
 	if err == nil {
-		if _, err = s.db.ExecContext(r.Context(), "INSERT INTO delivery_requests VALUES(?,?,?)", input.RequestID, requestHash, existingID); err != nil {
+		if _, err = s.db.ExecContext(r.Context(), "INSERT INTO delivery_requests(request_id,request_hash,delivery_id) VALUES(?,?,?)", input.RequestID, requestHash, existingID); err != nil {
 			fail(w, 500, "SAVE_FAILED")
 			return
 		}
@@ -138,19 +138,22 @@ func (s *Server) freezeDelivery(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) persistDeliverySnapshot(ctx context.Context, snapshot DeliverySnapshot, requestHash, raw string) error {
 	return s.deliveryTransaction(ctx, func(tx *sql.Tx) error {
+		if err := s.lockArchiveRow(ctx, tx, "campaigns", snapshot.Payload.Campaign.ID); err != nil {
+			return err
+		}
 		var version int
 		err := tx.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0)+1 FROM delivery_snapshots WHERE campaign_id=?", snapshot.Payload.Campaign.ID).Scan(&version)
 		if err == nil {
 			_, err = tx.ExecContext(ctx, `INSERT INTO delivery_snapshots(id,project_id,campaign_id,source_run_id,version,request_id,request_hash,payload,content_hash,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, snapshot.ID, snapshot.Payload.Project.ID, snapshot.Payload.Campaign.ID, snapshot.Payload.Run.ID, version, snapshot.RequestID, requestHash, raw, snapshot.SHA256, snapshot.CreatedAt)
 		}
 		if err == nil {
-			_, err = tx.ExecContext(ctx, "INSERT INTO delivery_requests VALUES(?,?,?)", snapshot.RequestID, requestHash, snapshot.ID)
+			_, err = tx.ExecContext(ctx, "INSERT INTO delivery_requests(request_id,request_hash,delivery_id) VALUES(?,?,?)", snapshot.RequestID, requestHash, snapshot.ID)
 		}
 		if err == nil {
 			err = transitionDeliveries(ctx, tx, "campaign_id=? AND id<>? AND status='valid'", []any{snapshot.Payload.Campaign.ID, snapshot.ID}, "superseded", "已由新的明确冻结交付替代。", snapshot.ID, snapshot.CreatedAt)
 		}
 		if err == nil {
-			_, err = tx.ExecContext(ctx, "INSERT INTO delivery_events VALUES(?,?,?,?,?,?)", id(), snapshot.ID, "frozen", "人工确认交付范围、说明素材及审核结论。", snapshot.Payload.Run.ID, snapshot.CreatedAt)
+			_, err = tx.ExecContext(ctx, "INSERT INTO delivery_events(id,delivery_id,kind,reason,reference,created_at) VALUES(?,?,?,?,?,?)", id(), snapshot.ID, "frozen", "人工确认交付范围、说明素材及审核结论。", snapshot.Payload.Run.ID, snapshot.CreatedAt)
 		}
 		return err
 	})

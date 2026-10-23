@@ -4,18 +4,31 @@ export GOCACHE := $(CURDIR)/.cache/go-build
 export GOMODCACHE := $(CURDIR)/.cache/go-mod
 SUITE ?= all
 DOCKER_COMPOSE := docker compose -p acceptances -f deploy/compose.yaml
-FORMAT_PATHS := package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md skills/acceptances-v1
+MYSQL_DSN_FILE := $(CURDIR)/.cache/mysql/dev.dsn
+FORMAT_PATHS := package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md db/README.md docs/mysql-storage.md docs/adr/0010-mysql-archive.md docs/licensing/runtime-materials.json skills/acceptances-v1
 
-.PHONY: dev dev-up dev-status dev-stop services-status services-stop fmt lint typecheck test build toolchain docker-build docker-up docker-rebuild install-skill replace-skill
+.PHONY: dev dev-up dev-status dev-stop services-status services-stop fmt lint typecheck test build toolchain docker-build docker-up docker-migrate docker-rebuild mysql-up mysql-migrate mysql-status mysql-stop install-skill replace-skill
 
 toolchain:
 	node scripts/v1/toolchain.mjs
 
-dev: toolchain
-	node scripts/v1/dev.mjs
+dev: toolchain mysql-up
+	ACCEPTANCES_DB_DRIVER=mysql ACCEPTANCES_MYSQL_DSN_FILE="$(MYSQL_DSN_FILE)" node scripts/v1/dev.mjs
 
-dev-up: toolchain
-	node scripts/v1/dev.mjs up
+dev-up: toolchain mysql-up
+	ACCEPTANCES_DB_DRIVER=mysql ACCEPTANCES_MYSQL_DSN_FILE="$(MYSQL_DSN_FILE)" node scripts/v1/dev.mjs up
+
+mysql-up:
+	node scripts/v1/mysql.mjs up
+
+mysql-migrate: toolchain mysql-up
+	node scripts/v1/mysql.mjs migrate
+
+mysql-status:
+	node scripts/v1/mysql.mjs status
+
+mysql-stop:
+	node scripts/v1/mysql.mjs stop
 
 dev-status:
 	node scripts/v1/dev.mjs status
@@ -31,13 +44,13 @@ services-stop:
 
 fmt:
 	pnpm exec prettier --write $(FORMAT_PATHS)
-	go fmt ./cmd/... ./internal/...
+	go fmt ./cmd/... ./internal/... ./db/...
 
 lint: toolchain
 	pnpm exec prettier --check $(FORMAT_PATHS)
 	pnpm exec eslint apps/web packages/api-client scripts/v1 eslint.config.js
-	go vet ./cmd/... ./internal/...
-	@test -z "$$(gofmt -l cmd internal)" || (echo '请执行 make fmt'; exit 1)
+	go vet ./cmd/... ./internal/... ./db/...
+	@test -z "$$(gofmt -l cmd internal db)" || (echo '请执行 make fmt'; exit 1)
 
 typecheck: toolchain
 	pnpm -r typecheck
@@ -52,9 +65,15 @@ docker-build:
 	$(DOCKER_COMPOSE) build app
 
 docker-up:
+	node scripts/v1/mysql.mjs prepare
 	$(DOCKER_COMPOSE) up --build -d
 
 docker-rebuild: docker-up
+
+docker-migrate: docker-build
+	node scripts/v1/mysql.mjs prepare
+	$(DOCKER_COMPOSE) up -d --wait mysql
+	$(DOCKER_COMPOSE) run --rm --no-deps app --database=mysql --migrate-sqlite --data-dir=/var/lib/acceptances
 
 test:
 	node scripts/v1/test.mjs "$(SUITE)"

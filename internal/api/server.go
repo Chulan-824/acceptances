@@ -27,6 +27,13 @@ type Server struct {
 	dir       string
 	mu        sync.Mutex
 	artifacts *deliveryArtifacts
+	mysql     bool
+	lease     *sql.Conn
+	leaseName string
+	leaseID   uint64
+	directory *archiveDirectory
+	closeOnce sync.Once
+	closeErr  error
 }
 type Project struct {
 	ID          string `json:"id"`
@@ -35,12 +42,27 @@ type Project struct {
 	CreatedAt   string `json:"createdAt"`
 }
 
-func Open(dir string) (*Server, error) {
+func Open(dir string) (_ *Server, err error) {
 	absoluteDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
 	}
 	dir = absoluteDir
+	directory, err := lockArchiveDirectory(dir)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			directory.stop()
+			_ = directory.release()
+		}
+	}()
+	if _, err := os.Stat(filepath.Join(dir, ".mysql-storage.json")); err == nil {
+		return nil, fmt.Errorf("archive directory has migrated to MySQL; use MySQL or restore a backup into a separate directory")
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
 	if err := os.MkdirAll(filepath.Join(dir, "evidence"), 0700); err != nil {
 		return nil, err
 	}
@@ -58,7 +80,7 @@ func Open(dir string) (*Server, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
-	s := &Server{db: db, dir: dir, artifacts: &deliveryArtifacts{db: db, dir: dir}}
+	s := &Server{db: db, dir: dir, directory: directory, artifacts: &deliveryArtifacts{db: db, dir: dir}}
 	if _, err = db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
 		db.Close()
 		return nil, err
@@ -111,8 +133,30 @@ func Open(dir string) (*Server, error) {
 	}
 	return s, nil
 }
-func (s *Server) Close() error                    { return s.db.Close() }
-func (s *Server) Ready(ctx context.Context) error { return s.db.PingContext(ctx) }
+func (s *Server) Close() error {
+	s.closeOnce.Do(func() {
+		if s.directory != nil {
+			s.directory.stop()
+		}
+		if s.lease != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, _ = s.lease.ExecContext(ctx, "SELECT RELEASE_LOCK(?)", s.leaseName)
+			_ = s.lease.Close()
+		}
+		s.closeErr = s.db.Close()
+		if s.directory != nil {
+			s.closeErr = errors.Join(s.closeErr, s.directory.release())
+		}
+	})
+	return s.closeErr
+}
+func (s *Server) Ready(ctx context.Context) error {
+	if s.mysql {
+		return s.checkMySQLLease(ctx)
+	}
+	return s.db.PingContext(ctx)
+}
 func id() string {
 	b := make([]byte, 16)
 	if _, e := rand.Read(b); e != nil {
@@ -162,6 +206,21 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 func (s *Server) Handler() http.Handler { m := http.NewServeMux(); s.Register(m); return s.Guard(m) }
 func (s *Server) Guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !s.directory.retain() {
+			fail(w, http.StatusServiceUnavailable, "ARCHIVE_UNAVAILABLE")
+			return
+		}
+		defer func() {
+			if err := s.directory.release(); err != nil {
+				slog.ErrorContext(r.Context(), "release archive directory", "error", err)
+			}
+		}()
+		if s.mysql {
+			if err := s.checkMySQLLease(r.Context()); err != nil {
+				fail(w, http.StatusServiceUnavailable, "ARCHIVE_UNAVAILABLE")
+				return
+			}
+		}
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Cache-Control", "no-store")
 		host := r.Host
@@ -220,7 +279,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p = Project{id(), input.Name, input.Description, now()}
-	if _, e := s.db.ExecContext(r.Context(), "INSERT INTO projects VALUES(?,?,?,?)", p.ID, p.Name, p.Description, p.CreatedAt); e != nil {
+	if _, e := s.db.ExecContext(r.Context(), "INSERT INTO projects(id,name,description,created_at) VALUES(?,?,?,?)", p.ID, p.Name, p.Description, p.CreatedAt); e != nil {
 		fail(w, 500, "SAVE_FAILED")
 		return
 	}

@@ -163,6 +163,9 @@ func (s *Server) prepareDocument(ctx context.Context, deliveryID, requestID, ret
 		rawGuide = string(raw)
 	}
 	err = s.deliveryTransaction(ctx, func(tx *sql.Tx) error {
+		if err := s.lockArchiveRow(ctx, tx, "delivery_snapshots", deliveryID); err != nil {
+			return err
+		}
 		if document.ID == "" {
 			document = BusinessDocument{Kind: kind, Guide: guide, ID: id(), DeliveryID: deliveryID, RequestID: requestID, TemplateVersion: kind.templateVersion(), Status: "generating", Attempts: 1, CreatedAt: now()}
 			err = tx.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0)+1 FROM business_documents WHERE delivery_id=? AND kind=?", deliveryID, kind).Scan(&document.Version)
@@ -191,16 +194,18 @@ func (s *Server) checkDocumentDelivery(ctx context.Context, deliveryID string) e
 }
 
 func (s *Server) persistBusinessDocument(ctx context.Context, documentID, hash string) error {
-	result, err := s.db.ExecContext(ctx, "UPDATE business_documents SET status='succeeded',content_hash=?,completed_at=? WHERE id=? AND status='generating'", hash, now(), documentID)
-	if err != nil {
-		return err
-	}
-	count, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if count != 1 {
-		return fmt.Errorf("说明生成状态已变化")
-	}
-	return nil
+	return s.deliveryTransaction(ctx, func(tx *sql.Tx) error {
+		result, err := tx.ExecContext(ctx, "UPDATE business_documents SET status='succeeded',content_hash=?,completed_at=? WHERE id=? AND status='generating'", hash, now(), documentID)
+		if err != nil {
+			return err
+		}
+		count, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if count != 1 {
+			return fmt.Errorf("说明生成状态已变化")
+		}
+		return nil
+	})
 }

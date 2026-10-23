@@ -1,10 +1,12 @@
 package api
 
 import (
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -341,6 +343,10 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 		v.SourceRunAvailable = &available
 	}
 	target := filepath.Join(s.dir, "evidence", v.ID)
+	if e = s.checkTransactionLease(r.Context(), s.db); e != nil {
+		fail(w, 503, "ARCHIVE_UNAVAILABLE")
+		return
+	}
 	if e = os.Rename(stage, target); e != nil {
 		fail(w, 500, "SAVE_FAILED")
 		return
@@ -348,22 +354,30 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 	committed := false
 	defer func() {
 		if !committed {
-			os.RemoveAll(target)
+			if s.mysql {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				var owner string
+				// Do not delete on an unknown COMMIT outcome. A locking read waits
+				// for the original transaction before deciding file ownership.
+				err := s.db.QueryRowContext(ctx, "SELECT id FROM runs WHERE id=? FOR UPDATE", v.ID).Scan(&owner)
+				if !errors.Is(err, sql.ErrNoRows) {
+					return
+				}
+			}
+			_ = os.RemoveAll(target)
 		}
 	}()
-	tx, e := s.db.BeginTx(r.Context(), nil)
-	if e != nil {
-		fail(w, 500, "SAVE_FAILED")
-		return
-	}
-	defer tx.Rollback()
-	_, e = tx.ExecContext(r.Context(), "INSERT INTO runs(id,campaign_id,submission_id,hash,report,status,void_reason,created_at) VALUES(?,?,?,?,?,'pending','',?)", v.ID, v.CampaignID, v.SubmissionID, digest, string(canonical), v.CreatedAt)
-	if e == nil {
-		_, e = tx.ExecContext(r.Context(), "UPDATE campaigns SET latest_run_id=?,status='pending' WHERE id=?", v.ID, v.CampaignID)
-	}
-	if e == nil {
-		e = tx.Commit()
-	}
+	e = s.deliveryTransaction(r.Context(), func(tx *sql.Tx) error {
+		if err := s.lockArchiveRow(r.Context(), tx, "campaigns", v.CampaignID); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(r.Context(), "INSERT INTO runs(id,campaign_id,submission_id,hash,report,status,void_reason,created_at) VALUES(?,?,?,?,?,'pending','',?)", v.ID, v.CampaignID, v.SubmissionID, digest, string(canonical), v.CreatedAt); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(r.Context(), "UPDATE campaigns SET latest_run_id=?,status='pending' WHERE id=?", v.ID, v.CampaignID)
+		return err
+	})
 	if e != nil {
 		fail(w, 500, "SAVE_FAILED")
 		return
@@ -383,8 +397,8 @@ func (s *Server) run(key string) (Run, error) {
 		return v, e
 	}
 	v.Reviews = []Review{}
-	// SQLite rowid follows save order, including judgments with identical timestamps.
-	rows, e := s.db.Query("SELECT id,run_id,kind,body,created_at,check_id,legacy FROM reviews WHERE run_id=? ORDER BY rowid", key)
+	// Save order decides the latest judgment, even when timestamps are identical.
+	rows, e := s.db.Query("SELECT id,run_id,kind,body,created_at,check_id,legacy FROM reviews WHERE run_id=? ORDER BY "+s.orderColumn(), key)
 	if e != nil {
 		return v, e
 	}

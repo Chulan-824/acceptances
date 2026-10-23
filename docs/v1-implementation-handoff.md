@@ -4,6 +4,8 @@
 
 2026-10-11 逐项评审已完成实现、隔离真实 API/浏览器验证和保留数据的日常升级，具体证据见[验证报告](../artifacts/per-check-human-review/verification/REPORT.md)。日常旧报告的检查项仍待用户逐项评审。
 
+2026-10-22，日常存储切换为 MySQL，旧 SQLite 保留数据导入及验证入口见 [MySQL 存储](mysql-storage.md)。下方早期 SQLite 升级步骤作为历史交接保留，当前部署以该文档为准。
+
 ## 静态与集成检查
 
 ```sh

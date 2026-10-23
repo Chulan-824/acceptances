@@ -117,6 +117,10 @@ func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	if e = s.lockArchiveRow(r.Context(), tx, "runs", v.ID); e != nil {
+		fail(w, 500, "SAVE_FAILED")
+		return
+	}
 	_, e = tx.ExecContext(r.Context(), "INSERT INTO reviews(id,run_id,kind,body,created_at,check_id,legacy) VALUES(?,?,?,?,?,?,0)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt, review.CheckID)
 	if e == nil && in.Kind != "comment" {
 		_, e = tx.ExecContext(r.Context(), "UPDATE runs SET status=? WHERE id=?", v.humanStatus(), v.ID)
@@ -168,6 +172,10 @@ func (s *Server) voidRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	if e = s.lockArchiveRow(r.Context(), tx, "runs", v.ID); e != nil {
+		fail(w, 500, "SAVE_FAILED")
+		return
+	}
 	_, e = tx.ExecContext(r.Context(), "UPDATE runs SET status='void',void_reason=? WHERE id=?", in.Reason, v.ID)
 	if e == nil {
 		e = invalidateRunDeliveries(r.Context(), tx, v.ID, "来源验证记录已作废："+in.Reason, v.ID)

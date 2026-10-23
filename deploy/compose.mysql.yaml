@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: mysql:8.4@sha256:76f0358884cb92d9a086d24e5671c38048d3fef40f2588703d73eb55392d6b69
+    environment:
+      MYSQL_DATABASE: acceptances
+      MYSQL_USER: acceptances
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_bin
+      - --default-time-zone=+00:00
+      - --log-bin-trust-function-creators=1
+    secrets:
+      - mysql_password
+      - mysql_root_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$$(cat /run/secrets/mysql_password)"
+          mysql --protocol=TCP -h 127.0.0.1 -u acceptances
+          -D "$$MYSQL_DATABASE" -e 'SELECT 1' >/dev/null
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+secrets:
+  mysql_password:
+    file: ../.cache/mysql/password
+  mysql_root_password:
+    file: ../.cache/mysql/root-password
+volumes:
+  mysql-data:

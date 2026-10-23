@@ -72,6 +72,20 @@
       "goSum": "h1:IqGTL6eFMaDZZhEWwcREgeMXYwmW83LYW8cROZYkg+E=",
       "archiveHash": "h1:IqGTL6eFMaDZZhEWwcREgeMXYwmW83LYW8cROZYkg+E=",
       "matches": true
+    },
+    {
+      "module": "github.com/go-sql-driver/mysql",
+      "version": "v1.9.3",
+      "goSum": "h1:U/N249h2WzJ3Ukj8SowVFjdtZKfu9vlLZxjPXV1aweo=",
+      "archiveHash": "h1:U/N249h2WzJ3Ukj8SowVFjdtZKfu9vlLZxjPXV1aweo=",
+      "matches": true
+    },
+    {
+      "module": "filippo.io/edwards25519",
+      "version": "v1.1.0",
+      "goSum": "h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=",
+      "archiveHash": "h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=",
+      "matches": true
     }
   ],
   "materials": [
@@ -237,6 +251,22 @@
       "path": "LICENSES/runtime/vite@8.2.2/LICENSE",
       "sourcePath": "node_modules/.pnpm/vite@8.2.2_@types+node@26.6.4/node_modules/vite/LICENSE.md",
       "sha256": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c"
+    },
+    {
+      "component": "github.com/go-sql-driver/mysql",
+      "version": "v1.9.3",
+      "path": "LICENSES/runtime/github.com_go-sql-driver_mysql@v1.9.3/LICENSE",
+      "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85",
+      "sourcePath": ".cache/go-mod/github.com/go-sql-driver/mysql@v1.9.3/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/github.com/go-sql-driver/mysql/@v/v1.9.3.zip"
+    },
+    {
+      "component": "filippo.io/edwards25519",
+      "version": "v1.1.0",
+      "path": "LICENSES/runtime/filippo.io_edwards25519@v1.1.0/LICENSE",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "sourcePath": ".cache/go-mod/filippo.io/edwards25519@v1.1.0/LICENSE",
+      "sourceArchive": "https://proxy.golang.org/filippo.io/edwards25519/@v/v1.1.0.zip"
     }
   ]
 }

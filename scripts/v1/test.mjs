@@ -33,6 +33,27 @@ if (targets[suite]) {
 } else if (suite === "browser") {
   execFileSync("make", ["build"], { stdio: "inherit" });
   execFileSync("node", ["scripts/v1/browser-check.mjs"], { stdio: "inherit" });
+} else if (suite === "mysql") {
+  execFileSync("make", ["mysql-up"], { stdio: "inherit" });
+  execFileSync(
+    "go",
+    [
+      "test",
+      "./internal/api",
+      "-run",
+      "^TestMySQL",
+      "-count=1",
+      "-timeout=180s",
+    ],
+    {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        ACCEPTANCES_MYSQL_TEST_DSN_FILE:
+          process.cwd() + "/.cache/mysql/dev.dsn",
+      },
+    },
+  );
 } else if (suite === "agent") {
   await import("./agent-check.mjs");
 } else if (suite === "platform") {
@@ -41,7 +62,7 @@ if (targets[suite]) {
   await import("./e2e-check.mjs");
 } else {
   console.error(
-    "可用 SUITE=all|web|services|browser|http|cli|agent|platform|e2e；browser 使用隔离服务，e2e 需要外部真实浏览器驱动。",
+    "可用 SUITE=all|web|services|mysql|browser|http|cli|agent|platform|e2e；mysql 使用 Docker MySQL，browser 使用隔离服务，e2e 需要外部真实浏览器驱动。",
   );
   process.exit(2);
 }

@@ -42,7 +42,11 @@ func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
 		v := Repository{id(), key, in.Name, in.Source}
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		_, e := s.db.ExecContext(r.Context(), "INSERT INTO repositories VALUES(?,?,?,?) ON CONFLICT(project_id,source) DO NOTHING", v.ID, key, v.Name, v.Source)
+		query := "INSERT INTO repositories(id,project_id,name,source) VALUES(?,?,?,?) ON CONFLICT(project_id,source) DO NOTHING"
+		if s.mysql {
+			query = "INSERT INTO repositories(id,project_id,name,source) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE id=id"
+		}
+		_, e := s.db.ExecContext(r.Context(), query, v.ID, key, v.Name, v.Source)
 		if e != nil {
 			fail(w, 500, "SAVE_FAILED")
 			return
@@ -95,7 +99,7 @@ func (s *Server) campaigns(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		v := Campaign{id(), key, in.Title, in.Description, "pending", "", now()}
-		if _, e := s.db.ExecContext(r.Context(), "INSERT INTO campaigns VALUES(?,?,?,?,?,?,?)", v.ID, v.ProjectID, v.Title, v.Description, v.Status, v.LatestRunID, v.CreatedAt); e != nil {
+		if _, e := s.db.ExecContext(r.Context(), "INSERT INTO campaigns(id,project_id,title,description,status,latest_run_id,created_at) VALUES(?,?,?,?,?,?,?)", v.ID, v.ProjectID, v.Title, v.Description, v.Status, v.LatestRunID, v.CreatedAt); e != nil {
 			fail(w, 500, "SAVE_FAILED")
 			return
 		}

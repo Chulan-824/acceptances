@@ -25,7 +25,13 @@ func (s *Server) deliveryTransaction(ctx context.Context, write func(*sql.Tx) er
 			_ = conn.Raw(func(any) error { return driver.ErrBadConn })
 		}
 	}()
+	if err = s.checkTransactionLease(ctx, tx); err != nil {
+		return err
+	}
 	if err = write(tx); err != nil {
+		return err
+	}
+	if err = s.checkTransactionLease(ctx, tx); err != nil {
 		return err
 	}
 	err = tx.Commit()

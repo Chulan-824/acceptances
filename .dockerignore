@@ -16,6 +16,8 @@
 !cmd/**
 !internal/
 !internal/**
+!db/
+!db/**
 !apps/
 !apps/web/
 !apps/web/**

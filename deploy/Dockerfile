@@ -16,6 +16,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd cmd
 COPY internal internal
+COPY db db
 COPY apps/web/*.go apps/web/
 COPY apps/web/src/theme.css apps/web/src/theme.css
 COPY apps/web/public/fonts/geist apps/web/public/fonts/geist

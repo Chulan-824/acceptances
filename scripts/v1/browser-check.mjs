@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { suites, selectSuites } from "./browser-suites.mjs";
 import { startIsolatedServer } from "./services.mjs";
+import { createMySQLTestDatabase } from "./mysql-test-database.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 process.chdir(root);
@@ -24,6 +25,12 @@ assert.ok(
   "只支持 --list；通过 BROWSER_GROUPS 选择分组",
 );
 const selected = selectSuites(process.env.BROWSER_GROUPS || "all");
+assert.ok(
+  ["sqlite", "mysql"].includes(
+    process.env.ACCEPTANCES_BROWSER_DATABASE || "sqlite",
+  ),
+  "浏览器数据库只支持 sqlite 或 mysql",
+);
 if (process.argv.includes("--list")) {
   for (const name of selected)
     console.log(
@@ -54,19 +61,39 @@ async function buildDigest(server, web) {
 }
 
 async function startServer(name, output, buildDirectory, onStop) {
-  return startIsolatedServer({
-    kind: "browser",
-    binary: join(buildDirectory, "server"),
-    web: join(buildDirectory, "web"),
-    // The deletion fault-injection seam restricts writes to this exact prefix.
-    directoryPrefix:
-      name === "deletion-real"
-        ? "/tmp/acceptances-deletion."
-        : "/tmp/acceptances-browser-",
-    logPath: join(output, "server.log"),
-    onStop,
-    signals: false, // The browser runner owns interruption and evidence finalization.
-  });
+  const database =
+    process.env.ACCEPTANCES_BROWSER_DATABASE === "mysql"
+      ? await createMySQLTestDatabase()
+      : null;
+  try {
+    const service = await startIsolatedServer({
+      kind: "browser",
+      binary: join(buildDirectory, "server"),
+      web: join(buildDirectory, "web"),
+      // The deletion fault-injection seam restricts writes to this exact prefix.
+      directoryPrefix:
+        name === "deletion-real"
+          ? "/tmp/acceptances-deletion."
+          : "/tmp/acceptances-browser-",
+      logPath: join(output, "server.log"),
+      onStop,
+      signals: false, // The browser runner owns interruption and evidence finalization.
+      environment: database?.environment,
+    });
+    return {
+      ...service,
+      async stop() {
+        try {
+          return await service.stop();
+        } finally {
+          await database?.close();
+        }
+      },
+    };
+  } catch (error) {
+    await database?.close();
+    throw error;
+  }
 }
 
 async function main() {
@@ -81,6 +108,7 @@ async function main() {
   const git = (...args) =>
     execFileSync("git", args, { encoding: "utf8" }).trim();
   const report = {
+    databaseEngine: process.env.ACCEPTANCES_BROWSER_DATABASE || "sqlite",
     startedAt: new Date().toISOString(),
     sourceCommit: git("rev-parse", "HEAD"),
     dirty: Boolean(git("status", "--porcelain=v1")),
