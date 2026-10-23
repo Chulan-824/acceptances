@@ -5,10 +5,8 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -19,6 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Chulan-824/acceptances/internal/dao"
+	"github.com/Chulan-824/acceptances/internal/handler"
+	"github.com/Chulan-824/acceptances/internal/service"
 	_ "modernc.org/sqlite"
 )
 
@@ -169,14 +170,10 @@ func id() string {
 }
 func now() string { return time.Now().UTC().Format(time.RFC3339Nano) }
 func respond(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if v != nil {
-		_ = json.NewEncoder(w).Encode(v)
-	}
+	handler.WriteJSON(w, status, v)
 }
 func fail(w http.ResponseWriter, status int, code string) {
-	respond(w, status, map[string]string{"code": code, "message": strings.ReplaceAll(strings.ToLower(code), "_", " ")})
+	handler.WriteError(w, status, code)
 }
 
 // lookupFailure distinguishes a missing record from an unreadable archive.
@@ -189,16 +186,8 @@ func lookupFailure(w http.ResponseWriter, r *http.Request, err error, missing st
 	fail(w, http.StatusInternalServerError, "READ_FAILED")
 }
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(v); err != nil {
-		fail(w, 400, "INVALID_INPUT")
-		return false
-	}
-	var extra any
-	if d.Decode(&extra) != io.EOF {
-		fail(w, 400, "INVALID_INPUT")
+	if err := handler.DecodeJSON(w, r, v); err != nil {
+		fail(w, http.StatusBadRequest, "INVALID_INPUT")
 		return false
 	}
 	return true
@@ -246,10 +235,7 @@ func (s *Server) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/projects/{id}", s.getProject)
 	m.HandleFunc("GET /api/v1/projects/{id}/repositories", s.repositories)
 	m.HandleFunc("POST /api/v1/projects/{id}/repositories", s.repositories)
-	m.HandleFunc("GET /api/v1/projects/{id}/campaigns", s.campaigns)
-	m.HandleFunc("POST /api/v1/projects/{id}/campaigns", s.campaigns)
-	m.HandleFunc("GET /api/v1/campaigns/{id}", s.getCampaign)
-	m.HandleFunc("PATCH /api/v1/campaigns/{id}", s.updateCampaignDescription)
+	handler.NewCampaign(service.NewCampaign(dao.NewCampaign(s.db), &s.mu)).Register(m)
 	m.HandleFunc("POST /api/v1/campaigns/{id}/runs", s.submitRun)
 	m.HandleFunc("GET /api/v1/campaigns/{id}/runs", s.listRuns)
 	m.HandleFunc("GET /api/v1/runs/{id}", s.getRun)

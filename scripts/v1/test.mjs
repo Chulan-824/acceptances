@@ -1,6 +1,16 @@
 import { execFileSync } from "node:child_process";
 const suite = process.argv[2] || "all";
-const targets = { all: "./...", http: "./internal/api", cli: "./internal/cli" };
+const targets = {
+  all: ["./..."],
+  http: [
+    "./internal/api",
+    "./internal/handler",
+    "./internal/service",
+    "./internal/dao",
+    "./internal/httpserver",
+  ],
+  cli: ["./internal/cli"],
+};
 if (suite === "all" || suite === "web") {
   execFileSync("node", ["--test", "apps/web/tests/*.test.mjs"], {
     stdio: "inherit",
@@ -25,7 +35,7 @@ if (suite === "services") {
   });
 }
 if (targets[suite]) {
-  execFileSync("go", ["test", targets[suite], "-count=1", "-timeout=120s"], {
+  execFileSync("go", ["test", ...targets[suite], "-count=1", "-timeout=120s"], {
     stdio: "inherit",
   });
 } else if (suite === "web" || suite === "services") {

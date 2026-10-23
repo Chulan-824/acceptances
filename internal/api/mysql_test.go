@@ -233,6 +233,9 @@ func TestMySQLRequestCancellationAndLeaseLoss(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer app.Close()
+	pid := request(t, app, "POST", "/api/v1/projects", `{"name":"Lease guard"}`, 201)["id"].(string)
+	listPath := "/api/v1/projects/" + pid + "/campaigns"
+	cid := request(t, app, "POST", listPath, `{"title":"Campaign"}`, 201)["id"].(string)
 	// A browser can cancel parallel fetches during navigation. These contexts
 	// must never close the dedicated connection that owns the archive lease.
 	var requests sync.WaitGroup
@@ -264,4 +267,16 @@ func TestMySQLRequestCancellationAndLeaseLoss(t *testing.T) {
 		t.Fatal("lost lease reported ready")
 	}
 	request(t, app, "GET", "/api/v1/projects", "", 503)
+	request(t, app, "GET", listPath, "", 503)
+	request(t, app, "POST", listPath, `{"title":"Must not be created"}`, 503)
+	request(t, app, "GET", "/api/v1/campaigns/"+cid, "", 503)
+	request(t, app, "PATCH", "/api/v1/campaigns/"+cid, `{"description":"Must not be saved"}`, 503)
+	var count int
+	var description string
+	if err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM campaigns").Scan(&count); err != nil || count != 1 {
+		t.Fatalf("lease loss allowed campaign creation: %d, %v", count, err)
+	}
+	if err := db.QueryRowContext(t.Context(), "SELECT description FROM campaigns WHERE id=?", cid).Scan(&description); err != nil || description != "" {
+		t.Fatalf("lease loss allowed campaign update: %q, %v", description, err)
+	}
 }

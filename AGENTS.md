@@ -12,6 +12,10 @@ Five canonical roles, label strings equal to role names (`needs-triage`, `needs-
 
 Single-context: one `GLOSSARY.md` at the repo root and ADRs in `docs/adr/`. See `docs/agents/domain.md`.
 
+### Go backend
+
+Campaign 的创建、列表、详情和描述修改已按 Gin Handler → Service → DAO 分层。修改这四个接口前读取 [Campaign 后端样板](docs/agents/campaign-backend.md)。其他模块继续沿用现有实现，按任务范围迁移。
+
 ### Verification
 
 Before choosing checks or reporting verification results, read [the toolchain guide](docs/toolchain.md) for command coverage and evidence boundaries. For product acceptance, follow [the T1–T9 handoff](docs/v1-implementation-handoff.md).

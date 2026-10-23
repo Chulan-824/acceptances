@@ -32,6 +32,8 @@
 
 旧 DTO、OpenAPI 和 sqlc 生成流程已移除。未知测试分组返回非零，不将未运行标记为通过。
 
+`make test SUITE=http` 同时运行 `internal/api`、`internal/handler`、`internal/service`、`internal/dao` 和 `internal/httpserver`，覆盖 Campaign 分层测试及现有 HTTP 集成测试。MySQL 分组继续通过临时数据库验证真实存储行为。
+
 `pnpm check` 执行 lint、类型检查、Go/Web 测试和构建，不启动 Playwright 浏览器。日常浏览器回归使用用户指定的 Codex `@Chrome`、Claude in Chrome 或 `ego-browser`，按 [Agent 浏览器约定](../AGENTS.md#browser-regression) 执行；验证失败或工具不可用时不自动切换到 Playwright。
 
 上表 `make test SUITE=browser` 及其别名 `pnpm test:browser` 是保留的 Playwright 脚本入口，仅在用户明确要求执行此类脚本回归时运行。届时可用 `BROWSER_GROUPS=review,preview pnpm test:browser` 选择分组。不要因一般的浏览器回归请求或 Jev 接入自动启动这些入口。依赖、覆盖范围、隔离与产物说明见 [Web 回归验证](../apps/web/tests/README.md)。
