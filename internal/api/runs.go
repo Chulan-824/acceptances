@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
@@ -11,9 +10,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
-	"os"
-	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 )
@@ -192,12 +189,12 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "MULTIPART_REQUIRED")
 		return
 	}
-	stage, e := os.MkdirTemp(s.dir, ".upload-")
+	batch, e := s.beginFileBatch(r.Context())
 	if e != nil {
 		fail(w, 500, "SAVE_FAILED")
 		return
 	}
-	defer os.RemoveAll(stage)
+	defer batch.Close()
 	var raw, submission string
 	seen := map[string]bool{}
 	hashes := map[string]string{}
@@ -250,26 +247,17 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		file, err := os.OpenFile(filepath.Join(stage, filename), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-		if err != nil {
-			part.Close()
-			fail(w, 500, "SAVE_FAILED")
-			return
-		}
-		h := sha256.New()
-		_, copyErr := io.Copy(io.MultiWriter(file, h), part)
-		syncErr := file.Sync()
-		closeErr := file.Close()
+		content, err := batch.put(filename, part)
 		part.Close()
-		if copyErr != nil {
-			fail(w, 400, "INCOMPLETE_UPLOAD")
+		if err != nil {
+			if _, incomplete := errors.AsType[*fileInputError](err); incomplete {
+				fail(w, 400, "INCOMPLETE_UPLOAD")
+			} else {
+				fail(w, 500, "SAVE_FAILED")
+			}
 			return
 		}
-		if syncErr != nil || closeErr != nil {
-			fail(w, 500, "SAVE_FAILED")
-			return
-		}
-		hashes[filename] = hex.EncodeToString(h.Sum(nil))
+		hashes[filename] = content.sha256
 	}
 	if strings.TrimSpace(submission) == "" || len(submission) > 200 {
 		fail(w, 400, "SUBMISSION_ID_REQUIRED")
@@ -304,7 +292,7 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 	for name := range hashes {
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	slices.Sort(names)
 	for _, name := range names {
 		fmt.Fprintf(h, "%s:%s\n", name, hashes[name])
 	}
@@ -342,33 +330,7 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 		available := true
 		v.SourceRunAvailable = &available
 	}
-	target := filepath.Join(s.dir, "evidence", v.ID)
-	if e = s.checkTransactionLease(r.Context(), s.db); e != nil {
-		fail(w, 503, "ARCHIVE_UNAVAILABLE")
-		return
-	}
-	if e = os.Rename(stage, target); e != nil {
-		fail(w, 500, "SAVE_FAILED")
-		return
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			if s.mysql {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				defer cancel()
-				var owner string
-				// Do not delete on an unknown COMMIT outcome. A locking read waits
-				// for the original transaction before deciding file ownership.
-				err := s.db.QueryRowContext(ctx, "SELECT id FROM runs WHERE id=? FOR UPDATE", v.ID).Scan(&owner)
-				if !errors.Is(err, sql.ErrNoRows) {
-					return
-				}
-			}
-			_ = os.RemoveAll(target)
-		}
-	}()
-	e = s.deliveryTransaction(r.Context(), func(tx *sql.Tx) error {
+	e = batch.publishRun(r.Context(), fileOwner{"evidence", v.ID}, func(tx *sql.Tx) error {
 		if err := s.lockArchiveRow(r.Context(), tx, "campaigns", v.CampaignID); err != nil {
 			return err
 		}
@@ -382,7 +344,6 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 		fail(w, 500, "SAVE_FAILED")
 		return
 	}
-	committed = true
 	v.deriveCheckReviews()
 	respond(w, 201, v)
 }

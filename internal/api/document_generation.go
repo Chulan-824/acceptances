@@ -139,7 +139,7 @@ func (s *Server) prepareDocument(ctx context.Context, deliveryID, requestID, ret
 	if document.ID != "" && !supportedDocumentTemplate(kind, document.TemplateVersion) {
 		return document, snapshot, false, documentProblem{"DOCUMENT_TEMPLATE_CHANGED", "该失败版本的模板已不受支持，请创建新说明版本。"}
 	}
-	if document.ID != "" {
+	if document.ID != "" && !s.databaseFiles() {
 		if err = s.artifacts.prepareDocumentRetry(document.ID); err != nil {
 			return document, snapshot, false, err
 		}
@@ -195,17 +195,21 @@ func (s *Server) checkDocumentDelivery(ctx context.Context, deliveryID string) e
 
 func (s *Server) persistBusinessDocument(ctx context.Context, documentID, hash string) error {
 	return s.deliveryTransaction(ctx, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(ctx, "UPDATE business_documents SET status='succeeded',content_hash=?,completed_at=? WHERE id=? AND status='generating'", hash, now(), documentID)
-		if err != nil {
-			return err
-		}
-		count, err := result.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if count != 1 {
-			return fmt.Errorf("说明生成状态已变化")
-		}
-		return nil
+		return persistBusinessDocumentTx(ctx, tx, documentID, hash)
 	})
+}
+
+func persistBusinessDocumentTx(ctx context.Context, tx *sql.Tx, documentID, hash string) error {
+	result, err := tx.ExecContext(ctx, "UPDATE business_documents SET status='succeeded',content_hash=?,completed_at=? WHERE id=? AND status='generating'", hash, now(), documentID)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return fmt.Errorf("说明生成状态已变化")
+	}
+	return nil
 }

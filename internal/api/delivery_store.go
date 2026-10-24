@@ -109,7 +109,7 @@ func (s *Server) deliveryEvidence(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("filename")
 	for _, file := range snapshot.Payload.Files {
 		if file.Path == name {
-			serveVerifiedEvidence(w, r, s.dir+"/deliveries/"+snapshot.ID+"/evidence", name, &file)
+			s.serveOwnedEvidence(w, r, fileOwner{"deliveries", snapshot.ID}, name, &file)
 			return
 		}
 	}

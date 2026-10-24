@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,9 +26,7 @@ func OpenMySQL(dir, dsn string) (*Server, error) {
 		return nil, err
 	}
 	s := &Server{db: db, mysql: true}
-	if s.dir, err = filepath.Abs(dir); err == nil {
-		s.directory, err = lockArchiveDirectory(s.dir)
-	}
+	s.dir, err = filepath.Abs(dir)
 	if err == nil {
 		err = s.acquireMySQLLease(context.Background())
 	}
@@ -35,9 +34,18 @@ func OpenMySQL(dir, dsn string) (*Server, error) {
 		err = s.migrateMySQL(context.Background())
 	}
 	if err == nil {
-		err = s.bindMySQLDirectory(false)
+		err = s.initializeFileArchive(context.Background())
 	}
-	if err == nil {
+	if err == nil && !s.databaseFiles() {
+		err = s.bootstrapEmptyFiles(context.Background())
+	}
+	if err == nil && !s.databaseFiles() {
+		s.directory, err = lockArchiveDirectory(s.dir)
+		if err == nil {
+			err = s.bindMySQLDirectory(false)
+		}
+	}
+	if err == nil && !s.databaseFiles() {
 		for _, name := range []string{"evidence", "deliveries", "documents"} {
 			if err = os.MkdirAll(filepath.Join(s.dir, name), 0700); err != nil {
 				break
@@ -45,7 +53,20 @@ func OpenMySQL(dir, dsn string) (*Server, error) {
 		}
 	}
 	if err == nil {
-		s.artifacts = &deliveryArtifacts{db: db, dir: s.dir, mysql: true}
+		if s.databaseFiles() {
+			s.directory = &archiveDirectory{refs: 1}
+			// A retained binding is still checked, but an empty local directory
+			// is valid after restoring a complete database-only archive.
+			if _, statErr := os.Stat(filepath.Join(s.dir, ".mysql-storage.json")); statErr == nil {
+				err = s.bindMySQLDirectory(false)
+			} else if !errors.Is(statErr, os.ErrNotExist) {
+				err = statErr
+			}
+		} else {
+			s.artifacts = &deliveryArtifacts{db: db, dir: s.dir, mysql: true}
+		}
+	}
+	if err == nil {
 		err = s.cleanupOrphans()
 	}
 	if err != nil {
@@ -155,36 +176,86 @@ func (s *Server) migrateMySQL(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	data, err := schema.MySQL.ReadFile("migrations/mysql/001_archive.sql")
+	entries, err := schema.MySQL.ReadDir("migrations/mysql")
 	if err != nil {
 		return err
 	}
-	checksum := digestBytes(data)
-	var version int
-	var saved string
-	var dirty bool
-	err = s.db.QueryRowContext(ctx, "SELECT version,checksum,dirty FROM schema_migrations ORDER BY version DESC LIMIT 1").Scan(&version, &saved, &dirty)
-	if err == nil {
-		if version != 1 || saved != checksum || dirty {
+	names := []string{}
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".sql") {
+			names = append(names, entry.Name())
+		}
+	}
+	slices.Sort(names)
+	type appliedMigration struct {
+		checksum, archive string
+		dirty             bool
+	}
+	applied := map[int]appliedMigration{}
+	rows, err := s.db.QueryContext(ctx, "SELECT version,checksum,archive_id,dirty FROM schema_migrations ORDER BY version")
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var version int
+		var record appliedMigration
+		if err = rows.Scan(&version, &record.checksum, &record.archive, &record.dirty); err != nil {
+			rows.Close()
+			return err
+		}
+		applied[version] = record
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	if len(applied) > len(names) {
+		return fmt.Errorf("MySQL schema is newer than this server")
+	}
+	archiveID := id()
+	if first, ok := applied[1]; ok {
+		archiveID = first.archive
+	}
+	// Validate the entire history before any DDL. Never repair dirty migrations
+	// or replace the original archive identity automatically.
+	for version, record := range applied {
+		if version < 1 || version > len(names) {
+			return fmt.Errorf("unsupported MySQL schema version %d", version)
+		}
+		data, readErr := schema.MySQL.ReadFile("migrations/mysql/" + names[version-1])
+		if readErr != nil {
+			return readErr
+		}
+		if version > len(applied) || record.dirty || record.archive != archiveID || record.checksum != digestBytes(data) {
 			return fmt.Errorf("MySQL schema version/checksum mismatch or interrupted migration; inspect schema_migrations before recovery")
 		}
-		return nil
 	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
-	// MySQL DDL commits implicitly. Persist dirty before executing any statements
-	// and refuse automatic continuation after a partial schema migration.
-	if _, err = s.db.ExecContext(ctx, "INSERT INTO schema_migrations(version,checksum,archive_id,dirty) VALUES(1,?,?,1)", checksum, id()); err != nil {
-		return err
-	}
-	for i, statement := range strings.Split(string(data), "-- statement\n") {
-		if _, err = s.db.ExecContext(ctx, statement); err != nil {
-			return fmt.Errorf("MySQL schema statement %d: %w", i+1, err)
+	for index, name := range names {
+		version := index + 1
+		if _, ok := applied[version]; ok {
+			continue
+		}
+		data, readErr := schema.MySQL.ReadFile("migrations/mysql/" + name)
+		if readErr != nil {
+			return readErr
+		}
+		if _, err = s.db.ExecContext(ctx, "INSERT INTO schema_migrations(version,checksum,archive_id,dirty) VALUES(?,?,?,1)", version, digestBytes(data), archiveID); err != nil {
+			return err
+		}
+		for statement := range strings.SplitSeq(string(data), "-- statement\n") {
+			if strings.TrimSpace(statement) == "" {
+				continue
+			}
+			if _, err = s.db.ExecContext(ctx, statement); err != nil {
+				return fmt.Errorf("MySQL schema %s: %w", name, err)
+			}
+		}
+		if _, err = s.db.ExecContext(ctx, "UPDATE schema_migrations SET dirty=0 WHERE version=?", version); err != nil {
+			return err
 		}
 	}
-	_, err = s.db.ExecContext(ctx, "UPDATE schema_migrations SET dirty=0 WHERE version=1")
-	return err
+	return nil
 }
 
 type mysqlBinding struct {

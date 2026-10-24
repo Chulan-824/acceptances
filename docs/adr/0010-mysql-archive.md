@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded-in-part
 ---
 
 # MySQL 保存归档元数据，本地文件保留证据
@@ -13,3 +13,5 @@ status: accepted
 SQLite 作为迁移源和隔离测试实现保留。迁移必须先停写、完整备份，向空目标事务导入并逐表核对，不清空源库或重置人工判断。数据库与文件目录绑定，目标不同或结果未知时停止清理，禁止静默回退。
 
 运行方式、结构与恢复边界见 [MySQL 存储](../mysql-storage.md)。本决策和命令说明不作为验证通过证据。
+
+文件存储部分由 [ADR-0011](0011-mysql-file-content.md) 替代，业务结构和历史迁移规则继续有效。

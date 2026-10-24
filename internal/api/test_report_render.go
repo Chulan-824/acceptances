@@ -8,7 +8,7 @@ import (
 	"html/template"
 	"image"
 	"io"
-	"os"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"unicode/utf8"
@@ -136,7 +136,7 @@ var testReportTemplate = template.Must(template.New("test-report").Funcs(templat
 	"human":        humanResultLabel,
 }).Parse(testReportHTML))
 
-func renderTestReport(output io.Writer, root *os.Root, snapshot DeliverySnapshot, document BusinessDocument) error {
+func renderTestReport(output io.Writer, root fs.FS, snapshot DeliverySnapshot, document BusinessDocument) error {
 	if err := verifyFrozenDocumentEvidence(root, snapshot); err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func renderTestReport(output io.Writer, root *os.Root, snapshot DeliverySnapshot
 	return testReportTemplate.Execute(output, view)
 }
 
-func testReportFilePreview(root *os.Root, item *testReportFile, textBudget, imageBudget *int64) error {
+func testReportFilePreview(root fs.FS, item *testReportFile, textBudget, imageBudget *int64) error {
 	extension := strings.ToLower(filepath.Ext(item.Path))
 	switch extension {
 	case ".png", ".jpg", ".jpeg", ".gif":

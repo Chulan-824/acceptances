@@ -70,10 +70,7 @@ func TestMySQLMigrationLocksLegacySQLiteThroughImport(t *testing.T) {
 		t.Fatal("idle legacy WAL connection was not rejected:", err)
 	}
 	legacy.Close()
-	bootstrap, err := api.OpenMySQL(t.TempDir(), dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
+	bootstrap := openLegacyMySQL(t, t.TempDir(), dsn)
 	bootstrap.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -144,10 +141,8 @@ func TestMySQLLeaseLossDuringPublication(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				dsn, db := isolatedMySQL(t)
 				dir := t.TempDir()
-				app, err := api.OpenMySQL(dir, dsn)
-				if err != nil {
-					t.Fatal(err)
-				}
+				app := openLegacyMySQL(t, dir, dsn)
+				var err error
 				defer app.Close()
 				pid := request(t, app, "POST", "/api/v1/projects", `{"name":"lease-loss fixture"}`, 201)["id"].(string)
 				cid := request(t, app, "POST", "/api/v1/projects/"+pid+"/campaigns", `{"title":"lease-loss fixture"}`, 201)["id"].(string)
@@ -270,10 +265,7 @@ func TestMySQLBindingWriteFailureHelper(t *testing.T) {
 func TestMySQLBindingRejectsCorruptionWithoutChangingFiles(t *testing.T) {
 	dsn, _ := isolatedMySQL(t)
 	dir := t.TempDir()
-	app, err := api.OpenMySQL(dir, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
+	app := openLegacyMySQL(t, dir, dsn)
 	app.Close()
 	path := filepath.Join(dir, ".mysql-storage.json")
 	original, err := os.ReadFile(path)
@@ -307,12 +299,14 @@ func TestMySQLBindingRejectsCorruptionWithoutChangingFiles(t *testing.T) {
 
 func TestMySQLBindingWriteFailureCanRetry(t *testing.T) {
 	dsn, _ := isolatedMySQL(t)
-	bootstrap, err := api.OpenMySQL(t.TempDir(), dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
+	var err error
+	bootstrap := openLegacyMySQL(t, t.TempDir(), dsn)
 	bootstrap.Close()
 	dir := t.TempDir()
+	// Explicitly request the legacy filesystem adapter in the child process.
+	if err = os.MkdirAll(filepath.Join(dir, "data", "evidence"), 0700); err != nil {
+		t.Fatal(err)
+	}
 	if err = os.WriteFile(filepath.Join(dir, "dsn"), []byte(dsn), 0600); err != nil {
 		t.Fatal(err)
 	}

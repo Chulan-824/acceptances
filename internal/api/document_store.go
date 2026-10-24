@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 )
 
 func (s *Server) document(key string) (BusinessDocument, error) {
@@ -90,18 +88,23 @@ func (s *Server) documentHTML(w http.ResponseWriter, r *http.Request) {
 		deliveryFailure(w, 409, "DOCUMENT_NOT_READY", "说明尚未生成成功，没有可预览或下载的成品。")
 		return
 	}
-	root, err := os.OpenRoot(filepath.Join(s.dir, "documents", document.ID))
+	root, err := s.openFiles(r.Context(), fileOwner{"documents", document.ID})
 	if err != nil {
 		fail(w, 500, "DOCUMENT_FILE_UNAVAILABLE")
 		return
 	}
 	defer root.Close()
-	file, err := root.Open("business.html")
+	opened, err := root.Open("business.html")
 	if err != nil {
 		fail(w, 500, "DOCUMENT_FILE_UNAVAILABLE")
 		return
 	}
-	defer file.Close()
+	defer opened.Close()
+	file, ok := opened.(readSeekFile)
+	if !ok {
+		fail(w, 500, "READ_FAILED")
+		return
+	}
 	info, err := file.Stat()
 	if err != nil || !info.Mode().IsRegular() {
 		fail(w, 500, "DOCUMENT_FILE_UNAVAILABLE")

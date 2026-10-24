@@ -1,13 +1,13 @@
 package api
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
+	"io/fs"
 	"regexp"
 	"sort"
 	"strings"
@@ -21,7 +21,7 @@ func digestBytes(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func readMaterial(root *os.Root, name string, target any) error {
+func readMaterial(root fs.FS, name string, target any) error {
 	if !validName(name) {
 		return fmt.Errorf("材料文件名无效")
 	}
@@ -45,7 +45,7 @@ func readMaterial(root *os.Root, name string, target any) error {
 	return nil
 }
 
-func archiveFiles(root *os.Root, evidence []Evidence) ([]ArchivedFile, error) {
+func archiveFiles(root fs.FS, evidence []Evidence) ([]ArchivedFile, error) {
 	files := make([]ArchivedFile, 0, len(evidence))
 	for _, item := range evidence {
 		if !validName(item.Path) {
@@ -120,7 +120,7 @@ func (s *Server) prepareDelivery(runID string) (DeliveryPreparation, error) {
 			}
 		}
 	}
-	root, err := os.OpenRoot(filepath.Join(s.dir, "evidence", run.ID))
+	root, err := s.openFiles(context.Background(), fileOwner{"evidence", run.ID})
 	if err != nil {
 		issue("EVIDENCE_UNAVAILABLE", "本轮附件无法读取。")
 	} else {
@@ -164,7 +164,7 @@ func validateDeliverySources(versions []Version) error {
 	return nil
 }
 
-func loadDeliveryMaterials(root *os.Root, prep *DeliveryPreparation) error {
+func loadDeliveryMaterials(root fs.FS, prep *DeliveryPreparation) error {
 	hashes := map[string]ArchivedFile{}
 	for _, file := range prep.Files {
 		hashes[file.Path] = file

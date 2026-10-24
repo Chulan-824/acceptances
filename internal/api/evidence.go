@@ -3,7 +3,9 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
+	"io/fs"
 	"mime"
 	"net/http"
 	"os"
@@ -29,7 +31,17 @@ func (s *Server) evidence(w http.ResponseWriter, r *http.Request) {
 		fail(w, 404, "EVIDENCE_NOT_FOUND")
 		return
 	}
-	serveEvidenceFile(w, r, filepath.Join(s.dir, "evidence", v.ID), name)
+	s.serveOwnedEvidence(w, r, fileOwner{"evidence", v.ID}, name, nil)
+}
+
+func (s *Server) serveOwnedEvidence(w http.ResponseWriter, r *http.Request, owner fileOwner, name string, expected *ArchivedFile) {
+	root, err := s.openFiles(r.Context(), owner)
+	if err != nil {
+		fail(w, 500, "READ_FAILED")
+		return
+	}
+	defer root.Close()
+	serveEvidenceFrom(w, r, root, name, expected)
 }
 
 func serveEvidenceFile(w http.ResponseWriter, r *http.Request, directory, name string) {
@@ -47,28 +59,55 @@ func serveVerifiedEvidence(w http.ResponseWriter, r *http.Request, directory, na
 		return
 	}
 	defer root.Close()
-	file, e := root.Open(name)
-	if e != nil {
+	serveEvidenceFrom(w, r, root.FS(), name, expected)
+}
+
+func serveEvidenceFrom(w http.ResponseWriter, r *http.Request, root fs.FS, name string, expected *ArchivedFile) {
+	if !validName(name) {
 		fail(w, 404, "EVIDENCE_NOT_FOUND")
 		return
 	}
-	defer file.Close()
+	opened, e := root.Open(name)
+	if e != nil {
+		if errors.Is(e, fs.ErrNotExist) {
+			fail(w, 404, "EVIDENCE_NOT_FOUND")
+		} else {
+			fail(w, 500, "READ_FAILED")
+		}
+		return
+	}
+	defer opened.Close()
+	file, ok := opened.(readSeekFile)
+	if !ok {
+		fail(w, 500, "READ_FAILED")
+		return
+	}
 	info, e := file.Stat()
 	if e != nil || !info.Mode().IsRegular() {
 		fail(w, 404, "EVIDENCE_NOT_FOUND")
 		return
 	}
 	if expected != nil {
-		hash := sha256.New()
-		size, err := io.Copy(hash, file)
-		if err != nil || size != expected.Size || hex.EncodeToString(hash.Sum(nil)) != expected.SHA256 {
-			fail(w, 409, "EVIDENCE_INTEGRITY_FAILED")
-			return
+		if stored, ok := file.(*blobReader); ok {
+			if stored.sha256 != expected.SHA256 || info.Size() != expected.Size {
+				fail(w, 409, "EVIDENCE_INTEGRITY_FAILED")
+				return
+			}
+		} else {
+			hash := sha256.New()
+			size, err := io.Copy(hash, file)
+			if err != nil || size != expected.Size || hex.EncodeToString(hash.Sum(nil)) != expected.SHA256 {
+				fail(w, 409, "EVIDENCE_INTEGRITY_FAILED")
+				return
+			}
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				fail(w, 500, "READ_FAILED")
+				return
+			}
 		}
-		if _, err := file.Seek(0, io.SeekStart); err != nil {
-			fail(w, 500, "READ_FAILED")
-			return
-		}
+	}
+	if stored, ok := file.(*blobReader); ok {
+		w.Header().Set("ETag", `"`+stored.sha256+`"`)
 	}
 	kind := "application/octet-stream"
 	disposition := "attachment"

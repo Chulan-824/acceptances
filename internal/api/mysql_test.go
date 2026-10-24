@@ -91,6 +91,14 @@ func TestMySQLMigrationPreservesArchive(t *testing.T) {
 	if err != nil || !replay.AlreadyImported {
 		t.Fatalf("migration retry: %+v %v", replay, err)
 	}
+	files, err := api.MigrateFilesToMySQL(t.Context(), dir, dsn)
+	if err != nil || files.Files != 13 || files.Objects == 0 {
+		t.Fatalf("file migration: %+v %v", files, err)
+	}
+	again, err := api.MigrateFilesToMySQL(t.Context(), dir, dsn)
+	if err != nil || !again.AlreadyActive || again.Bytes != files.Bytes || again.ImportID != files.ImportID {
+		t.Fatalf("file migration retry: %+v %v", again, err)
+	}
 	app, err = api.OpenMySQL(dir, dsn)
 	if err != nil {
 		t.Fatal(err)
@@ -187,19 +195,20 @@ func TestMySQLIdentityConcurrencyAndOwnership(t *testing.T) {
 		t.Fatalf("duplicate snapshot: %d %v", count, err)
 	}
 	app.Close()
-	if other, err := api.OpenMySQL(t.TempDir(), dsn); err == nil {
-		other.Close()
-		t.Fatal("wrong directory accepted populated database")
+	empty := t.TempDir()
+	reopened, err := api.OpenMySQL(empty, dsn)
+	if err != nil {
+		t.Fatal("database-only restart in an empty directory:", err)
 	}
-	if err = os.Remove(filepath.Join(dir, ".mysql-storage.json")); err != nil {
-		t.Fatal(err)
+	defer reopened.Close()
+	w := httptest.NewRecorder()
+	reopened.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+rid+"/evidence/screen.png", nil))
+	if w.Code != 200 || w.Body.Len() == 0 {
+		t.Fatal("database-only restart lost evidence:", w.Code)
 	}
-	if other, err := api.OpenMySQL(dir, dsn); err == nil {
-		other.Close()
-		t.Fatal("unbound archive allowed cleanup")
-	}
-	if _, err = os.Stat(filepath.Join(dir, "evidence", rid)); err != nil {
-		t.Fatal("startup failure removed evidence")
+	entries, err := os.ReadDir(empty)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("database-only startup wrote local files: %v %v", entries, err)
 	}
 }
 
@@ -263,6 +272,21 @@ func TestMySQLRequestCancellationAndLeaseLoss(t *testing.T) {
 	if _, err = db.Exec(fmt.Sprintf("KILL CONNECTION %d", owner)); err != nil {
 		t.Fatal(err)
 	}
+	// MySQL acknowledges KILL before the target connection finishes exiting.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		var released bool
+		if err = db.QueryRow("SELECT IS_USED_LOCK(?) IS NULL", fmt.Sprintf("acceptances:%x", sum[:24])).Scan(&released); err != nil {
+			t.Fatal(err)
+		}
+		if released {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("killed lease did not exit")
+		}
+		time.Sleep(time.Millisecond)
+	}
 	if err = app.Ready(context.Background()); err == nil {
 		t.Fatal("lost lease reported ready")
 	}
@@ -279,4 +303,23 @@ func TestMySQLRequestCancellationAndLeaseLoss(t *testing.T) {
 	if err := db.QueryRowContext(t.Context(), "SELECT description FROM campaigns WHERE id=?", cid).Scan(&description); err != nil || description != "" {
 		t.Fatalf("lease loss allowed campaign update: %q, %v", description, err)
 	}
+}
+
+// Exercise the retained filesystem adapter explicitly, rather than relying on
+// the old default for newly created MySQL archives.
+func openLegacyMySQL(t *testing.T, dir, dsn string) *api.Server {
+	t.Helper()
+	source, err := api.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source.Close()
+	if _, err = api.MigrateSQLiteToMySQL(t.Context(), dir, dsn); err != nil {
+		t.Fatal(err)
+	}
+	app, err := api.OpenMySQL(dir, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return app
 }

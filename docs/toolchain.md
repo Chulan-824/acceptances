@@ -20,6 +20,7 @@
 | `make test SUITE=browser`  | 构建当前源码，再执行隔离 Go 服务上的真实浏览器回归        |
 | `make test SUITE=mysql`    | 在临时 MySQL 数据库验证导入、约束、并发和文件保留         |
 | `make mysql-migrate`       | 停写后备份并迁移旧开发 SQLite，保留原数据                 |
+| `make mysql-files-migrate` | 停写后完整备份 MySQL，迁移所有附件并回读校验后切换        |
 | `make mysql-status`        | 查看本地开发 MySQL 容器状态                               |
 | `make mysql-stop`          | 停止开发 MySQL，保留持久卷                                |
 | `make test SUITE=http`     | HTTP 集成测试                                             |

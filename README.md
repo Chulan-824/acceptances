@@ -12,14 +12,14 @@ Go 同时提供 API 和 React Web，MySQL 保存元数据，本地持久卷保�
 make docker-up
 ```
 
-打开 <http://127.0.0.1:8765> 创建 Project。全新数据首次启动自动初始化，旧 SQLite 卷先按 [MySQL 迁移说明](docs/mysql-storage.md) 停写、备份并运行 `make docker-migrate`。服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；文件保存在 `acceptances_app-data`，数据库保存在 `acceptances_mysql-data`。普通重启或 `down` 保留数据，不要使用 `down -v`，除非确实要删除该项目全部记录。
+打开 <http://127.0.0.1:8765> 创建 Project。全新数据首次启动自动初始化，旧 SQLite 卷先按 [MySQL 迁移说明](docs/mysql-storage.md) 停写、备份并运行 `make docker-migrate`。服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；业务和完整文件保存在 `acceptances_mysql-data`；`acceptances_app-data` 保留旧归档及备份。普通重启或 `down` 保留数据，不要使用 `down -v`，除非确实要删除该项目全部记录。
 
 ```sh
 curl --fail http://127.0.0.1:8765/health/ready
 docker compose -f deploy/compose.yaml restart app
 ```
 
-现有开发数据按 `make dev-stop` → `make mysql-migrate` → `make dev-up` 迁移。导入前自动备份整个数据目录，逐表校验并保留原 SQLite；不会重置已有人工判断。数据库、附件与凭据须配套备份，完整步骤见 [MySQL 存储与迁移](docs/mysql-storage.md)。
+现有开发数据按 `make dev-stop` → `make mysql-migrate` → `make dev-up` 迁移。导入前自动备份整个数据目录，逐表校验并保留原 SQLite；不会重置已有人工判断。旧附件还须运行 `make dev-stop` → `make mysql-files-migrate` → `make dev-up`；切换后完整 MySQL 备份包含全部文件。旧目录和凭据继续保留，完整步骤见 [MySQL 存储与迁移](docs/mysql-storage.md)。
 
 ## 关联业务项目
 

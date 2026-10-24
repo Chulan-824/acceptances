@@ -8,8 +8,8 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"io/fs"
 	"net/http"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -58,7 +58,7 @@ func validateVerificationMap(m VerificationMap, prep DeliveryPreparation) error 
 	return nil
 }
 
-func validateDocumentationMaterials(root *os.Root, m DocumentationMaterials, prep DeliveryPreparation) error {
+func validateDocumentationMaterials(root fs.FS, m DocumentationMaterials, prep DeliveryPreparation) error {
 	if m.SchemaVersion != 1 || m.ProjectID != prep.Project.ID || m.RequirementSHA256 != prep.Manifest.Requirement.SHA256 || m.MapSHA256 != prep.Manifest.Map.SHA256 {
 		return fmt.Errorf("说明素材的版本、归属或需求/地图摘要不匹配。")
 	}
@@ -149,7 +149,7 @@ func validCheckReferences(values []string, allowed map[string]bool) bool {
 	return true
 }
 
-func readDocumentationImage(root *os.Root, name string) ([]byte, string, error) {
+func readDocumentationImage(root fs.FS, name string) ([]byte, string, error) {
 	if !validName(name) {
 		return nil, "", fmt.Errorf("截图仅允许单层附件文件名。")
 	}

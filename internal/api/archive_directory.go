@@ -50,7 +50,7 @@ func (d *archiveDirectory) release() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.refs--
-	if d.refs == 0 {
+	if d.refs == 0 && d.file != nil {
 		return d.file.Close() // Closing the descriptor releases the OS lock.
 	}
 	return nil

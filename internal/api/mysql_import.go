@@ -223,6 +223,13 @@ func MigrateSQLiteToMySQL(ctx context.Context, dir, dsn string) (result MySQLImp
 		result.AlreadyImported = true
 		return result, s.bindMySQLDirectory(true)
 	}
+	var fileBackend string
+	if err = db.QueryRowContext(ctx, "SELECT backend FROM archive_file_storage WHERE singleton=1").Scan(&fileBackend); err != nil {
+		return result, err
+	}
+	if fileBackend == "mysql" {
+		return result, fmt.Errorf("destination file backend is already MySQL; import SQLite into a fresh database before starting its server")
+	}
 	result.Backup, result.Files, result.FileBytes, err = backupArchive(dir)
 	if err != nil {
 		return result, err

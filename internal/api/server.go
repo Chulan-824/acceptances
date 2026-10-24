@@ -28,6 +28,7 @@ type Server struct {
 	dir       string
 	mu        sync.Mutex
 	artifacts *deliveryArtifacts
+	files     *fileArchive
 	mysql     bool
 	lease     *sql.Conn
 	leaseName string

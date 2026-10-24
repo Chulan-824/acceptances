@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"os"
+	"io/fs"
 
 	webassets "github.com/Chulan-824/acceptances/apps/web"
 )
@@ -87,7 +87,7 @@ table{width:100%;border-collapse:collapse;font-size:var(--text-ui)}td,th{border:
 <p class="metadata">交付快照：<code>{{.Snapshot.ID}}</code><br>快照内容摘要：<code>{{.Snapshot.SHA256}}</code><br>来源 Run：<code>{{.Snapshot.Payload.Run.ID}}</code><br>需求摘要：<code>{{.Snapshot.Payload.Manifest.Requirement.SHA256}}</code><br>地图摘要：<code>{{.Snapshot.Payload.Manifest.Map.SHA256}}</code><br>素材摘要：<code>{{.Snapshot.Payload.Manifest.Materials.SHA256}}</code><br>说明版本：{{.Document.Version}} · 模板：{{.Document.TemplateVersion}} · 创建时间：{{.Document.CreatedAt}}</p>
 </section></main><template id="geist-font-license">{{fontLicense}}</template></body></html>`))
 
-func renderBusinessDocument(output io.Writer, root *os.Root, snapshot DeliverySnapshot, document BusinessDocument) error {
+func renderBusinessDocument(output io.Writer, root fs.FS, snapshot DeliverySnapshot, document BusinessDocument) error {
 	if err := verifyFrozenDocumentEvidence(root, snapshot); err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func renderBusinessDocument(output io.Writer, root *os.Root, snapshot DeliverySn
 	return businessTemplate.Execute(output, view)
 }
 
-func verifyFrozenDocumentEvidence(root *os.Root, snapshot DeliverySnapshot) error {
+func verifyFrozenDocumentEvidence(root fs.FS, snapshot DeliverySnapshot) error {
 	files, err := archiveFiles(root, snapshot.Payload.Run.Report.Evidence)
 	if err != nil {
 		return err

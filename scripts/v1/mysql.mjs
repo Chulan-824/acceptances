@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { openSync, closeSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile, access, chmod } from "node:fs/promises";
 import { join } from "node:path";
@@ -114,11 +115,33 @@ try {
       },
     );
     console.log("MySQL 已就绪：127.0.0.1:3307 / acceptances_dev");
-  } else if (command === "migrate") {
+  } else if (command === "migrate" || command === "migrate-files") {
     if ((await controlServices("status", "dev")).length)
       throw new Error(
         "迁移前请先运行 make dev-stop，确认没有其他服务写入该目录",
       );
+    if (command === "migrate-files") {
+      const backups = join(root, ".cache/backups");
+      await mkdir(backups, { recursive: true, mode: 0o700 });
+      const path = join(backups, `mysql-before-files-${Date.now()}.sql`);
+      const fd = openSync(path, "wx", 0o600);
+      try {
+        docker(
+          [
+            "exec",
+            "-T",
+            "mysql",
+            "sh",
+            "-c",
+            'MYSQL_PWD="$(cat /run/secrets/mysql_root_password)" exec mysqldump -u root --single-transaction --no-tablespaces --hex-blob --routines --triggers --set-gtid-purged=OFF acceptances_dev',
+          ],
+          { stdio: ["ignore", fd, "inherit"] },
+        );
+      } finally {
+        closeSync(fd);
+      }
+      console.log(`迁移前 MySQL 完整备份：${path}`);
+    }
     execFileSync(
       "go",
       [
@@ -129,7 +152,7 @@ try {
         join(directory, "dev.dsn"),
         "--data-dir",
         process.env.ACCEPTANCES_DATA_DIR || ".cache/dev-data",
-        "--migrate-sqlite",
+        command === "migrate-files" ? "--migrate-files" : "--migrate-sqlite",
       ],
       { stdio: "inherit" },
     );
@@ -138,7 +161,7 @@ try {
   } else if (command === "stop") {
     docker(["stop", "mysql"]);
   } else {
-    throw new Error("可用 prepare|up|migrate|status|stop");
+    throw new Error("可用 prepare|up|migrate|migrate-files|status|stop");
   }
 } catch (error) {
   console.error(error.message);

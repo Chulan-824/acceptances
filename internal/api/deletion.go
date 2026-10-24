@@ -124,6 +124,9 @@ func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string
 		return
 	}
 	for _, key := range keys {
+		if s.databaseFiles() {
+			continue
+		}
 		if e = os.RemoveAll(filepath.Join(s.dir, "evidence", key)); e != nil {
 			fail(w, 500, "EVIDENCE_CLEANUP_FAILED")
 			return
@@ -135,6 +138,10 @@ func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string
 // The database decides visibility. A crash before committing an upload or after
 // deleting a record can leave files only; startup removes those unreferenced files.
 func (s *Server) cleanupOrphans() error {
+	if s.databaseFiles() {
+		_, err := s.db.Exec("UPDATE business_documents SET status='failed',error='服务重启中断了生成，请重试。',completed_at=? WHERE status='generating'", now())
+		return err
+	}
 	entries, e := os.ReadDir(filepath.Join(s.dir, "evidence"))
 	if e != nil {
 		return e

@@ -46,6 +46,7 @@ func run() error {
 	flags.StringVar(&driver, "database", driver, "数据库：mysql 或 sqlite")
 	flags.StringVar(&dsnFile, "mysql-dsn-file", dsnFile, "MySQL 连接串文件，内容不写入日志")
 	importSQLite := flags.Bool("migrate-sqlite", false, "备份并迁移数据目录中的 SQLite 到空 MySQL，完成后退出")
+	importFiles := flags.Bool("migrate-files", false, "保留源文件并全量迁入当前 MySQL，回读验证后切换存储")
 	flags.StringVar(&listen, "listen", listen, "监听地址")
 	flags.StringVar(&dir, "data-dir", dir, "归档附件目录，SQLite 模式下也保存数据库")
 	webDir := flags.String("web-dir", "apps/web/dist", "Web 构建目录，空值禁用页面")
@@ -78,12 +79,27 @@ func run() error {
 		return fmt.Errorf("SQLite 模式不能同时配置 MySQL")
 	}
 	if *importSQLite {
+		if *importFiles {
+			return fmt.Errorf("SQLite 业务迁移和文件迁移须分开执行")
+		}
 		if driver != "mysql" {
 			return fmt.Errorf("迁移需要 --database=mysql")
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 		result, err := api.MigrateSQLiteToMySQL(ctx, dir, dsn)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(os.Stdout).Encode(result)
+	}
+	if *importFiles {
+		if driver != "mysql" {
+			return fmt.Errorf("文件迁移需要 --database=mysql")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		defer cancel()
+		result, err := api.MigrateFilesToMySQL(ctx, dir, dsn)
 		if err != nil {
 			return err
 		}

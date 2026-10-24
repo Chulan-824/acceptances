@@ -8,7 +8,7 @@ import (
 	"html/template"
 	"image"
 	"io"
-	"os"
+	"io/fs"
 
 	webassets "github.com/Chulan-824/acceptances/apps/web"
 )
@@ -57,7 +57,7 @@ var guideTemplate = template.Must(template.New("guide").Funcs(template.FuncMap{
 	},
 }).Parse(guideHTML))
 
-func renderBusinessGuide(output io.Writer, root *os.Root, snapshot DeliverySnapshot, document BusinessDocument) error {
+func renderBusinessGuide(output io.Writer, root fs.FS, snapshot DeliverySnapshot, document BusinessDocument) error {
 	if document.Guide == nil {
 		return fmt.Errorf("业务指南素材缺失")
 	}
