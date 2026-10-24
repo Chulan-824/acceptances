@@ -27,6 +27,7 @@ import type {
 import { useResource, Status } from "./client";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
+import { Label } from "./components/ui/label";
 import { Alert } from "./components/reui/alert";
 import { ChoiceSelect } from "./components/choice-select";
 import { SelectItem } from "./components/ui/select";
@@ -225,7 +226,7 @@ export function Home({
                     交付版本 <ArrowRight size={14} />
                   </Button>
                   <div className="home-tools">
-                    <label className="home-search">
+                    <Label className="home-search">
                       <Search size={14} />
                       <Input
                         ref={searchInput}
@@ -234,7 +235,7 @@ export function Home({
                         aria-label="搜索需求"
                         placeholder="搜索需求、代码仓库或提交哈希 (⌘K)"
                       />
-                    </label>
+                    </Label>
                     <div
                       className="home-filters"
                       role="group"
@@ -335,7 +336,7 @@ export function Home({
             <FramePanel asChild>
               <div className="home-side-card">
                 <h2>项目</h2>
-                <label className="home-project-filter">
+                <Label className="home-project-filter">
                   项目范围
                   <ChoiceSelect
                     value={projectId}
@@ -349,7 +350,7 @@ export function Home({
                       </SelectItem>
                     ))}
                   </ChoiceSelect>
-                </label>
+                </Label>
                 {loadError && (
                   <Alert variant="destructive">
                     {loadError}

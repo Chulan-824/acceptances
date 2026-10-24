@@ -100,9 +100,10 @@ function ImageViewer({
         使用缩放按钮查看细节，放大后可拖动图片。按 Esc 或点击空白处关闭。
       </DialogDescription>
       <DialogClose asChild>
-        <button
+        <Button
           type="button"
-          className="image-viewer-backdrop"
+          variant="ghost"
+          className="image-viewer-backdrop hover:bg-transparent"
           aria-label="关闭图片预览"
           tabIndex={-1}
         />

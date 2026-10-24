@@ -196,7 +196,7 @@
 .file-preview-markdown th,
 .file-preview-table th {
   background: var(--color-surface-subtle);
-  font-weight: 600;
+  font-weight: 500;
 }
 .file-preview-table {
   padding: 20px;

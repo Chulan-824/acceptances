@@ -2,6 +2,15 @@ import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "./components/ui/button";
+import { Checkbox } from "./components/ui/checkbox";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "./components/ui/table";
 import { parseDiffEvidence } from "./diff-evidence-data";
 import {
   loadFilePreview,
@@ -234,6 +243,29 @@ function FileContents({
                   remarkPlugins={[remarkGfm]}
                   skipHtml
                   components={{
+                    table: ({ children }) => <Table>{children}</Table>,
+                    thead: ({ children }) => (
+                      <TableHeader>{children}</TableHeader>
+                    ),
+                    tbody: ({ children }) => <TableBody>{children}</TableBody>,
+                    tr: ({ children }) => <TableRow>{children}</TableRow>,
+                    th: ({ children, style }) => (
+                      <TableHead className="whitespace-normal" style={style}>
+                        {children}
+                      </TableHead>
+                    ),
+                    td: ({ children, style }) => (
+                      <TableCell className="whitespace-pre-wrap" style={style}>
+                        {children}
+                      </TableCell>
+                    ),
+                    input: ({ checked, disabled }) => (
+                      <Checkbox
+                        checked={checked}
+                        disabled={disabled}
+                        aria-label="任务完成状态"
+                      />
+                    ),
                     img: ({ src, alt }) => {
                       const url = resolvePreviewImage(
                         typeof src === "string" ? src : undefined,
@@ -266,28 +298,37 @@ function FileContents({
             )}
             {rich.rows && (
               <div className="file-preview-table">
-                <table aria-label="CSV 内容">
+                <Table aria-label="CSV 内容">
                   {header && rich.rows.length > 0 && (
-                    <thead>
-                      <tr>
+                    <TableHeader>
+                      <TableRow>
                         {rich.rows[0].map((cell, index) => (
-                          <th key={index} scope="col">
+                          <TableHead
+                            key={index}
+                            scope="col"
+                            className="whitespace-normal"
+                          >
                             {cell}
-                          </th>
+                          </TableHead>
                         ))}
-                      </tr>
-                    </thead>
+                      </TableRow>
+                    </TableHeader>
                   )}
-                  <tbody>
+                  <TableBody>
                     {rich.rows.slice(header ? 1 : 0).map((row, index) => (
-                      <tr key={index}>
+                      <TableRow key={index}>
                         {row.map((cell, column) => (
-                          <td key={column}>{cell}</td>
+                          <TableCell
+                            key={column}
+                            className="whitespace-pre-wrap"
+                          >
+                            {cell}
+                          </TableCell>
                         ))}
-                      </tr>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
             {rich.diff && (

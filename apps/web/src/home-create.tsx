@@ -5,7 +5,7 @@ import { Disclosure } from "./components/disclosure";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Textarea } from "./components/ui/textarea";
-import { FieldGroup } from "./components/ui/field";
+import { FieldGroup, FieldSet } from "./components/ui/field";
 import { FormField } from "./components/reui/form-field";
 import { useRef, useState } from "react";
 import type { Project } from "@acceptances/api-client";
@@ -104,7 +104,7 @@ export function HomeCreate({
                 void create(event.currentTarget);
               }}
             >
-              <fieldset disabled={busy}>
+              <FieldSet disabled={busy} className="block">
                 <FieldGroup className="gap-4">
                   <FormField
                     id="home-name"
@@ -171,7 +171,7 @@ export function HomeCreate({
                   )}
                   {busy ? "正在创建…" : "创建项目"}
                 </Button>
-              </fieldset>
+              </FieldSet>
               {error && (
                 <Alert
                   variant="destructive"

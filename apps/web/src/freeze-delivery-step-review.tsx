@@ -9,6 +9,7 @@ import {
 import type { DeliveryPreparation } from "@acceptances/api-client";
 import { Badge } from "./components/reui/badge";
 import { Label } from "./components/ui/label";
+import { Checkbox } from "./components/ui/checkbox";
 import { Textarea } from "./components/ui/textarea";
 import { Disclosure } from "./components/disclosure";
 import { Status } from "./client";
@@ -168,10 +169,11 @@ export function StepBusinessMaterials({
         )}
       >
         <Label className="delivery-checkbox">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={materialsConfirmed}
-            onChange={(e) => onMaterialsConfirmedChange(e.target.checked)}
+            onCheckedChange={(checked) =>
+              onMaterialsConfirmedChange(checked === true)
+            }
           />
           <span className="delivery-checkbox-label-text">
             我已审阅功能说明、操作步骤、角色前提、限制和对应截图。
@@ -328,11 +330,10 @@ export function StepFinalConfirmation({
         )}
       >
         <Label className="delivery-checkbox">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={sensitiveInfoReviewed}
-            onChange={(event) =>
-              onSensitiveInfoReviewedChange(event.target.checked)
+            onCheckedChange={(checked) =>
+              onSensitiveInfoReviewedChange(checked === true)
             }
           />
           <span className="delivery-checkbox-label-text">

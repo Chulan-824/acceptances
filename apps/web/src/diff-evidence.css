@@ -200,9 +200,10 @@
     min-width: 0;
     border-bottom: 1px solid var(--border);
     font-size: var(--text-meta);
+    margin: 0;
   }
 
-  .diff-evidence-file-select select {
+  .diff-evidence-file-select .ui-select-trigger {
     width: 100%;
     min-width: 0;
     height: 36px;

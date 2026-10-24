@@ -199,7 +199,7 @@
     @apply text-xs font-medium m-0 mb-3 pb-3 border-b border-border;
   }
   .home-project-filter {
-    @apply flex flex-col gap-2 text-xs text-muted;
+    @apply flex flex-col gap-2 text-xs text-muted m-0;
   }
   .home-project-list {
     @apply list-none m-0 mt-3 p-0 flex flex-col gap-1;
@@ -229,7 +229,7 @@
     @apply flex flex-wrap items-center gap-2 w-full;
   }
   .home-search {
-    @apply flex flex-1 items-center gap-1.5 min-w-48 bg-surface-subtle border border-border rounded-default px-3 text-muted;
+    @apply flex flex-row flex-1 items-center gap-1.5 min-w-48 bg-surface-subtle border border-border rounded-default px-3 text-muted m-0;
   }
   .home-search input {
     @apply border-0 bg-transparent shadow-none text-xs min-w-0 w-full px-0;

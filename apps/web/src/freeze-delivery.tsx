@@ -32,6 +32,7 @@ import {
 import { Alert } from "./components/reui/alert";
 import { Badge } from "./components/reui/badge";
 import { Button } from "./components/ui/button";
+import { FieldSet, FieldLegend } from "./components/ui/field";
 import {
   StepCodeAndBuild,
   StepMapAndScope,
@@ -275,11 +276,11 @@ function FreezeConfirmation({
 
           <FramePanel>
             <StepperPanel>
-              <fieldset
+              <FieldSet
                 disabled={busy || unknown}
-                className="delivery-confirmation"
+                className="delivery-confirmation block"
               >
-                <legend className="sr-only">冻结确认</legend>
+                <FieldLegend className="sr-only">冻结确认</FieldLegend>
 
                 <StepperContent value={1} forceMount>
                   <StepCodeAndBuild prep={prep} />
@@ -315,7 +316,7 @@ function FreezeConfirmation({
                     }}
                   />
                 </StepperContent>
-              </fieldset>
+              </FieldSet>
             </StepperPanel>
           </FramePanel>
 

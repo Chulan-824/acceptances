@@ -150,9 +150,6 @@ div.business-preview[data-slot="dialog-content"][role="dialog"] {
   .delivery-checkbox {
     @apply flex flex-row items-center gap-3 text-sm mb-0 cursor-pointer w-full;
   }
-  .delivery-checkbox input {
-    @apply size-4 rounded-default border-border text-brand focus:ring-brand shrink-0 m-0 cursor-pointer;
-  }
   .delivery-reason {
     @apply block my-2;
   }

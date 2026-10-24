@@ -9,11 +9,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from "./components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "./components/ui/popover";
 import { type ReactNode } from "react";
 
 export type IconName =
@@ -123,17 +118,7 @@ export function ActionMenu({
       <Icon name={icon} />
     </Button>
   );
-  return icon === "filter" ? (
-    <Popover>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent
-        className={`action-menu-content ${className}`}
-        align="end"
-      >
-        {children}
-      </PopoverContent>
-    </Popover>
-  ) : (
+  return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent

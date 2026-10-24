@@ -5,8 +5,16 @@ import { Alert } from "./components/reui/alert";
 import { Disclosure } from "./components/disclosure";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
-import { ChoiceSelect } from "./components/choice-select";
-import { SelectItem } from "./components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
+import { filterChecklist } from "./checklist-filter";
 import { useEffect, useRef, useState } from "react";
 import type {
   Report,
@@ -20,14 +28,6 @@ import { Evidence, isImageEvidence } from "./evidence";
 import { Icon } from "./workspace-controls";
 import { Button } from "./components/ui/button";
 import { ReviewForm, ReviewHistory, type ReviewDraft } from "./review";
-
-const statuses = [
-  { value: "all", label: "全部" },
-  { value: "passed", label: "通过" },
-  { value: "failed", label: "失败" },
-  { value: "blocked", label: "阻塞" },
-  { value: "skipped", label: "未执行" },
-];
 
 export function Checklist({
   run,
@@ -71,16 +71,19 @@ export function Checklist({
     history.push(review);
     reviews.set(review.checkId, history);
   }
-  const search = query.trim().toLocaleLowerCase();
-  const checks = report.checks.filter(
-    (check) =>
-      (status === "all" || check.status === status) &&
-      (humanStatus === "all" ||
-        (humanStates.get(check.id) || "pending") === humanStatus) &&
-      [check.id, check.title, check.expected, check.actual].some((text) =>
-        text.toLocaleLowerCase().includes(search),
-      ),
+  const { checks, statusOptions, humanStatusOptions } = filterChecklist(
+    report.checks,
+    humanStates,
+    { query, status, humanStatus },
   );
+  const hasFilters = Boolean(
+    query || status !== "all" || humanStatus !== "all",
+  );
+  function clearFilters() {
+    onQueryChange("");
+    onStatusChange("all");
+    onHumanStatusChange("all");
+  }
   const sourceIndex = report.checks.findIndex(
     (check) => check.id === advance?.checkId,
   );
@@ -149,70 +152,33 @@ export function Checklist({
                   placeholder="搜索检查项"
                 />
               </Label>
-              <Label>
-                <span className="sr-only">原始验证结果筛选</span>
-                <ChoiceSelect
-                  aria-label="原始验证结果筛选"
-                  value={status}
-                  onValueChange={(value) => onStatusChange(value)}
-                >
-                  {statuses.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}{" "}
-                      {item.value === "all"
-                        ? report.checks.length
-                        : report.checks.filter(
-                            (check) => check.status === item.value,
-                          ).length}
-                    </SelectItem>
-                  ))}
-                </ChoiceSelect>
-              </Label>
-              <Label>
-                <span className="sr-only">人工评审状态筛选</span>
-                <ChoiceSelect
-                  aria-label="人工评审状态筛选"
-                  value={humanStatus}
-                  onValueChange={onHumanStatusChange}
-                >
-                  {[
-                    ["all", "全部人工状态"],
-                    ["pending", "待审"],
-                    ["accepted", "人工通过"],
-                    ["rejected", "人工不通过"],
-                  ].map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}{" "}
-                      {value === "all"
-                        ? report.checks.length
-                        : report.checks.filter(
-                            (check) =>
-                              (humanStates.get(check.id) || "pending") ===
-                              value,
-                          ).length}
-                    </SelectItem>
-                  ))}
-                </ChoiceSelect>
-              </Label>
-              {(query || status !== "all" || humanStatus !== "all") && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    onQueryChange("");
-                    onStatusChange("all");
-                    onHumanStatusChange("all");
-                  }}
-                >
-                  清除筛选
-                </Button>
-              )}
+              <ChecklistFilter
+                label="原始验证结果"
+                prefix="验证"
+                value={status}
+                options={statusOptions}
+                onValueChange={onStatusChange}
+              />
+              <ChecklistFilter
+                label="人工评审状态"
+                prefix="人工"
+                value={humanStatus}
+                options={humanStatusOptions}
+                onValueChange={onHumanStatusChange}
+              />
             </div>
           </div>
         </FrameHeader>
-        <p className="muted" role="status">
-          显示 {checks.length} / {report.checks.length} 项
-        </p>
+        <div className="checklist-filter-summary">
+          <p className="muted" role="status">
+            显示 {checks.length} / {report.checks.length} 项
+          </p>
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              清除筛选
+            </Button>
+          )}
+        </div>
         {checks.map((check) => (
           <CheckItem
             key={check.id}
@@ -254,6 +220,54 @@ export function Checklist({
         )}
       </section>
     </Frame>
+  );
+}
+
+function ChecklistFilter({
+  label,
+  prefix,
+  value,
+  options,
+  onValueChange,
+}: {
+  label: string;
+  prefix: string;
+  value: string;
+  options: { value: string; label: string; count: number }[];
+  onValueChange: (value: string) => void;
+}) {
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger
+        aria-label={`${label}筛选`}
+        className="checklist-filter-trigger"
+        data-filtered={value !== "all"}
+      >
+        <span className="muted">{prefix}</span>
+        <SelectValue>
+          {options.find((item) => item.value === value)?.label}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent
+        position="popper"
+        align="end"
+        className="checklist-filter-menu"
+      >
+        <SelectGroup>
+          <SelectLabel>{label}</SelectLabel>
+          {options.map((item) => (
+            <SelectItem
+              key={item.value}
+              value={item.value}
+              textValue={item.label}
+            >
+              <span>{item.label}</span>
+              <span className="muted tabular-nums">{item.count}</span>
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 }
 

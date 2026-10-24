@@ -2,6 +2,9 @@ import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import { FileDiff } from "@pierre/diffs/react";
 import { preloadHighlighter, type FileDiffMetadata } from "@pierre/diffs";
 import { Button } from "./components/ui/button";
+import { Label } from "./components/ui/label";
+import { ChoiceSelect } from "./components/choice-select";
+import { SelectItem } from "./components/ui/select";
 import type { DiffEvidenceData } from "./diff-evidence-data";
 
 export function DiffEvidenceViewer({
@@ -58,33 +61,35 @@ export function DiffEvidenceViewer({
             hidden={data.files.length === 1}
           >
             {data.files.map((entry, index) => (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 key={index}
                 aria-current={selected === index ? "true" : undefined}
                 onClick={() => setSelected(index)}
               >
                 <span>{entry.name}</span>
                 <small>{changeLabel(entry)}</small>
-              </button>
+              </Button>
             ))}
           </nav>
-          <label
+          <Label
             className="diff-evidence-file-select"
             hidden={data.files.length === 1}
           >
             变更文件
-            <select
-              value={selected}
-              onChange={(event) => setSelected(Number(event.target.value))}
+            <ChoiceSelect
+              aria-label="变更文件"
+              value={String(selected)}
+              onValueChange={(value) => setSelected(Number(value))}
             >
               {data.files.map((entry, index) => (
-                <option key={index} value={index}>
+                <SelectItem key={index} value={String(index)}>
                   {entry.name} · {changeLabel(entry)}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </label>
+            </ChoiceSelect>
+          </Label>
           <section
             className="diff-evidence-file"
             aria-label={`文件差异 ${file.name}`}

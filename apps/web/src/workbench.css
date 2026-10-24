@@ -73,10 +73,28 @@
     @apply block;
   }
   .sidebar-search-row {
-    @apply flex items-center gap-1 mb-3;
+    @apply flex items-center gap-1 mb-2;
   }
   .sidebar-search-row .search-field {
     @apply flex-1;
+  }
+  .sidebar-status-trigger {
+    @apply w-full justify-start text-caption;
+  }
+  .sidebar-status-trigger > span {
+    @apply flex-1 text-left;
+  }
+  .sidebar-status-trigger > svg:last-child {
+    @apply rotate-90;
+  }
+  .sidebar-status-trigger[data-filtered="true"] {
+    @apply border-brand bg-surface-subtle;
+  }
+  .sidebar-filter-summary {
+    @apply flex items-center justify-between gap-2 min-h-11 my-1;
+  }
+  .sidebar-filter-summary p {
+    @apply m-0;
   }
   .acceptance-workbench .search-field {
     @apply relative m-0 min-w-0;
@@ -92,12 +110,6 @@
   }
   .menu-content button {
     @apply flex items-center gap-2 w-full text-left p-2 text-caption bg-transparent border-0;
-  }
-  .menu-content label {
-    @apply m-0 p-2 text-caption;
-  }
-  .menu-content .ui-select-trigger {
-    @apply w-full py-2 text-caption;
   }
   .acceptance-workbench .workspace-deliveries > [role="status"] {
     @apply text-meta mt-0 mb-2;
@@ -209,7 +221,7 @@
     @apply text-ui m-0;
   }
   .checklist-tools {
-    @apply flex items-center gap-2;
+    @apply flex flex-wrap items-center justify-end gap-2 max-w-full;
   }
   .checklist-tools .search-field {
     @apply w-40;
@@ -217,8 +229,23 @@
   .checklist-tools label {
     @apply m-0;
   }
-  .checklist-tools .ui-select-trigger {
-    @apply py-2 px-3 text-caption bg-surface-subtle border-transparent;
+  .checklist-tools .checklist-filter-trigger {
+    @apply w-36 shrink-0 py-2 px-3 text-caption bg-surface border-border-dark;
+  }
+  .checklist-filter-trigger > [data-slot="select-value"] {
+    @apply flex-1;
+  }
+  .checklist-filter-trigger[data-filtered="true"] {
+    @apply border-brand bg-surface-subtle;
+  }
+  .checklist-filter-menu [data-slot="select-item"] > span:last-child {
+    @apply flex-1 justify-between;
+  }
+  .checklist-filter-summary {
+    @apply flex items-center justify-between gap-3 min-h-10;
+  }
+  .checklist-filter-summary p {
+    @apply m-0;
   }
   .report-panel [role="status"] {
     @apply text-meta;

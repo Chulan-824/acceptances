@@ -20,7 +20,9 @@ export function ChoiceSelect({
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>{children}</SelectContent>
+      <SelectContent position="popper" align="start">
+        {children}
+      </SelectContent>
     </Select>
   );
 }

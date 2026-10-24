@@ -12,6 +12,9 @@ import {
 import { Load, message, Status, useResource } from "./client";
 import { Alert } from "./components/reui/alert";
 import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Label } from "./components/ui/label";
+import { Disclosure } from "./components/disclosure";
 import {
   Dialog,
   DialogContent,
@@ -160,8 +163,7 @@ function DocumentPanel({
           两类文档分别生成和保存版本，均可预览、下载离线 HTML。
         </p>
         {isGuide && delivery.status === "valid" && (
-          <details className="guide-materials">
-            <summary>整理或更新指南内容</summary>
+          <Disclosure className="guide-materials" title="整理或更新指南内容">
             <p className="muted">
               首次生成使用已有说明素材；再次生成沿用最近成功的指南内容。可下载素材，补充页面入口、状态含义和截图标注后导入。图片须来自当前交付，样例须明确标为演示数据。
             </p>
@@ -175,9 +177,9 @@ function DocumentPanel({
             >
               下载当前指南素材 JSON
             </a>
-            <label className="field">
+            <Label className="field">
               导入指南素材 JSON
-              <input
+              <Input
                 type="file"
                 accept=".json,application/json"
                 disabled={
@@ -211,13 +213,13 @@ function DocumentPanel({
                   }
                 }}
               />
-            </label>
+            </Label>
             {sourceName && (
               <p role="status">
                 待生成素材：{sourceName}。点击“生成{label}”后保存为新版本。
               </p>
             )}
-          </details>
+          </Disclosure>
         )}
         {delivery.status !== "valid" && (
           <p>交付已非有效状态，停止新生成；已有文档仍可作为历史预览与下载。</p>

@@ -62,6 +62,34 @@
   .ui-textarea {
     @apply min-h-24 resize-y;
   }
+  .ui-file-input {
+    @apply text-caption cursor-pointer;
+  }
+  .ui-file-input::file-selector-button {
+    @apply mr-3 px-3 py-2 rounded-default border border-border-dark bg-surface-subtle text-fg-secondary font-sans text-caption cursor-pointer;
+  }
+  .ui-file-input::file-selector-button:hover {
+    @apply bg-surface-hover;
+  }
+  .ui-file-input:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .ui-file-input:disabled::file-selector-button {
+    @apply cursor-not-allowed;
+  }
+  .ui-checkbox {
+    @apply inline-flex size-4 shrink-0 items-center justify-center p-0 m-0 rounded-default border border-border-dark bg-surface text-fg cursor-pointer;
+  }
+  .ui-checkbox[data-state="checked"],
+  .ui-checkbox[data-state="indeterminate"] {
+    @apply border-brand bg-brand text-brand-fg;
+  }
+  .ui-checkbox:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .ui-checkbox[aria-invalid="true"] {
+    @apply border-danger;
+  }
   .ui-input::placeholder,
   .ui-textarea::placeholder {
     @apply text-muted opacity-100;
@@ -95,6 +123,7 @@
   .ui-input:focus-visible,
   .ui-textarea:focus-visible,
   .ui-select-trigger:focus-visible,
+  .ui-checkbox:focus-visible,
   [data-slot="collapsible-trigger"]:focus-visible {
     @apply outline-2 outline-solid outline-brand outline-offset-[3px];
   }

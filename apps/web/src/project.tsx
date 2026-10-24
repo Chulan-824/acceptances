@@ -4,7 +4,16 @@ import { Frame, FrameHeader, FramePanel } from "./components/reui/frame";
 import { WorkspacePanels } from "./components/workspace-panels";
 import type { ReactNode } from "react";
 import { Alert } from "./components/reui/alert";
-import { DropdownMenuItem } from "./components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
@@ -26,7 +35,7 @@ import { Campaign } from "./campaign";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 import "./workbench.css";
 const statuses = [
-  { value: "all", label: "全部" },
+  { value: "all", label: "全部状态" },
   { value: "pending", label: "整体待评审" },
   { value: "accepted", label: "完整范围已验收" },
   { value: "rejected", label: "最新一轮人工不通过" },
@@ -59,11 +68,17 @@ export function Project({
   const base = `/projects/${id}`;
   const items = campaigns.data?.items || [];
   const search = query.trim().toLocaleLowerCase();
-  const filtered = items.filter(
-    (item) =>
-      (status === "all" || item.status === status) &&
-      `${item.title} ${item.description}`.toLocaleLowerCase().includes(search),
+  const searched = items.filter((item) =>
+    `${item.title} ${item.description}`.toLocaleLowerCase().includes(search),
   );
+  const filtered = searched.filter(
+    (item) => status === "all" || item.status === status,
+  );
+  const hasFilters = Boolean(query || status !== "all");
+  function clearFilters() {
+    setQuery("");
+    setStatus("all");
+  }
   function refresh() {
     setRevision((value) => value + 1);
     void actions.refreshCampaigns();
@@ -143,29 +158,40 @@ export function Project({
             placeholder="搜索需求"
           />
         </Label>
-        <ActionMenu label="需求状态筛选" icon="filter" className="filter-menu">
-          <div className="menu-content">
-            <Label>
-              需求状态筛选
-              <ChoiceSelect
-                value={status}
-                onValueChange={(value) => setStatus(value)}
-              >
-                {statuses.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}{" "}
-                    {item.value === "all"
-                      ? items.length
-                      : items.filter(
-                          (campaign) => campaign.status === item.value,
-                        ).length}
-                  </SelectItem>
-                ))}
-              </ChoiceSelect>
-            </Label>
-          </div>
-        </ActionMenu>
       </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className="sidebar-status-trigger"
+            aria-label="需求状态筛选"
+            data-filtered={status !== "all"}
+            disabled={!campaigns.data}
+          >
+            <Icon name="filter" />
+            <span>{statuses.find((item) => item.value === status)?.label}</span>
+            <Icon name="chevron" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-64">
+          <DropdownMenuLabel>需求状态</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup value={status} onValueChange={setStatus}>
+            {statuses.map((item) => (
+              <DropdownMenuRadioItem key={item.value} value={item.value}>
+                <span>{item.label}</span>
+                <span className="ml-auto pl-3 text-muted tabular-nums">
+                  {item.value === "all"
+                    ? searched.length
+                    : searched.filter(
+                        (campaign) => campaign.status === item.value,
+                      ).length}
+                </span>
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {campaigns.data && campaigns.error && (
         <Alert role="alert">
           需求列表刷新失败：{campaigns.error}
@@ -178,9 +204,16 @@ export function Project({
         <Load error={campaigns.error} />
       ) : (
         <>
-          <p className="muted" role="status">
-            显示 {filtered.length} / {items.length} 个需求
-          </p>
+          <div className="sidebar-filter-summary">
+            <p className="muted" role="status">
+              显示 {filtered.length} / {items.length} 个需求
+            </p>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                清除筛选
+              </Button>
+            )}
+          </div>
           <div className="navigation-list">
             {filtered.map((campaign) => (
               <Button

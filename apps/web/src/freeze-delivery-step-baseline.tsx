@@ -9,6 +9,7 @@ import {
 import type { DeliveryPreparation } from "@acceptances/api-client";
 import { Badge } from "./components/reui/badge";
 import { Label } from "./components/ui/label";
+import { Checkbox } from "./components/ui/checkbox";
 import { Disclosure } from "./components/disclosure";
 import { cn } from "./lib/utils";
 
@@ -205,10 +206,11 @@ export function StepMapAndScope({
         className={cn("delivery-sign-panel", mapConfirmed && "is-confirmed")}
       >
         <Label className="delivery-checkbox">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={mapConfirmed}
-            onChange={(e) => onMapConfirmedChange(e.target.checked)}
+            onCheckedChange={(checked) =>
+              onMapConfirmedChange(checked === true)
+            }
           />
           <span className="delivery-checkbox-label-text">
             我确认所选地图版本及必验范围准确、完整。

@@ -26,7 +26,20 @@
 | 产品介绍 `/landing.html`                                     | `landing/main.tsx`                                             | FramePanel 展示、特性及规范区块，Scrollspy 分区高亮；原生锚点负责导航；ReUI Badge，shadcn Tabs、Dialog、Table、Sonner             |
 | 共享状态与批量确认                                           | `client.tsx`、`check-counts.tsx`、`bulk-acceptance-dialog.tsx` | ReUI Badge 与 Alert，保留 shadcn AlertDialog、Dialog 的焦点与确认机制                                                             |
 
-保留原生标题、链接、段落、定义列表、表单提交、复选框、媒体元素与 sandbox iframe。这些元素表达内容或浏览器能力，不为覆盖清单额外套控件。覆盖以正常有数据页面的实际布局、主题样式和交互职责为依据，不以导入、data-slot 或组件数量为依据。基础控件仍由 shadcn/ui 提供。
+保留标题、链接、段落、定义列表、表单提交、媒体元素与 sandbox iframe 的 HTML 语义。业务页面的交互控件统一从共享基础层组合，基础控件仍由 shadcn/ui 提供。覆盖以正常有数据页面的实际布局、主题样式和交互职责为依据，不以导入、data-slot 或组件数量为依据。
+
+## 2026-10-25 原生控件排查与统一
+
+- 左侧需求状态筛选使用 DropdownMenuRadioGroup，直接选择后关闭，触发器常驻当前条件；菜单数量随标题、描述搜索更新，清除同时重置关键词与状态。
+- 差异预览的按钮与窄屏文件选择统一为 Button / ChoiceSelect；ChoiceSelect 使用贴合触发器的 popper 定位。
+- 冻结向导的三个确认项及 Markdown 只读任务状态统一为 Checkbox；创建项目和冻结向导复用 FieldSet，保留整组禁用语义。
+- 指南素材区使用 Disclosure、Label 和 Input，文件选择按钮复用共享主题。CSV 与 Markdown 表格统一为 Table，保留首行切换、文本换行与 Markdown 对齐。
+- 图片空白关闭区使用 Button，首页搜索及项目筛选使用 Label，并显式保留横向搜索布局与外边距。
+- Checkbox 来自 [shadcn 官方 new-york-v4 registry](https://ui.shadcn.com/r/styles/new-york-v4/checkbox.json)，下载 JSON 的 SHA-256 为 `567b649e4cd68c05bfdc58ca00fa04aee38bca291cd6f16ed7776ec06ba3d6bd`。源码位于 `components/ui/checkbox.tsx`，交互由现有 Radix 提供，外观使用 `ui.css` 和 `theme.css`，不新增依赖。
+
+`apps/web/tests/ui-controls.test.mjs` 使用 TypeScript AST 扫描两个前端入口及共享业务代码，禁止在 `components/ui/` 之外直接实现原生交互控件。输入框、表格等基础实现仍必须生成对应 HTML，系统文件选择器继续由浏览器提供。
+
+`internal/api` 中的离线 HTML 模板是独立文档，CSP 禁止脚本，不装载 React / Radix。它们继续使用语义表格、details 和阅读辅助 checkbox；已有归档文档和证据保持原样，不属于在线交互控件替换范围。
 
 ## 本地适配
 
