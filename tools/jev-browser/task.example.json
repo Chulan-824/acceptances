@@ -5,5 +5,15 @@
   "allowed_write_labels": [],
   "max_steps": 20,
   "max_seconds": 120,
-  "expect": { "text": ["项目"] }
+  "expect": {
+    "text": ["项目"]
+  },
+  "timeouts": {
+    "navigation": 30,
+    "login": 15,
+    "data_ready": 30
+  },
+  "ready": {
+    "text": ["项目"]
+  }
 }

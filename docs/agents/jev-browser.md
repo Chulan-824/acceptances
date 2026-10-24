@@ -81,6 +81,8 @@ make jev-docker-run TASK=tools/jev-browser/task.example.json
   "allowed_write_labels": [],
   "max_steps": 20,
   "max_seconds": 120,
+  "timeouts": { "navigation": 30, "login": 15, "data_ready": 30 },
+  "ready": { "text": ["项目"] },
   "expect": { "text": ["项目"] }
 }
 ```
@@ -91,7 +93,11 @@ make jev-docker-run TASK=tools/jev-browser/task.example.json
 
 `values` 是观察得到的字段完整标签到文本的映射。遇到未提供值的填入动作时停止，不请求其他模型猜测。`allowed_write_labels` 用完整标签允许保存、删除、提交等动作；标签检查是启发式辅助，不能判断任意按钮的业务副作用。写操作只能使用专用合成数据，用户明确授权范围之外的日常报告不得操作。
 
-默认最多 30 次动作尝试、120 秒；上限为 60 次、300 秒，循环次数另受动作预算两倍限制。连接 Chrome 也计入时间预算，最终截图和标签清理各额外最多 8 秒。每次观察以 50 毫秒间隔等待页面指纹连续稳定至少 150 毫秒，单次最多等待 1 秒，覆盖常见 SPA 加载和重绘；这不保证所有异步请求都已结束。连续三次非等待动作没有页面变化时停止。
+默认最多 30 次动作尝试、120 秒；上限为 60 次、300 秒，循环次数另受动作预算两倍限制。连接 Chrome 也计入总时间预算，最终截图和标签清理各额外最多 8 秒。`timeouts` 可分别设置 `navigation`（默认 30 秒）、`login`（15 秒）、`data_ready`（30 秒），每项为 1–60 的整数；嵌套等待不会延长总时限。导航含连接、首次打开及动作发出；超时动作保留 `dispatching`，不能自动重放。
+
+`ready` 使用与 `expect` 相同的 URL/文本结构，表示入口业务数据就绪，和最终结果断言分开。业务列表回归应填写能证明实际数据已返回的文本，例如已知行名或分页总数，不能只用页面标题。入口持续空壳或加载时，在数据时限内结束为 `data_ready_timeout`，不因文字暂时稳定而开始模型决策。未配置 `ready` 的旧任务继续兼容，只判断加载状态及指纹稳定，不能据此证明业务数据已经就绪。
+
+发现可见密码框或 login/signin 路由时等待已有人工登录，超过时限记录 `login_timeout`；不读取密码值或猜测凭据。后续观察如重新跳回登录页则交回 `login_required`。数据阶段每 50 毫秒检查 DOM 加载、可见的 aria-busy/Ant Design 加载指示及指纹连续稳定 150 毫秒；持续变动也受数据时限约束。这不保证未显式声明的所有异步请求结束。连续三次非等待动作没有页面变化时停止。
 
 过期动作只有明确确认输入尚未发出时才重试：重新观察同一 URL，并按动作类型、完整标签、角色与原值唯一匹配新控件，不复用旧节点编号或坐标。同一动作最多尝试三次，仍过期则以 `stale_retry_exhausted` 交回。目标被遮挡时可先滚动露出，再重新观察；滚动也单独计入动作预算。控件缺失、匹配不唯一、原值或 URL 已变化时交由模型基于新页面重新决策；执行结果不明的异常停止，不自动重放。
 
@@ -99,7 +105,7 @@ make jev-docker-run TASK=tools/jev-browser/task.example.json
 
 ## 结果与排查
 
-证据默认保存在忽略目录 `artifacts/jev-browser/<时间>-<进程号>/`，可通过 `JEV_EVIDENCE_DIR` 更改。Docker 中的 `/evidence` 映射回同一宿主机目录。`result.json` 记录依赖版本、上游提交、模型、每次决策耗时、动作、页面观察、断言和结果；`observations` 保留各循环的 URL、标题和可见文本，`retry_of` 指向前一次未执行尝试，成功捕获时另有 `final.jpg`。报告可能包含页面内容和任务输入，不要提交含敏感内容的证据。
+证据默认保存在忽略目录 `artifacts/jev-browser/<时间>-<进程号>/`，可通过 `JEV_EVIDENCE_DIR` 更改。Docker 中的 `/evidence` 映射回同一宿主机目录。`result.json` 记录依赖版本、上游提交、模型、每次决策耗时、动作、页面观察、断言和结果；`observations` 保留各循环的 URL、标题和可见文本，`retry_of` 指向前一次未执行尝试，成功捕获时另有质量 72 的 JPEG `final.jpg`，并核对 JPEG 文件标记。`timings` 逐次记录导航、登录和数据就绪的时限、实际秒数与完成/中断状态；`navigation_timeout`、`login_timeout`、`data_ready_timeout` 区分等待位置，`time_budget_exhausted` 表示总时限。报告可能包含页面内容和任务输入，不要提交含敏感内容的证据。
 
 | 结果                     | 含义                                                    | 退出码 |
 | ------------------------ | ------------------------------------------------------- | ------ |

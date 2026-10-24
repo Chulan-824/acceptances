@@ -73,19 +73,27 @@ def load_task(path):
         value = task.setdefault(name, default)
         if type(value) is not int or not 1 <= value <= upper:
             raise ValueError(f"{name} 必须为 1–{upper} 的整数")
-    expect = task.get("expect", {})
-    if not isinstance(expect, dict) or set(expect) - {"url", "text"}:
-        raise ValueError("expect 只支持 url 和 text")
-    if "url" in expect:
-        local_origin(expect["url"])
-        if local_origin(expect["url"]) != local_origin(task["url"]):
+    timeouts = task.setdefault("timeouts", {})
+    if not isinstance(timeouts, dict) or set(timeouts) - {"navigation", "login", "data_ready"}:
+        raise ValueError("timeouts 只支持 navigation、login 和 data_ready")
+    for name, default in [("navigation", 30), ("login", 15), ("data_ready", 30)]:
+        value = timeouts.setdefault(name, default)
+        if type(value) is not int or not 1 <= value <= 60:
+            raise ValueError(f"timeouts.{name} 必须为 1–60 的整数")
+    for name in ("expect", "ready"):
+        expect = task.get(name, {})
+        if not isinstance(expect, dict) or set(expect) - {"url", "text"}:
+            raise ValueError(f"{name} 只支持 url 和 text")
+        if name == "ready" and name in task and not expect:
+            raise ValueError("ready 必须提供入口数据就绪的 url 或 text 断言")
+        if "url" in expect and local_origin(expect["url"]) != local_origin(task["url"]):
             raise ValueError("预期 URL 必须与入口同源")
-    if "text" in expect and (
-        not isinstance(expect["text"], list)
-        or not expect["text"]
-        or any(not isinstance(x, str) or not x.strip() for x in expect["text"])
-    ):
-        raise ValueError("expect.text 必须为非空文本数组")
+        if "text" in expect and (
+            not isinstance(expect["text"], list)
+            or not expect["text"]
+            or any(not isinstance(x, str) or not x.strip() for x in expect["text"])
+        ):
+            raise ValueError(f"{name}.text 必须为非空文本数组")
     return task
 
 
@@ -110,17 +118,87 @@ def action_text(action, task):
 
 
 @contextmanager
-def deadline(seconds):
+def deadline(seconds, reason="time_budget_exhausted"):
     def stop(_signum, _frame):
-        raise HandBack("time_budget_exhausted")
+        raise HandBack(reason)
 
-    previous = signal.signal(signal.SIGALRM, stop)
-    signal.setitimer(signal.ITIMER_REAL, seconds)
+    started = time.monotonic()
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    # Nested stages must never extend or rename the remaining task deadline.
+    outer_first = previous_timer[0] > 0 and previous_timer[0] <= seconds
+    signal.signal(signal.SIGALRM, previous_handler if outer_first else stop)
+    signal.setitimer(signal.ITIMER_REAL, previous_timer[0] if outer_first else seconds)
     try:
         yield
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0:
+            remaining = previous_timer[0] - (time.monotonic() - started)
+            if remaining > 0:
+                signal.setitimer(signal.ITIMER_REAL, remaining, previous_timer[1])
+
+
+@contextmanager
+def stage(report, name, seconds):
+    entry = {"stage": name, "limit_seconds": seconds, "outcome": "ready"}
+    report.setdefault("timings", []).append(entry)
+    started = time.monotonic()
+    try:
+        with deadline(seconds, name + "_timeout"):
+            yield
+    except BaseException:
+        entry["outcome"] = "interrupted"
+        raise
+    finally:
+        entry["elapsed_seconds"] = round(time.monotonic() - started, 3)
+
+
+# Read only visibility/state; never inspect password values or browser credentials.
+READINESS = r"""(() => {
+ const visible = e => e.getBoundingClientRect().width > 0 &&
+   e.getBoundingClientRect().height > 0 &&
+   e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true});
+ return {
+   login: [...document.querySelectorAll('input[type="password"]')].some(visible) ||
+     /(?:^|\/)(?:login|signin|sign-in)(?:\/|$)/i.test(location.pathname),
+   busy: document.readyState === 'loading' ||
+     [...document.querySelectorAll('[aria-busy="true"],.ant-spin-spinning,.ant-skeleton')]
+       .some(visible)
+ };
+})()"""
+
+
+def observe_ready(browser, task, report, *, initial=False):
+    limits = task.get("timeouts", {})
+
+    with stage(report, "login", limits.get("login", 15)):
+        status = browser.evaluate(READINESS)
+        while status["login"]:
+            time.sleep(0.1)
+            status = browser.evaluate(READINESS)
+    with stage(report, "data_ready", limits.get("data_ready", 30)):
+        current = browser.observe(screenshot=False)
+        stable_since = time.monotonic()
+        while True:
+            if local_origin(current["url"]) != local_origin(task["url"]):
+                raise HandBack("navigation_left_task_origin")
+            ready = (
+                not initial
+                or not task.get("ready")
+                or verification(current, task["ready"])["passed"]
+            )
+            if not status["busy"] and ready and time.monotonic() - stable_since >= 0.15:
+                return current
+            time.sleep(0.05)
+            following = browser.observe(screenshot=False)
+            if following["fingerprint"] != current["fingerprint"]:
+                stable_since = time.monotonic()
+            current = following
+            status = browser.evaluate(READINESS)
+            if status["login"]:
+                raise HandBack("login_required")
 
 
 def configure_harness(endpoint="default"):
@@ -248,22 +326,9 @@ def reveal_action(browser, action):
 
 def run_loop(browser, choose, stale_error, task, report):
     def observe():
-        current = browser.observe(screenshot=False)
-        # document.readyState does not cover SPA data/rendering. Require a short
-        # stable observation window, bounded independently of the task deadline.
-        until = time.monotonic() + 1
-        stable_since = time.monotonic()
-        while time.monotonic() < until:
-            time.sleep(0.05)
-            following = browser.observe(screenshot=False)
-            if following["fingerprint"] != current["fingerprint"]:
-                stable_since = time.monotonic()
-            current = following
-            if time.monotonic() - stable_since >= 0.15:
-                break
-        return current
+        return observe_ready(browser, task, report)
 
-    page = observe()
+    page = observe_ready(browser, task, report, initial=True)
     pending = None
     for _ in range(task["max_steps"] * 2):
         report["page"] = {key: page[key] for key in ("url", "title", "text")}
@@ -325,7 +390,8 @@ def run_loop(browser, choose, stale_error, task, report):
         # A failed post-action observation cannot erase an already dispatched action.
         report["actions"].append(entry)
         try:
-            browser.act(action, page, text=text)
+            with stage(report, "navigation", task.get("timeouts", {}).get("navigation", 30)):
+                browser.act(action, page, text=text)
         except stale_error:
             entry["outcome"] = "stale_not_executed"
             page = observe()
@@ -400,10 +466,11 @@ def execute(task, output, *, observe_only=False, keep_open=False):
     try:
         with deadline(task["max_seconds"]):
             # Retain the object so constructor failure can still clean up our own target.
-            Browser.__init__(browser, task["url"])
+            with stage(report, "navigation", task.get("timeouts", {}).get("navigation", 30)):
+                Browser.__init__(browser, task["url"])
             report["target_id"] = browser.target
             if observe_only:
-                page = browser.observe(screenshot=False)
+                page = observe_ready(browser, task, report, initial=True)
                 report["page"] = {key: page[key] for key in ("url", "title", "text", "actions")}
                 report["outcome"] = "observed"
                 report["environment_class"] = "real-chrome-no-model"
@@ -421,7 +488,10 @@ def execute(task, output, *, observe_only=False, keep_open=False):
             try:
                 with deadline(8):
                     shot = browser.call("Page.captureScreenshot", format="jpeg", quality=72)
-                    (output / "final.jpg").write_bytes(base64.b64decode(shot["data"]))
+                    data = base64.b64decode(shot["data"], validate=True)
+                    if not data.startswith(b"\xff\xd8\xff") or not data.endswith(b"\xff\xd9"):
+                        raise ValueError("Chrome screenshot is not JPEG")
+                    (output / "final.jpg").write_bytes(data)
             except Exception:
                 report["screenshot_unavailable"] = True
             if not keep_open:

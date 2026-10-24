@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -11,12 +12,15 @@ from jev_browser import (
     action_text,
     chrome_endpoint,
     configure_harness,
+    deadline,
     execute,
     failure_reason,
     load_task,
     model_context,
+    observe_ready,
     replacement_action,
     run_loop,
+    stage,
     verification,
 )
 
@@ -45,6 +49,9 @@ class FakeBrowser:
         if self.acted and self.fail_after_action:
             raise RuntimeError("post-action observation failed")
         return page("after" if self.acted else "before")
+
+    def evaluate(self, _expression):
+        return {"login": False, "busy": False}
 
     def fresh(self, current):
         return True
@@ -84,12 +91,74 @@ class JevBrowserTests(unittest.TestCase):
                 {"url": "http://name:password@localhost:5173/"},
                 {"max_steps": True},
                 {"max_seconds": 301},
+                {"timeouts": {"navigation": True}},
+                {"timeouts": {"login": 61}},
+                {"timeouts": {"unknown": 2}},
+                {"ready": {}},
+                {"ready": {"text": "after"}},
+                {"ready": {"url": "https://example.com/"}},
                 {"expect": {"text": "after"}},
             ]:
                 with self.subTest(changes=changes):
                     path.write_text(json.dumps({**task, **changes}))
                     with self.assertRaises(ValueError):
                         load_task(path)
+
+    def test_nested_deadlines_preserve_total_budget_and_reason(self):
+        started = time.monotonic()
+        with self.assertRaisesRegex(HandBack, "time_budget_exhausted"):
+            with deadline(0.06):
+                with deadline(0.2, "navigation_timeout"):
+                    time.sleep(0.15)
+        self.assertLess(time.monotonic() - started, 0.14)
+        with self.assertRaisesRegex(HandBack, "login_timeout"):
+            with deadline(1):
+                with deadline(0.01, "login_timeout"):
+                    time.sleep(0.05)
+
+    def test_readiness_waits_for_actual_text_not_stable_empty_shell(self):
+        browser = FakeBrowser()
+        observations = iter([page("loading"), page("loading"), page("rows ready")])
+        browser.observe = lambda **_: next(observations, page("rows ready"))
+        browser.evaluate = lambda _: {"login": False, "busy": False}
+        task = {**self.task(), "ready": {"text": ["rows ready"]}}
+        report = {}
+        self.assertIn("rows ready", observe_ready(browser, task, report, initial=True)["text"])
+        self.assertEqual(report["timings"][-1]["stage"], "data_ready")
+        self.assertEqual(browser.acted, 0)
+
+    def test_login_and_data_timeouts_do_not_call_model_or_dispatch(self):
+        for kind in ["login", "data_ready"]:
+            browser = FakeBrowser()
+            browser.evaluate = lambda _, k=kind: {"login": k == "login", "busy": k == "data_ready"}
+            task = {**self.task(), "timeouts": {kind: 0.02}}
+            report = {"actions": [], "decisions": []}
+            with self.subTest(stage=kind), self.assertRaisesRegex(HandBack, kind + "_timeout"):
+                run_loop(
+                    browser, lambda *_: self.fail("model must not be called"), Stale, task, report
+                )
+            self.assertEqual(browser.acted, 0)
+            self.assertEqual(report["timings"][-1]["outcome"], "interrupted")
+
+    def test_navigation_timeout_preserves_unknown_write_outcome(self):
+        browser = FakeBrowser()
+        browser.act = lambda *_args, **_kwargs: time.sleep(0.1)
+        report = {"actions": [], "decisions": []}
+        task = {**self.task(), "timeouts": {"navigation": 0.01}}
+        with self.assertRaisesRegex(HandBack, "navigation_timeout"):
+            run_loop(browser, lambda *_: self.decision("1"), Stale, task, report)
+        self.assertEqual(len(report["actions"]), 1)
+        self.assertEqual(report["actions"][0]["outcome"], "dispatching")
+
+    def test_completed_stage_does_not_reset_total_budget(self):
+        report = {}
+        with self.assertRaisesRegex(HandBack, "time_budget_exhausted"):
+            with deadline(0.06):
+                with stage(report, "navigation", 1):
+                    time.sleep(0.03)
+                with stage(report, "data_ready", 1):
+                    time.sleep(0.05)
+        self.assertEqual([x["stage"] for x in report["timings"]], ["navigation", "data_ready"])
 
     def test_explicit_input_and_mutation_labels(self):
         task = self.task()
