@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import { EmptyState } from "./components/reui/empty-state";
 import {
   FramePanel,
@@ -453,12 +454,7 @@ function DeliveryCard({
               <Status value={run.status} context="run" />
               <span>{scopeLabels[run.scopeType]}</span>
               <time dateTime={run.verifiedAt}>
-                {new Date(run.verifiedAt).toLocaleString("zh-CN", {
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {formatDateTime(run.verifiedAt, "MM-DD HH:mm")}
               </time>
             </div>
             <div

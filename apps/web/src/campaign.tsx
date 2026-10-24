@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import {
   Timeline,
   TimelineItem,
@@ -174,15 +175,7 @@ export function Campaign({
                       )}
                       <Status value={run.status} context="run" />
                       <time dateTime={run.report.verifiedAt}>
-                        {new Date(run.report.verifiedAt).toLocaleString(
-                          "zh-CN",
-                          {
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        )}
+                        {formatDateTime(run.report.verifiedAt, "MM-DD HH:mm")}
                       </time>
                     </span>
                     <span>{run.report.title}</span>

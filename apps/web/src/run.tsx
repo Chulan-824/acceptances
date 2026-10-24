@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import { ConsolidatedRuns, ConsolidatedRunArchive } from "./consolidated-runs";
 import { FramePanel } from "./components/reui/frame";
 import { Badge } from "./components/reui/badge";
@@ -261,7 +262,7 @@ export function Run({
                 {run.moves.map((move) => (
                   <li key={move.id}>
                     <time dateTime={move.createdAt}>
-                      {new Date(move.createdAt).toLocaleString()}
+                      {formatDateTime(move.createdAt)}
                     </time>
                     {" · "}
                     {move.reason}
@@ -281,7 +282,7 @@ export function Run({
               <ScopeType value={report.scopeType} /> {report.scope}
             </dd>
             <dt>验证时间</dt>
-            <dd>{new Date(report.verifiedAt).toLocaleString()}</dd>
+            <dd>{formatDateTime(report.verifiedAt)}</dd>
             <dt>验证环境</dt>
             <dd>
               {!report.environment || report.environment === "unknown"

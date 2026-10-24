@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import type { Run } from "@acceptances/api-client";
 import { evidenceURL } from "@acceptances/api-client";
 import { Alert } from "./components/reui/alert";
@@ -26,8 +27,7 @@ export function ConsolidatedRuns({
           <li key={c.id}>
             <a href={runPath(c.sourceRunId)}>{c.title}</a>
             <p>
-              {new Date(c.verifiedAt).toLocaleString()} · {c.evidenceCount}{" "}
-              个原始附件
+              {formatDateTime(c.verifiedAt)} · {c.evidenceCount} 个原始附件
             </p>
             <p>{c.reason}</p>
           </li>
@@ -52,7 +52,7 @@ export function ConsolidatedRunArchive({
         <a href={runPath(c.primaryRunId)}>前往当前验收报告</a>
       </Alert>
       <h2>{run.report.title}</h2>
-      <p>原验证时间：{new Date(run.report.verifiedAt).toLocaleString()}</p>
+      <p>原验证时间：{formatDateTime(run.report.verifiedAt)}</p>
       <p>{c.reason}</p>
       <CheckCounts checks={run.report.checks} />
       <p>{run.report.description}</p>

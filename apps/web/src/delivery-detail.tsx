@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -148,7 +149,7 @@ export function DeliveryDetail({
         <div className="delivery-archive-meta-row">
           <div className="delivery-archive-meta-item">
             <Clock size={13} className="text-muted" />
-            <span>创建时间：{new Date(data.createdAt).toLocaleString()}</span>
+            <span>创建时间：{formatDateTime(data.createdAt)}</span>
           </div>
           <div className="delivery-archive-meta-item font-mono">
             <Hash size={13} className="text-muted" />
@@ -426,7 +427,7 @@ export function DeliveryDetail({
                 <TimelineIndicator />
                 <TimelineSeparator />
                 <TimelineDate dateTime={event.createdAt}>
-                  {new Date(event.createdAt).toLocaleString()}
+                  {formatDateTime(event.createdAt)}
                 </TimelineDate>
                 <TimelineContent className="text-sm text-fg-secondary">
                   {event.reason}

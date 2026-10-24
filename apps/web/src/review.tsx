@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import {
   Timeline,
   TimelineItem,
@@ -253,7 +254,7 @@ export function ReviewHistory({
             <Status value={review.kind} />
           )}
           <TimelineDate dateTime={review.createdAt}>
-            {new Date(review.createdAt).toLocaleString()}
+            {formatDateTime(review.createdAt)}
           </TimelineDate>
           {review.body && <p className="prose">{review.body}</p>}
           {review.legacy && (

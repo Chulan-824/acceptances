@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import { EmptyState } from "./components/reui/empty-state";
 import { Frame, FrameHeader, FramePanel } from "./components/reui/frame";
 import { WorkspacePanels } from "./components/workspace-panels";
@@ -194,10 +195,7 @@ export function Project({
                 </span>
                 <strong>{campaign.title}</strong>
                 <time dateTime={campaign.createdAt}>
-                  {new Date(campaign.createdAt).toLocaleDateString("zh-CN", {
-                    month: "2-digit",
-                    day: "2-digit",
-                  })}
+                  {formatDateTime(campaign.createdAt, "MM-DD")}
                 </time>
               </Button>
             ))}

@@ -1,3 +1,4 @@
+import { formatDateTime } from "./lib/date";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -183,7 +184,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
               <div className="delivery-archive-meta-row">
                 <div className="delivery-archive-meta-item">
                   <Clock size={13} className="text-muted" />
-                  <span>{new Date(item.createdAt).toLocaleString()}</span>
+                  <span>{formatDateTime(item.createdAt)}</span>
                 </div>
                 <div className="delivery-archive-meta-item font-mono">
                   <span>快照 ID：{item.id.slice(0, 8)}</span>
