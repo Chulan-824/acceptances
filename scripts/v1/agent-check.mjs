@@ -10,6 +10,10 @@ execFileSync(
 execFileSync("python3", ["scripts/v1/install-skill.test.py"], {
   stdio: "inherit",
 });
+execFileSync("python3", ["scripts/v1/jev-probe.test.py"], {
+  stdio: "inherit",
+  env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" },
+});
 execFileSync("go", ["test", "./internal/cli", "-count=1"], {
   stdio: "inherit",
 });
@@ -26,6 +30,7 @@ writeFileSync(
       limitations: [
         "HTTP helper tests use a controlled local service; not deployed Docker or browser acceptance",
         "HTTP integration tests use isolated SQLite storage via SUITE=http",
+        "Jev selection checks use an offline doctor fixture; no Chrome or official model calls",
       ],
     },
     null,

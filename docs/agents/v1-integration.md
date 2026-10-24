@@ -4,6 +4,8 @@
 
 不需要账号、token 或旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/acceptances-v1/SKILL.md)和[报告格式](../../skills/acceptances-v1/references/report.md) 为准。
 
+浏览器验证按 skill 的 [可选 Jev 执行](../../skills/acceptances-v1/references/jev-browser.md) 先探测执行者本机配置，可用时优先尝试 Jev；无 Key、无执行器或调用不可用时，继续原有真实浏览器流程。安装器仅记录可选源码路径，迁移后可用 `ACCEPTANCES_JEV_ROOT` 指向本机已有源码；不分发私有配置，也不要求其他使用者安装 Jev。部署服务不提供共享 Key。
+
 ## 交付一次验证
 
 1. 确认需求对应的 Campaign。复验继续使用同一 Campaign。

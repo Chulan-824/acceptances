@@ -45,13 +45,13 @@
 
 运行验证按静态检查、进程内 HTTP 集成、原生进程、Docker、真实浏览器分别报告。归档源码 commit、dirty 状态、构建产物摘要、命令和实际结果；仅在本机执行不代表其他架构已验证。真实产品验收按 [T1–T9 及逐项评审交接](v1-implementation-handoff.md) 记录，日常运行库迁移结果单独报告。
 
-`make test SUITE=agent` 在临时安装目标验证 CLI 与 skill，并运行隔离 CLI 测试，不升级日常安装。`make test SUITE=e2e` 只核对外部驱动回执与证据文件，逐项评审、范围及反馈关联必须由真实浏览器操作和 API 断言覆盖。源码更新后的日常安装使用 `make replace-skill`，替换结果以安装器回执为准。
+`make test SUITE=agent` 在临时安装目标验证 CLI 与 skill，并运行隔离 CLI 测试及可选 Jev 的离线选择测试，不升级日常安装。Jev 选择测试使用受控 doctor，验证已配置、缺配置、执行器失效、超时及诊断脱敏，不连接 Chrome 或官方模型；不能据此声称真实回归通过。`make test SUITE=e2e` 只核对外部驱动回执与证据文件，逐项评审、范围及反馈关联必须由真实浏览器操作和 API 断言覆盖。源码更新后的日常安装使用 `make replace-skill`，替换结果以安装器回执为准。
 
 ## 本机服务生命周期
 
 开发、平台烟测和浏览器回归共用 `scripts/v1/services.mjs`。Agent 启动本机服务时使用上述入口，避免独立的 `nohup` 或 `&` 启动器绕过状态记录与退出清理。`make dev` 保持前台，Ctrl-C 或 SIGTERM 会回收 API、Vite 及其进程组；`make dev-up` 后台启动，等待 API 和 Web 代理就绪才返回。任一开发子进程退出或部分启动失败会停止整组，先 TERM，6 秒后仍未退出则 KILL。平台和浏览器验证继续使用独立临时数据、随机端口，完成后停止服务并核对端口已释放。
 
-开发默认 API 8765、Web 5173。启动前检查两个端口，Vite 使用 strictPort，不会悄悄换端口。需要同时保留其他本机服务时，可显式指定 `ACCEPTANCES_DEV_API_PORT`、`ACCEPTANCES_DEV_WEB_PORT`；两个值须是不同的 1–65535 整数，Web 代理同步指向指定 API。开发附件目录仍由 `ACCEPTANCES_DATA_DIR` 指定，默认 `.cache/dev-data`。开发入口使用 Docker MySQL 的 `acceptances_dev` 数据库；停止 Go/Vite 不停止 MySQL。迁移、凭据和备份规则见 [MySQL 存储](mysql-storage.md)。
+开发默认 API 8765、Web 5173。启动前检查两个端口，Vite 使用 strictPort，不会悄悄换端口。需要同时保留其他本机服务时，可显式指定 `ACCEPTANCES_DEV_API_PORT`、`ACCEPTANCES_DEV_WEB_PORT`；两个值须是不同的 1–65535 整数，Web 代理同步指向指定 API。旧归档目录由 `ACCEPTANCES_DATA_DIR` 指定，默认 `.cache/dev-data`。开发入口使用 Docker MySQL 的 `acceptances_dev` 数据库；停止 Go/Vite 不停止 MySQL。迁移、凭据和备份规则见 [MySQL 存储](mysql-storage.md)。
 
 状态记录和开发日志保存在 `.cache/services/`，每次启动覆盖 `api.log`、`web.log`，后台启动另有 `dev.log`。状态为 `starting`、`ready`、`stopping` 或 `stale`，没有记录显示 `[]`。`make dev-stop` 只停止开发；`make services-stop` 也会中断当前平台/浏览器验证。停止命令通过本机控制 socket 联系持有子进程句柄的启动器，不使用磁盘 PID 杀进程。过期记录由对应 stop 命令清理；未知占用方需先核对端口、PID、cwd 和启动来源。
 

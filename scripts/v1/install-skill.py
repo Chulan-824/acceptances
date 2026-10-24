@@ -1,22 +1,32 @@
 #!/usr/bin/env python3
 """Install the standalone local archive CLI and self-contained agent skill."""
+
 import argparse
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--destination", type=Path, help="skill directory")
 parser.add_argument("--bin-dir", type=Path, default=Path.home() / ".local" / "bin")
-parser.add_argument("--cli", type=Path, help="prebuilt acceptances executable; otherwise build with Go")
-parser.add_argument("--replace", action="store_true", help="replace an existing Acceptances skill and CLI")
+parser.add_argument(
+    "--cli", type=Path, help="prebuilt acceptances executable; otherwise build with Go"
+)
+parser.add_argument(
+    "--replace",
+    action="store_true",
+    help="replace an existing Acceptances skill and CLI",
+)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[2]
 source = root / "skills" / "acceptances-v1"
-destination = (args.destination or Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "skills" / "acceptances-v1").absolute()
+destination = (
+    args.destination
+    or Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "skills" / "acceptances-v1"
+).absolute()
 binary = args.bin_dir.absolute() / "acceptances"
 if destination == source or source in destination.parents or destination in source.parents:
     raise SystemExit("安装目标不能覆盖源码 skill")
@@ -30,6 +40,10 @@ if destination.exists() and not (destination / "SKILL.md").is_file():
 with tempfile.TemporaryDirectory(prefix="acceptances-install-") as temp:
     staged = Path(temp) / "acceptances-v1"
     shutil.copytree(source, staged)
+    # Optional Jev location hint; CLI/skill remain usable if this checkout is absent.
+    (staged / "scripts" / "jev-runtime.json").write_text(
+        json.dumps({"root": str(root)}, ensure_ascii=False) + "\n"
+    )
     # Keep the scope, provenance and third-party terms with the installed CLI/skill.
     licensing = staged / "licensing"
     licensing.mkdir()
@@ -42,7 +56,11 @@ with tempfile.TemporaryDirectory(prefix="acceptances-install-") as temp:
     if args.cli:
         shutil.copy2(args.cli, executable)
     else:
-        subprocess.run(["go", "build", "-o", str(executable), "./cmd/acceptances"], cwd=root, check=True)
+        subprocess.run(
+            ["go", "build", "-o", str(executable), "./cmd/acceptances"],
+            cwd=root,
+            check=True,
+        )
     executable.chmod(0o755)
     subprocess.run([str(executable), "version"], check=True, stdout=subprocess.DEVNULL)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -52,4 +70,13 @@ with tempfile.TemporaryDirectory(prefix="acceptances-install-") as temp:
         shutil.rmtree(destination)
     shutil.copytree(staged, destination)
     shutil.copy2(executable, binary)
-print(json.dumps({"skill": str(destination), "cli": str(binary), "licensing": str(destination / "licensing")}, ensure_ascii=False))
+print(
+    json.dumps(
+        {
+            "skill": str(destination),
+            "cli": str(binary),
+            "licensing": str(destination / "licensing"),
+        },
+        ensure_ascii=False,
+    )
+)
