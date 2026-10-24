@@ -9,7 +9,7 @@
 3. 根据实际验证编写 report.json，每个地图必验 check 都在这一个 Run 内出现，id 和 expected 一致。原始失败、阻塞、未执行如实记录，不跨历史 Run 拼接通过。
 4. 编写业务说明素材，功能说明、角色、前提、步骤、限制和截图对应地图及本轮实际检查。截图是该检查项真实 evidence，上传前完成业务项目要求的脱敏。
 5. 保存真实运行构建的标识、产物、SHA-256 和源码绑定；无需构建的项目明确记不适用并说明原因。静态候选源码包、源码 commit 或地图 zip 不能冒充运行构建证据。
-6. 材料定稿后计算附件 SHA-256，形成固定名称 delivery-manifest.json。全部附件平铺，逐个声明在 report.evidence 中，与实物一一对应。素材与引用校验齐备才发布真实 Run。
+6. 材料定稿后计算附件 SHA-256，形成固定名称 delivery-manifest.json。全部附件平铺，逐个声明在 report.evidence 中，与实物一一对应。执行 `acceptances validate --bundle <目录> --formal --project <实际ID> --campaign <实际ID>`，通过后使用 `acceptances publish --bundle <目录> --campaign <实际ID> --formal` 发布真实 Run。两者复用冻结材料校验；离线预检不创建 Run 或 submission ID，不代表人工接受。
 7. 用户逐项评审或一键接受后，在 Web 从需求顶部点击“确认需求交付”。用户确认地图版本/范围、说明内容与敏感信息检查，并为原始未通过项确认具体接受理由。Agent 提供材料和事实，不代替人执行冻结、接受或撤销。
 
 发布后不能补挂或修改材料。缺材料时保留既有审核结果，下一次真实验证准备完整材料；读取反馈、补文案本身不产生 Run。
@@ -127,7 +127,7 @@ business-materials.json：
       "limitations": [],
       "screenshots": [
         {
-          "path": "export-screen.png",
+          "path": "export-screen.jpg",
           "caption": "说明截图展示的真实操作与结果。",
           "checkIds": ["vtt-export--download"]
         }
@@ -140,7 +140,7 @@ business-materials.json：
 
 每个地图功能都有且只有一份说明。角色及步骤非空，前提和限制没有额外内容时使用空数组。步骤和截图的 checkIds 只关联该功能在最终 Run 中实际存在的检查项；每张截图也必须出现在这些检查项的 evidence 中。含原始非 passed 项的功能必须写明相关业务限制，不写成已验证通过。
 
-截图使用实际 PNG、JPEG 或 GIF，文件扩展名与字节格式一致，单张不超过 10 MiB、4000 万像素，说明中引用的图片合计不超过 32 MiB。无对应图时使用明确的 screenshotOmissionReason，例如非图形操作或实际未执行，保持事实，不编造图。HTML、SVG、外部 URL 及脚本不作为截图或渲染模板。
+新增截图统一使用真实 JPEG（.jpg 或 .jpeg），采集时直接编码，不能只改后缀。预检检查全部声明图片的实际格式、完整解码和尺寸；普通发布也执行 JPEG 检查，材料清单存在时自动执行完整交付材料检查。历史 Run 的 PNG/GIF 继续可读，不转码或改写。单张不超过 10 MiB、4000 万像素，说明中引用的图片合计不超过 32 MiB。无对应图时使用明确的 screenshotOmissionReason，例如非图形操作或实际未执行，保持事实，不编造图。HTML、SVG、外部 URL 及脚本不作为截图或渲染模板。
 
 SHA-256 基于最终文件的原始字节。先定稿需求，填地图的 requirementSha256；定稿地图后填素材的 mapSha256；最后填 manifest 全部引用。更改文字、空格或附件内容后重新计算摘要。服务不会读取业务工作目录补全材料。
 

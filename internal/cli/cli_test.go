@@ -17,7 +17,7 @@ func TestLinkAndPublishRetry(t *testing.T) {
 	t.Setenv("ACCEPTANCES_CONFIG_DIR", t.TempDir())
 	repo := t.TempDir()
 	bundle := t.TempDir()
-	os.WriteFile(filepath.Join(bundle, "report.json"), []byte(`{"title":"Login","evidence":[{"path":"log.txt"}]}`), 0600)
+	os.WriteFile(filepath.Join(bundle, "report.json"), []byte(`{"title":"Login","scope":"Synthetic CLI validation","verifiedAt":"2026-10-24T00:00:00Z","checks":[{"id":"fixture","title":"Fixture","expected":"Observed","actual":"Observed","status":"passed"}],"evidence":[{"path":"log.txt"}]}`), 0600)
 	os.WriteFile(filepath.Join(bundle, "log.txt"), []byte("actual evidence"), 0600)
 	var ids []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +120,7 @@ func TestWorktreesShareAssociation(t *testing.T) {
 func TestPublishReportsConflictAndRetainsSubmission(t *testing.T) {
 	t.Setenv("ACCEPTANCES_CONFIG_DIR", t.TempDir())
 	repo, bundle := t.TempDir(), t.TempDir()
-	os.WriteFile(filepath.Join(bundle, "report.json"), []byte(`{"title":"report","evidence":[]}`), 0600)
+	os.WriteFile(filepath.Join(bundle, "report.json"), []byte(`{"title":"report","scope":"Synthetic CLI validation","verifiedAt":"2026-10-24T00:00:00Z","checks":[{"id":"fixture","title":"Fixture","expected":"Observed","actual":"Observed","status":"passed"}],"evidence":[]}`), 0600)
 	var ids []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -223,5 +223,49 @@ func TestLinkUsesBusinessDirectoryName(t *testing.T) {
 	}
 	if len(names) != 2 || names[0] != "frontend" || names[1] != "backend" {
 		t.Fatalf("wrong repository names: %v", names)
+	}
+}
+
+func TestOfflineValidationAndPublishPreflightHaveNoWriteSideEffects(t *testing.T) {
+	t.Setenv("ACCEPTANCES_CONFIG_DIR", t.TempDir())
+	bundle, repo := t.TempDir(), t.TempDir()
+	if err := os.WriteFile(filepath.Join(bundle, "report.json"), []byte(`{"title":"Incomplete"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	requests, uploads := 0, 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		switch r.URL.Path {
+		case "/api/v1/projects":
+			fmt.Fprint(w, `{"items":[{"id":"p1","name":"Demo"}]}`)
+		case "/api/v1/projects/p1/repositories":
+			fmt.Fprint(w, `{"id":"repo1"}`)
+		case "/api/v1/projects/p1/campaigns":
+			fmt.Fprint(w, `{"items":[{"id":"c1","title":"Case"}]}`)
+		default:
+			uploads++
+			t.Error("invalid bundle reached upload endpoint")
+		}
+	}))
+	defer server.Close()
+	var out, log bytes.Buffer
+	if Run([]string{"validate", "--bundle", bundle, "--formal", "--url", server.URL}, &out, &log) == 0 {
+		t.Fatal("invalid bundle accepted")
+	}
+	if requests != 0 {
+		t.Fatal("offline validation used network")
+	}
+	if Run([]string{"link", "--repo", repo, "--url", server.URL, "--project", "Demo"}, &out, &log) != 0 {
+		t.Fatal(&log)
+	}
+	log.Reset()
+	if Run([]string{"publish", "--repo", repo, "--bundle", bundle, "--campaign", "Case", "--formal"}, &out, &log) == 0 {
+		t.Fatal("invalid bundle published")
+	}
+	if !strings.Contains(log.String(), "bundle preflight") || uploads != 0 {
+		t.Fatal("preflight was bypassed", &log)
+	}
+	if _, err := os.Stat(filepath.Join(bundle, ".submission-id")); !os.IsNotExist(err) {
+		t.Fatal("preflight wrote ID")
 	}
 }

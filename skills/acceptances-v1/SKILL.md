@@ -16,7 +16,7 @@ Acceptances 保存验证事实供人验收。Project 关联一个或多个 Repos
 3. 运行 `acceptances campaigns` 查找本次需求；按既有交付选择 Campaign，新需求用 `acceptances campaigns --title <标题> --description <说明>` 创建。复验继续使用原 Campaign。
 4. 首次验证直接按需求执行。用户要求根据人工反馈修复或复验时，先按 [反馈处理](references/feedback.md) 读取指定来源 Run 的当前逐项判断和评论，确认本次处理范围与修复授权；复验继续归属原 Campaign。
 5. 执行真实验证，记录环境、预期与实际结果以及真实附件。每次实际验证使用新的 bundle 目录，按 [报告格式](references/report.md) 写入 `report.json` 与附件，明确 `scopeType` 和本次范围。反馈复验填写 `followUp`，逐条关联来源反馈、处理说明和本次检查项。多仓库各运行一次 `acceptances context --repo <目录>`，将返回的 version 填入报告。失败、阻塞和跳过如实保存；未重跑的内容写入范围说明。
-6. `acceptances publish --bundle <目录> --campaign <标题或ID>` 整包提交。成功以返回 Run 为准，并向用户给出 Web 的 Run 链接。上传失败保留目录内的 `.submission-id` 与内容，原命令重试；相同 ID、不同内容的冲突须说明原因，不通过换 ID 掩盖冲突。已保存报告有文字错误时用评论纠正，整体错误由用户作废；完成新的实际验证才建新 Run。
+6. 发布前执行 `acceptances validate --bundle <目录>`；正式交付加 `--formal --project <实际ID> --campaign <实际ID>`，检查完整范围、版本绑定、材料引用与摘要。新增截图统一为真实 JPEG，先编码再计算摘要，不改写历史附件。预检失败先修正本次待发布包，不能缩减检查范围或改旧 Run。`acceptances publish --bundle <目录> --campaign <标题或ID>` 整包提交，正式交付加 `--formal`；发布入口再次预检，通过前不创建 submission ID 或 Run。成功以返回 Run 为准，并向用户给出 Web 的 Run 链接。上传失败保留目录内的 `.submission-id` 与内容，原命令重试；相同 ID、不同内容的冲突须说明原因，不通过换 ID 掩盖冲突。已保存报告有文字错误时用评论纠正，整体错误由用户作废；完成新的实际验证才建新 Run。
 7. 用 `acceptances status --run <ID>` 核对新 Run，确认范围、反馈关联、实际结果及归档回执。向用户说明本轮覆盖内容和未完成项，等待用户逐项评审或一键确认本轮交付。读取反馈或改写文字本身不产生新 Run。
 
 ## 人审边界

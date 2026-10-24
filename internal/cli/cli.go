@@ -17,6 +17,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/Chulan-824/acceptances/internal/api"
 )
 
 type binding struct {
@@ -49,7 +51,7 @@ func run(args []string, log io.Writer) (any, error) {
 		return map[string]any{"commands": []string{
 			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...]",
 			"context [--repo .]", "campaigns [--title <new-title>] [--description ...] [--repo .]",
-			"publish --bundle <directory> --campaign <title-or-id> [--repo .]", "status --run <id> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
+			"validate --bundle <directory> [--formal] [--project <id>] [--campaign <id>]", "publish --bundle <directory> --campaign <title-or-id> [--formal] [--repo .]", "status --run <id> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
 		}, "bundle": "report.json and declared evidence files; .submission-id retained for retries; use a new directory for each actual verification"}, nil
 	}
 	if args[0] == "version" {
@@ -64,6 +66,7 @@ func run(args []string, log io.Writer) (any, error) {
 	title := f.String("title", "", "create campaign with this title")
 	description := f.String("description", "", "campaign description")
 	bundle := f.String("bundle", "", "directory containing report.json and evidence")
+	formal := f.Bool("formal", false, "require complete formal-delivery materials before publishing")
 	runID := f.String("run", "", "Run ID")
 	fromCampaign := f.String("from-campaign", "", "expected current Campaign ID")
 	reason := f.String("reason", "", "reason for correcting Run ownership")
@@ -74,6 +77,16 @@ func run(args []string, log io.Writer) (any, error) {
 	}
 	if f.NArg() != 0 {
 		return nil, fmt.Errorf("unexpected positional arguments")
+	}
+	if args[0] == "validate" {
+		if *bundle == "" {
+			return nil, fmt.Errorf("--bundle is required")
+		}
+		report, err := api.ValidateBundle(*bundle, *project, *campaign, *formal)
+		if err != nil {
+			return nil, fmt.Errorf("bundle preflight: %w", err)
+		}
+		return map[string]any{"valid": true, "scopeType": report.ScopeType, "checks": len(report.Checks), "evidence": len(report.Evidence), "screenshotFormat": "JPEG"}, nil
 	}
 	source, err := repositorySource(*repo)
 	if err != nil {
@@ -166,6 +179,9 @@ func run(args []string, log io.Writer) (any, error) {
 		}
 		if *bundle == "" {
 			return nil, fmt.Errorf("--bundle is required")
+		}
+		if _, err := api.ValidateBundle(*bundle, saved.ProjectID, id, *formal); err != nil {
+			return nil, fmt.Errorf("bundle preflight: %w", err)
 		}
 		result, err := c.publish(id, *bundle)
 		if err != nil {

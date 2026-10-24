@@ -15,7 +15,7 @@ import (
 func TestMoveRunCLIAndPublishRetryUseActualCampaign(t *testing.T) {
 	t.Setenv("ACCEPTANCES_CONFIG_DIR", t.TempDir())
 	repo, bundle := t.TempDir(), t.TempDir()
-	if err := os.WriteFile(filepath.Join(bundle, "report.json"), []byte(`{"title":"Original","evidence":[]}`), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(bundle, "report.json"), []byte(`{"title":"Original","scope":"Synthetic CLI validation","verifiedAt":"2026-10-24T00:00:00Z","checks":[{"id":"fixture","title":"Fixture","expected":"Observed","actual":"Observed","status":"passed"}],"evidence":[]}`), 0600); err != nil {
 		t.Fatal(err)
 	}
 	moves := 0
