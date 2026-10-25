@@ -74,7 +74,7 @@ make test SUITE=agent
 make test SUITE=platform
 ```
 
-开发 Web 为 <http://127.0.0.1:5173>，API 为 <http://127.0.0.1:8765>，附件默认在 `.cache/dev-data`，数据库使用 `127.0.0.1:3307/acceptances_dev` 的 Docker MySQL。开发时在业务目录首次关联使用 `acceptances link --url http://127.0.0.1:5173 --project <项目名称>`，与 Web 共用 Vite 代理入口；后续命令复用关联中保存的 URL。生产构建输出 `build/server`、`build/acceptances` 和 `apps/web/dist`。
+开发 Web 为 <http://127.0.0.1:5173>，API 为 <http://127.0.0.1:8765>，附件默认在 `.cache/dev-data`，数据库使用 `127.0.0.1:3307/acceptances_dev` 的 Docker MySQL。开发时在业务目录首次关联使用 `acceptances link --url http://127.0.0.1:5173 --project <项目名称>`，与 Web 共用 Vite 代理入口；后续命令复用关联中保存的 URL。也可分开配置 `acceptances link --url http://127.0.0.1:8765 --web-url http://127.0.0.1:5173 --project <项目名称>`：API 请求使用 `--url`，人审回执使用 `--web-url`；同源部署不需要额外配置。旧关联可重新 link 更新地址，`acceptances status --run <ID>` 只读返回正确人审链接。生产构建输出 `build/server`、`build/acceptances` 和 `apps/web/dist`。
 
 `make test` 执行隔离 Go 测试、Web 单元及服务生命周期回归。`make services-status` 查询受管开发/验证服务，`make services-stop` 停止它们（会中断验证）；真实开发启动/退出烟测使用 `make test SUITE=services`。`pnpm test:browser` 构建当前源码，再执行已有真实浏览器回归；分组与证据边界见 [Web 回归验证](apps/web/tests/README.md)。这些检查不能代替真实业务及 Docker 验收。命令边界见 [工具链](docs/toolchain.md)，T1–T9 验证步骤见 [实现交接](docs/v1-implementation-handoff.md)。
 

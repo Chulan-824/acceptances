@@ -55,7 +55,7 @@ Agent 读取 API 返回的 `checkReviews` 当前判断、`reviewCounts` 计数�
 
 `feedbackResponses` 可从原反馈找到后续 Run，`status --run <后续ID>` 可查看处理说明和复验证据。这些响应不关闭原反馈、不继承人工判断，用户重新逐项评审。来源之后被删除，后续 Run 保留原引用及说明，并通过 `sourceRunAvailable: false` 表示来源不可读。
 
-CLI 原样传递 API JSON，`publish` 原样上传报告并添加回执 `webUrl`，现有命令无需新增参数。字段细节和执行顺序见 [反馈处理](../../skills/acceptances-v1/references/feedback.md)。
+CLI `publish` 原样上传报告；`publish`、只读 `status` 和 `move-run` 添加完整 Run 路由的 `webUrl`，其余 API 字段保留。`--url` 是 API 地址；API 与 Web 分离时，用 `acceptances link --url http://127.0.0.1:8765 --web-url http://127.0.0.1:5173 --project <名称或ID>` 保存两个入口。同源部署省略 `--web-url`，默认复用 API 地址。旧关联可对同一 Project 重新 link 更新；只修正回执时运行 `status --run <ID>`，不创建或移动 Run。字段细节和执行顺序见 [反馈处理](../../skills/acceptances-v1/references/feedback.md)。
 
 ## 存储升级
 

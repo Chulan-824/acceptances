@@ -57,15 +57,15 @@ func TestMoveRunCLIAndPublishRetryUseActualCampaign(t *testing.T) {
 		}
 		return out.String()
 	}
-	invoke("link", "--repo", repo, "--url", server.URL, "--project", "Demo")
+	invoke("link", "--repo", repo, "--url", server.URL, "--project", "Demo", "--web-url", "http://127.0.0.1:5173/review/")
 	for range 2 {
 		receipt := invoke("move-run", "--repo", repo, "--run", "r1", "--from-campaign", "source", "--campaign", "Independent", "--reason", "Correct ownership", "--request-id", "stable")
-		if !strings.Contains(receipt, server.URL+"/projects/p1/campaigns/target/runs/r1") {
+		if !strings.Contains(receipt, "http://127.0.0.1:5173/review/projects/p1/campaigns/target/runs/r1") {
 			t.Fatal(receipt)
 		}
 	}
 	receipt := invoke("publish", "--repo", repo, "--bundle", bundle, "--campaign", "Original")
-	if !strings.Contains(receipt, server.URL+"/projects/p1/campaigns/target/runs/r1") {
+	if !strings.Contains(receipt, "http://127.0.0.1:5173/review/projects/p1/campaigns/target/runs/r1") {
 		t.Fatal("publish retry points to old Campaign", receipt)
 	}
 	if moves != 2 {

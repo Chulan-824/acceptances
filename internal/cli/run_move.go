@@ -30,7 +30,7 @@ func (c client) moveRun(campaigns, projectID, runID, fromCampaign, target, reaso
 	}
 	if run, ok := result["run"].(map[string]any); ok {
 		if actualCampaign, ok := run["campaignId"].(string); ok {
-			result["webUrl"] = c.base + "/projects/" + url.PathEscape(projectID) + "/campaigns/" + url.PathEscape(actualCampaign) + "/runs/" + url.PathEscape(runID)
+			result["webUrl"] = c.runURL(projectID, actualCampaign, runID)
 		}
 	}
 	return result, nil

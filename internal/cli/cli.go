@@ -23,11 +23,12 @@ import (
 
 type binding struct {
 	URL          string `json:"url"`
+	WebURL       string `json:"webUrl,omitempty"`
 	ProjectID    string `json:"projectId"`
 	RepositoryID string `json:"repositoryId"`
 	Source       string `json:"source"`
 }
-type client struct{ base string }
+type client struct{ base, web string }
 
 func Run(args []string, out, log io.Writer) int {
 	result, err := run(args, log)
@@ -49,7 +50,7 @@ func Run(args []string, out, log io.Writer) int {
 func run(args []string, log io.Writer) (any, error) {
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
 		return map[string]any{"commands": []string{
-			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...]",
+			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...] [--web-url ...]",
 			"context [--repo .]", "campaigns [--title <new-title>] [--description ...] [--repo .]",
 			"validate --bundle <directory> [--formal] [--project <id>] [--campaign <id>]", "publish --bundle <directory> --campaign <title-or-id> [--formal] [--repo .]", "status --run <id> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
 		}, "bundle": "report.json and declared evidence files; .submission-id retained for retries; use a new directory for each actual verification"}, nil
@@ -59,7 +60,8 @@ func run(args []string, log io.Writer) (any, error) {
 	}
 	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	f.SetOutput(log)
-	endpoint := f.String("url", "", "service URL (default saved association or http://127.0.0.1:8765)")
+	endpoint := f.String("url", "", "API URL (default saved association or http://127.0.0.1:8765)")
+	webEndpoint := f.String("web-url", "", "Web URL for human review (default saved association or API URL)")
 	repo := f.String("repo", ".", "business directory")
 	project := f.String("project", "", "project name or ID")
 	campaign := f.String("campaign", "", "campaign title or ID")
@@ -111,11 +113,21 @@ func run(args []string, log io.Writer) (any, error) {
 	if base == "" {
 		base = "http://127.0.0.1:8765"
 	}
-	parsed, err := url.Parse(base)
-	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
-		return nil, fmt.Errorf("invalid service URL")
+	base = strings.TrimRight(base, "/")
+	web := *webEndpoint
+	if web == "" && base == strings.TrimRight(saved.URL, "/") {
+		web = saved.WebURL
 	}
-	c := client{strings.TrimRight(base, "/")}
+	if web == "" {
+		web = base
+	}
+	for _, endpoint := range []struct{ name, value string }{{"service", base}, {"Web", web}} {
+		parsed, err := url.Parse(endpoint.value)
+		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" {
+			return nil, fmt.Errorf("invalid %s URL", endpoint.name)
+		}
+	}
+	c := client{base: base, web: strings.TrimRight(web, "/")}
 	if args[0] == "projects" {
 		return c.request("GET", "/projects", nil, "")
 	}
@@ -142,7 +154,7 @@ func run(args []string, log io.Writer) (any, error) {
 		if err = json.Unmarshal(result, &linked); err != nil {
 			return nil, err
 		}
-		saved = binding{URL: c.base, ProjectID: id, RepositoryID: linked.ID, Source: source}
+		saved = binding{URL: c.base, WebURL: c.web, ProjectID: id, RepositoryID: linked.ID, Source: source}
 		if err := saveJSON(path, saved); err != nil {
 			return nil, err
 		}
@@ -168,7 +180,7 @@ func run(args []string, log io.Writer) (any, error) {
 		if *runID == "" {
 			return nil, fmt.Errorf("--run is required")
 		}
-		return c.request("GET", "/runs/"+url.PathEscape(*runID), nil, "")
+		return c.status(*runID)
 	case "feedback", "publish":
 		id, err := c.selectID(campaigns, *campaign, "title")
 		if err != nil {
@@ -195,12 +207,43 @@ func run(args []string, log io.Writer) (any, error) {
 			id = actualCampaign
 		}
 		if runID, ok := run["id"].(string); ok {
-			run["webUrl"] = c.base + "/projects/" + url.PathEscape(saved.ProjectID) + "/campaigns/" + id + "/runs/" + url.PathEscape(runID)
+			run["webUrl"] = c.runURL(saved.ProjectID, id, runID)
 		}
 		return run, nil
 	default:
 		return nil, fmt.Errorf("unknown command %q; run help", args[0])
 	}
+}
+
+func (c client) runURL(projectID, campaignID, runID string) string {
+	return c.web + "/projects/" + url.PathEscape(projectID) + "/campaigns/" + url.PathEscape(campaignID) + "/runs/" + url.PathEscape(runID)
+}
+
+func (c client) status(runID string) (any, error) {
+	raw, err := c.request("GET", "/runs/"+url.PathEscape(runID), nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var run map[string]any
+	if err := json.Unmarshal(raw, &run); err != nil {
+		return nil, err
+	}
+	campaignID, _ := run["campaignId"].(string)
+	raw, err = c.request("GET", "/campaigns/"+url.PathEscape(campaignID), nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var campaign struct {
+		ProjectID string `json:"projectId"`
+	}
+	if err := json.Unmarshal(raw, &campaign); err != nil {
+		return nil, err
+	}
+	if campaignID == "" || campaign.ProjectID == "" {
+		return nil, fmt.Errorf("Run or Campaign response is missing ownership")
+	}
+	run["webUrl"] = c.runURL(campaign.ProjectID, campaignID, runID)
+	return run, nil
 }
 
 func (c client) request(method, path string, body io.Reader, contentType string) (json.RawMessage, error) {

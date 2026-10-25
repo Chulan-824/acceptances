@@ -92,6 +92,6 @@ Run 全部检查项人工通过才整轮通过；最新 Run 同时为 `full` 才
 
 ## 保存结果
 
-CLI `publish` 原样上传报告，返回 API Run JSON 并添加 `webUrl`；`status` 与 `feedback` 保留 API JSON 字段。回执包含 `id`、`status`、`reviews`、`checkReviews`、`reviewCounts` 和 `feedbackResponses`，报告的范围与来源位于 `report`。有来源时另返回派生的 `sourceRunAvailable`，它不写入原报告。用 `webUrl` 打开详情交给人审。
+CLI `publish` 原样上传报告；`publish`、`status` 与 `move-run` 的回执按关联的 Web 地址添加完整 Run 路由 `webUrl`，不使用 API 端口推断 Web 端口。`status` 只读查询 Run 及其当前 Campaign，按实际归属生成链接；`feedback` 保留 API JSON 字段。API 与 Web 分离时先用 `link --url <API地址> --web-url <Web地址> --project <名称或ID>` 保存地址；同源部署可省略 `--web-url`，单次命令也可用它覆盖回执地址。回执包含 `id`、`status`、`reviews`、`checkReviews`、`reviewCounts` 和 `feedbackResponses`，报告的范围与来源位于 `report`。有来源时另返回派生的 `sourceRunAvailable`，它不写入原报告。用 `webUrl` 打开详情交给人审。
 
 `status` 是人工状态，`report.checks[].status` 是原始验证结果。用户人工接受失败项时原始失败继续保留。若服务返回冲突，保留原包并说明，不宣称保存成功。上传中断后仍用原 ID 和原内容重试；来源之后被删除不改变已保存的后续报告及其同内容重试。
