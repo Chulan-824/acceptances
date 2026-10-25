@@ -16,6 +16,8 @@ type deletionPreview struct {
 	Reviews            int `json:"reviews"`
 	RetainedDeliveries int `json:"retainedDeliveries"`
 	RetainedDocuments  int `json:"retainedDocuments"`
+	PRDSnapshots       int `json:"prdSnapshots"`
+	PRDFiles           int `json:"prdFiles"`
 }
 
 func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string, remove bool) {
@@ -40,6 +42,16 @@ func (s *Server) deleteScope(w http.ResponseWriter, r *http.Request, kind string
 	case "campaigns":
 		preview.Campaigns = 1
 		where = "campaign_id=?"
+	}
+	if kind != "runs" {
+		if err := s.db.QueryRow("SELECT COUNT(*) FROM prd_snapshots WHERE "+where, key).Scan(&preview.PRDSnapshots); err != nil {
+			fail(w, 500, "READ_FAILED")
+			return
+		}
+		if err := s.db.QueryRow("SELECT COUNT(*) FROM prd_import_files WHERE import_id IN (SELECT id FROM prd_imports WHERE "+where+")", key).Scan(&preview.PRDFiles); err != nil {
+			fail(w, 500, "READ_FAILED")
+			return
+		}
 	}
 	rows, e := s.db.Query("SELECT id FROM runs WHERE "+where, key)
 	if e != nil {
