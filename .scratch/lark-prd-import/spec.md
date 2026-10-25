@@ -14,11 +14,13 @@
 - 部署目标为一台 VPS，倾向本地构建 Docker 镜像后上传运行；实际部署尚未完成。
 - 导入用于给后续 PRD 分析提供内容。测试用例生成列 TODO，本期也不引入 LLM、任意 SQL 执行或自动验收。
 
-架构决定见 [ADR-0014](../../docs/adr/0014-personal-lark-prd-import.md)，术语见 [GLOSSARY](../../GLOSSARY.md)。以下具体协议、限制与页面行为为推荐实施规格，未描述为现有功能。
+架构决定见 [ADR-0014](../../docs/adr/0014-personal-lark-prd-import.md)，术语见 [GLOSSARY](../../GLOSSARY.md)。以下为实施规格；实际实现和验证结果见[集成回执](integration-verification.md)，真实环境缺口见[外部验收交接](external-acceptance.md)。
 
 ## 证据与完整链路核验
 
 核查基线为 main，HEAD 3d4d8b8b97cc3dd0f2adbcb200e5264994b5a50f，相对本地 origin/main 领先 8 个提交。开始调研时工作区干净，未 fetch。未读取任何项目 .env 文件或输出凭据。
+
+本节保留开始调研时的事实。后续按用户授权新增的实现和本地验证单独记入回执，不用当前代码反写当时已取得的证据。
 
 | 环节             | 已取得证据                                                                                                                                                       | 尚未证明                                                          |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -271,7 +273,7 @@ manifest 明确 schemaVersion、实际 documentId、revisionId、格式/解析�
 - A12：原文撤权/删除后平台快照仍可读，并保留已确认共享提示；Campaign 删除影响预览包含 PRD，blob 引用规则不丢其他文件。
 - A13：首期目标成员的实际 OS/架构分别验收个人授权读取，不能用本机 macOS 成功代表所有电脑；VPS 镜像架构与运行回执单独记录。
 
-实现后的检查按 [toolchain](../../docs/toolchain.md) 选择 fmt、lint、typecheck、CLI/agent、HTTP/MySQL、Web 与构建；发布镜像变更再跑 release-check。真实页面使用用户指定/当前可用的真实浏览器，遵守 AGENTS，不默认运行 Playwright。以上是未来验收标准，本次未运行这些实现测试。
+实现后的检查按 [toolchain](../../docs/toolchain.md) 选择 fmt、lint、typecheck、CLI/agent、HTTP/MySQL、Web 与构建；发布镜像变更再跑 release-check。真实页面使用用户指定/当前可用的真实浏览器，遵守 AGENTS，不默认运行 Playwright。以上为验收标准，实际通过范围与未运行项以集成回执为准。
 
 ## 后续 TODO
 
