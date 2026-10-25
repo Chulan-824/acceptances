@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/Chulan-824/acceptances/internal/prd"
@@ -92,5 +93,57 @@ func TestBundleDeduplicatesTemporaryAliasesAndReadMetadata(t *testing.T) {
 	b := makeBundle("img_99", "8", "2026-10-25T01:00:00Z")
 	if a.SourceHash != b.SourceHash || a.ResourceHash != b.ResourceHash {
 		t.Fatal("temporary aliases, read time or revision changed semantic hashes")
+	}
+}
+
+func TestBundleResolvesAliasesWithinTheirReferenceGroup(t *testing.T) {
+	m, files := textBundle(t)
+	source := prd.SourceDocument{DocumentID: m.DocumentID, RevisionID: m.RevisionID, Content: `<title>登录需求</title><img ref="same"></img><a ref="same">链接</a>`, ReferenceMap: map[string]json.RawMessage{
+		"images": json.RawMessage(`{"same":{"token":"ImageToken123"}}`),
+		"links":  json.RawMessage(`{"same":{"href":"https://example.com"}}`),
+	}}
+	clean, err := prd.SanitizeDocument(source)
+	if err != nil || len(clean.Resources) != 1 || clean.Resources[0].ResourceID != "ImageToken123" {
+		t.Fatalf("group-scoped image alias was not resolved: %v %#v", err, clean.Resources)
+	}
+	files["source.json"], _ = json.Marshal(clean.Source)
+	m.Files[0] = prd.DescribeFile("source.json", "source", "application/json", files["source.json"])
+	m.Completeness, m.Resources = "partial", clean.Resources
+	first, err := prd.ValidateBundle(m, files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 20 {
+		next, err := prd.ValidateBundle(m, files)
+		if err != nil || next.SourceHash != first.SourceHash {
+			t.Fatal("group alias resolution was nondeterministic", err)
+		}
+	}
+}
+
+func TestDocumentExcludesCommentsAndTransientMediaURLsButKeepsLinks(t *testing.T) {
+	source := prd.SourceDocument{Content: `<title>标题</title><p comment-id="private">正文</p><img ref="img1"/><a ref="a1">原始链接</a><comment>私密评论</comment>`, ReferenceMap: map[string]json.RawMessage{
+		"images":   json.RawMessage(`{"img1":{"token":"ImageToken123","url":"https://example.com/image?signature=secret"}}`),
+		"links":    json.RawMessage(`{"a1":{"url":"https://example.com/requirement"}}`),
+		"comments": json.RawMessage(`{"c1":{"data":"secret conversation"}}`),
+	}}
+	got, err := prd.SanitizeDocument(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := json.Marshal(got.Source)
+	if !got.Excluded || strings.Contains(string(raw), "secret") || strings.Contains(string(raw), "private") || !strings.Contains(string(raw), "https://example.com/requirement") || !strings.Contains(got.Source.Content, "正文") {
+		t.Fatalf("incorrect sanitized document: %s", raw)
+	}
+}
+
+func TestDocumentKeepsBothMediaGroupsWhenAliasesCollide(t *testing.T) {
+	source := prd.SourceDocument{Content: `<title>资源</title><img ref="same"/><whiteboard ref="same"/>`, ReferenceMap: map[string]json.RawMessage{
+		"images":     json.RawMessage(`{"same":{"token":"ImageToken123"}}`),
+		"whiteboard": json.RawMessage(`{"same":{"token":"WhiteboardToken123"}}`),
+	}}
+	got, err := prd.SanitizeDocument(source)
+	if err != nil || len(got.Resources) != 2 || got.Resources[0].Reference == got.Resources[1].Reference || got.Resources[0].ResourceID != "ImageToken123" || got.Resources[1].ResourceID != "WhiteboardToken123" {
+		t.Fatalf("media alias collision lost a resource: %v %#v", err, got.Resources)
 	}
 }

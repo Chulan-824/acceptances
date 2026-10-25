@@ -55,6 +55,7 @@ type Resource struct {
 	Status     string `json:"status"`
 	Reason     string `json:"reason,omitempty"`
 	BlockID    string `json:"blockId,omitempty"`
+	FetchedAt  string `json:"fetchedAt,omitempty"`
 }
 
 type File struct {

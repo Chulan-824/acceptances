@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -77,6 +78,9 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 	if err != nil || doc.Excluded {
 		return Bundle{}, errors.New("PRD source contains excluded or invalid data")
 	}
+	if doc.Title == "" || doc.Title != manifest.Title {
+		return Bundle{}, errors.New("PRD title does not match its source")
+	}
 	if len(doc.Resources) != len(manifest.Resources) {
 		return Bundle{}, errors.New("PRD resource declarations are incomplete")
 	}
@@ -98,6 +102,9 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 		}
 		switch resource.Status {
 		case "saved":
+			if _, err := time.Parse(time.RFC3339Nano, resource.FetchedAt); err != nil {
+				return Bundle{}, errors.New("invalid PRD resource read time")
+			}
 			index := slices.IndexFunc(manifest.Files, func(f File) bool { return f.Name == resource.Filename })
 			if expected.Status == "unsupported" || expected.ResourceID == "" || index < 0 || manifest.Files[index].Role != resource.Kind {
 				return Bundle{}, errors.New("invalid saved PRD resource")
@@ -135,7 +142,7 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 	resources := make([]string, 0, len(manifest.Resources))
 	for _, resource := range manifest.Resources {
 		value := resource
-		value.Reference, value.Filename = "", ""
+		value.Reference, value.Filename, value.FetchedAt = "", "", ""
 		var fileHash string
 		for _, file := range manifest.Files {
 			if file.Name == resource.Filename {
@@ -180,7 +187,6 @@ func sum(data []byte) string {
 
 func stableDocument(source SourceDocument) ([]byte, error) {
 	source.RevisionID = ""
-	replacements := make(map[string]string)
 	stableMap := make(map[string]json.RawMessage)
 	for group, raw := range source.ReferenceMap {
 		var references map[string]json.RawMessage
@@ -188,21 +194,51 @@ func stableDocument(source SourceDocument) ([]byte, error) {
 			return nil, fmt.Errorf("invalid PRD reference group")
 		}
 		values := make(map[string]json.RawMessage)
-		for reference, attributes := range references {
+		for _, attributes := range references {
 			var value any
 			if json.Unmarshal(attributes, &value) != nil {
 				return nil, errors.New("invalid PRD reference")
 			}
 			canonical, _ := json.Marshal(value)
-			stableRef := "ref-" + sum(canonical)
-			replacements[reference] = stableRef
+			stableRef := "ref-" + sum(append([]byte(group+"\x00"), canonical...))
 			values[stableRef] = canonical
 		}
 		stableMap[group], _ = json.Marshal(values)
 	}
-	for reference, stable := range replacements {
-		source.Content = strings.ReplaceAll(source.Content, "ref=\""+reference+"\"", "ref=\""+stable+"\"")
+	var content bytes.Buffer
+	decoder, encoder := xml.NewDecoder(strings.NewReader(source.Content)), xml.NewEncoder(&content)
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.New("invalid PRD XML")
+		}
+		if element, ok := token.(xml.StartElement); ok {
+			for index, attr := range element.Attr {
+				if attr.Name.Local != "ref" {
+					continue
+				}
+				value, group, err := referenceValue(element.Name.Local, attr.Value, source.ReferenceMap)
+				if err != nil {
+					return nil, err
+				}
+				if group != "" {
+					canonical, _ := json.Marshal(value)
+					element.Attr[index].Value = "ref-" + sum(append([]byte(group+"\x00"), canonical...))
+				}
+			}
+			token = element
+		}
+		if err := encoder.EncodeToken(token); err != nil {
+			return nil, err
+		}
 	}
+	if err := encoder.Flush(); err != nil {
+		return nil, err
+	}
+	source.Content = content.String()
 	source.ReferenceMap = stableMap
 	return json.Marshal(source)
 }
