@@ -54,7 +54,7 @@ const errors: Record<string, string> = {
   LARK_PERMISSION_DENIED: "你的 Lark 账号无权读取此文档，请联系文档所有者。",
   LARK_NOT_FOUND: "Lark 文档不存在或已被删除，请检查链接。",
   LARK_IDENTITY_CHANGED: "本机 Lark 账号已变化，请确认个人身份后重新连接。",
-  LARK_VERSION_CHANGED: "本机 Lark CLI 版本已变化，请重新启动连接器。",
+  LARK_VERSION_CHANGED: "PRD 在读取期间持续变更，请待原文稳定后重新导入。",
   LARK_FETCH_FAILED: "本机读取 Lark 文档失败，请检查网络和连接器后重新导入。",
   LARK_INVALID_RESULT: "Lark 返回内容不符合读取要求，请检查原文后重新导入。",
   LARK_REALM_MISMATCH:

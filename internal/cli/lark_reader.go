@@ -27,10 +27,10 @@ type larkEnvelope struct {
 	Identity string          `json:"identity"`
 	Data     json.RawMessage `json:"data"`
 	Error    struct {
-		Type       string `json:"type"`
-		Subtype    string `json:"subtype"`
-		Code       int    `json:"code"`
-		RetryAfter int    `json:"retry_after_seconds"`
+		Type       string      `json:"type"`
+		Subtype    string      `json:"subtype"`
+		Code       int         `json:"code"`
+		RetryAfter json.Number `json:"retry_after_seconds"`
 	} `json:"error"`
 }
 type larkDocument struct {
@@ -408,9 +408,9 @@ func larkCommandError(raw []byte) *larkError {
 	case problem.Subtype == "not_found" || slices.Contains([]int{131005, 131012}, problem.Code):
 		return larkProblem("LARK_NOT_FOUND")
 	case problem.Subtype == "rate_limit" || problem.Type == "rate_limit" || problem.Code == 99991400:
-		return &larkError{Code: "LARK_RATE_LIMITED", Retryable: true, Delay: time.Duration(min(max(problem.RetryAfter, 0), 60)) * time.Second}
+		return &larkError{Code: "LARK_RATE_LIMITED", Retryable: true, Delay: retryAfterSeconds(problem.RetryAfter.String())}
 	case problem.Type == "network" || problem.Type == "transport" || problem.Subtype == "network" || problem.Subtype == "timeout":
-		return &larkError{Code: "LARK_FETCH_FAILED", Retryable: true}
+		return &larkError{Code: "LARK_FETCH_FAILED", Retryable: true, Delay: retryAfterSeconds(problem.RetryAfter.String())}
 	default:
 		return larkProblem("LARK_FETCH_FAILED")
 	}

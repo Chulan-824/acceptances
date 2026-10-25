@@ -67,6 +67,10 @@ func TestLarkFixture(t *testing.T) {
 	}
 	switch {
 	case joined == "--version":
+		if scenario == "unsupported_version" {
+			fmt.Print("lark-cli version 1.0.99\n")
+			os.Exit(0)
+		}
 		fmt.Print("lark-cli version 1.0.98\n")
 	case joined == "profile list":
 		fmt.Print(`[{"name":"personal","brand":"feishu","effective":true,"active":true}]`)
@@ -83,6 +87,20 @@ func TestLarkFixture(t *testing.T) {
 		}
 		fmt.Printf(`{"ok":true,"identity":"user","data":{"obj_type":%q,"obj_token":"DocToken123"}}`, kind)
 	case strings.Contains(joined, "docs +fetch"):
+		if scenario == "long_rate_limit" {
+			switch callCount(`"docs","+fetch"`) {
+			case 1:
+				os.WriteFile(os.Getenv("LARK_FIXTURE_CALLS")+".limited", []byte(time.Now().UTC().Format(time.RFC3339Nano)), 0600)
+				kind, subtype := "api", "rate_limit"
+				if os.Getenv("LARK_FIXTURE_RETRY_NETWORK") == "1" {
+					kind, subtype = "network", "timeout"
+				}
+				fmt.Fprintf(os.Stderr, `{"ok":false,"error":{"type":%q,"subtype":%q,"retryable":true,"retry_after_seconds":%s}}`, kind, subtype, os.Getenv("LARK_FIXTURE_RETRY_SECONDS"))
+				os.Exit(1)
+			case 2:
+				os.WriteFile(os.Getenv("LARK_FIXTURE_CALLS")+".retried", []byte(time.Now().UTC().Format(time.RFC3339Nano)), 0600)
+			}
+		}
 		content := `<title>PRD fixture</title><p comment-id="private">Requirement</p>`
 		references := map[string]any{"comments": map[string]any{"c1": map[string]string{"data": "private comment"}}}
 		revision := 1
@@ -146,21 +164,27 @@ func TestLarkFixture(t *testing.T) {
 }
 
 type connectorHarness struct {
-	server           *httptest.Server
-	uploads          chan prd.Bundle
-	failures         chan map[string]any
-	renewals         atomic.Int32
-	disconnected     atomic.Bool
-	cancelBusy       bool
-	disconnectUpload bool
-	readyAfterUpload bool
-	readyStored      atomic.Bool
-	readyChecked     chan bool
+	server            *httptest.Server
+	uploads           chan prd.Bundle
+	failures          chan map[string]any
+	renewals          atomic.Int32
+	disconnected      atomic.Bool
+	cancelBusy        bool
+	disconnectUpload  bool
+	readyAfterUpload  bool
+	readyStored       atomic.Bool
+	readyChecked      chan bool
+	retryUploadHeader string
+	uploadCalls       atomic.Int32
+	retryStarted      chan retryObservation
+	retryRepeated     chan time.Time
 }
+
+type retryObservation struct{ At, NotBefore time.Time }
 
 func newConnectorHarness(t *testing.T, source string) *connectorHarness {
 	t.Helper()
-	h := &connectorHarness{uploads: make(chan prd.Bundle, 1), failures: make(chan map[string]any, 1), readyChecked: make(chan bool, 1)}
+	h := &connectorHarness{uploads: make(chan prd.Bundle, 1), failures: make(chan map[string]any, 1), readyChecked: make(chan bool, 1), retryStarted: make(chan retryObservation, 1), retryRepeated: make(chan time.Time, 1)}
 	var claimed atomic.Bool
 	var uploadAttempts atomic.Int32
 	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -201,6 +225,25 @@ func newConnectorHarness(t *testing.T, source string) *connectorHarness {
 				w.WriteHeader(404)
 			}
 		case "/api/v1/prd-imports/import-1/result":
+			attempt := h.uploadCalls.Add(1)
+			if h.retryUploadHeader != "" {
+				if attempt == 1 {
+					now := time.Now()
+					notBefore := now.Add(120 * time.Second)
+					header := h.retryUploadHeader
+					if header == "http-date" {
+						notBefore = notBefore.Truncate(time.Second)
+						header = notBefore.UTC().Format(http.TimeFormat)
+					}
+					w.Header().Set("Retry-After", header)
+					w.WriteHeader(429)
+					h.retryStarted <- retryObservation{now, notBefore}
+					return
+				}
+				if attempt == 2 {
+					h.retryRepeated <- time.Now()
+				}
+			}
 			if h.disconnectUpload && uploadAttempts.Add(1) == 1 {
 				connection, _, err := w.(http.Hijacker).Hijack()
 				if err == nil {
@@ -369,6 +412,134 @@ func TestLarkConnectPreservesCodeDuringReadingViewCleanup(t *testing.T) {
 		t.Fatalf("code upload timed out: %s", output.String())
 	}
 	stopConnector(t, cmd, output, dir)
+}
+
+func TestLarkConnectHonorsMinimumRetryAfterAndCancelsLongWait(t *testing.T) {
+	type activeConnector struct {
+		name                      string
+		harness                   *connectorHarness
+		command                   *exec.Cmd
+		output                    *bytes.Buffer
+		directory                 string
+		lark, unbounded, repeated bool
+		first                     retryObservation
+	}
+	var active []*activeConnector
+	defer func() {
+		for _, item := range active {
+			if item.command.ProcessState == nil {
+				item.command.Process.Signal(os.Interrupt)
+				if err := item.command.Wait(); err != nil {
+					t.Errorf("%s failed on cancellation: %v %s", item.name, err, item.output.String())
+				}
+			}
+		}
+	}()
+	for _, scenario := range []struct {
+		name, header, seconds string
+		unbounded             bool
+	}{
+		{name: "lark-120", seconds: "120"},
+		{name: "lark-network-120", seconds: "120"},
+		{name: "platform-120", header: "120"},
+		{name: "platform-date", header: "http-date"},
+		{name: "lark-huge", seconds: "9223372036854775807", unbounded: true},
+		{name: "platform-huge", header: "184467440737095516160", unbounded: true},
+		{name: "platform-distant-date", header: time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC).Format(http.TimeFormat), unbounded: true},
+	} {
+		t.Setenv("LARK_FIXTURE_SCENARIO", "")
+		t.Setenv("LARK_FIXTURE_RETRY_NETWORK", "0")
+		if scenario.name == "lark-network-120" {
+			t.Setenv("LARK_FIXTURE_RETRY_NETWORK", "1")
+		}
+		if scenario.seconds != "" {
+			t.Setenv("LARK_FIXTURE_SCENARIO", "long_rate_limit")
+			t.Setenv("LARK_FIXTURE_RETRY_SECONDS", scenario.seconds)
+		}
+		h := newConnectorHarness(t, "https://team.feishu.cn/docx/DocToken123")
+		h.retryUploadHeader = scenario.header
+		cmd, output, dir := connectorProcess(t, h.server.URL)
+		active = append(active, &activeConnector{name: scenario.name, harness: h, command: cmd, output: output, directory: dir, lark: scenario.seconds != "", unbounded: scenario.unbounded})
+	}
+	deadline := time.Now().Add(150 * time.Second)
+	for time.Now().Before(deadline) {
+		done := true
+		for _, item := range active {
+			var retried time.Time
+			if item.lark {
+				if item.first.At.IsZero() {
+					if raw, err := os.ReadFile(filepath.Join(item.directory, "calls.jsonl.limited")); err == nil {
+						item.first.At, _ = time.Parse(time.RFC3339Nano, string(raw))
+						item.first.NotBefore = item.first.At.Add(120 * time.Second)
+					}
+				}
+				if !item.repeated {
+					if raw, err := os.ReadFile(filepath.Join(item.directory, "calls.jsonl.retried")); err == nil {
+						retried, _ = time.Parse(time.RFC3339Nano, string(raw))
+					}
+				}
+			} else {
+				if item.first.At.IsZero() {
+					select {
+					case item.first = <-item.harness.retryStarted:
+					default:
+					}
+				}
+				if !item.repeated {
+					select {
+					case retried = <-item.harness.retryRepeated:
+					default:
+					}
+				}
+			}
+			if !retried.IsZero() {
+				item.repeated = true
+				t.Logf("%s first=%s minimum=%s retried=%s", item.name, item.first.At.UTC().Format(time.RFC3339Nano), item.first.NotBefore.UTC().Format(time.RFC3339Nano), retried.UTC().Format(time.RFC3339Nano))
+				if item.unbounded {
+					t.Errorf("%s overflowed or shortened a wait beyond the task lifetime", item.name)
+				} else if retried.Before(item.first.NotBefore) {
+					t.Errorf("%s retried at %s before upstream minimum %s", item.name, retried.Format(time.RFC3339Nano), item.first.NotBefore.Format(time.RFC3339Nano))
+				}
+			}
+			if item.first.At.IsZero() || !item.unbounded && !item.repeated {
+				done = false
+			}
+		}
+		if done {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	for _, item := range active {
+		if item.first.At.IsZero() || !item.unbounded && !item.repeated {
+			t.Errorf("%s did not complete the expected public retry observation", item.name)
+		}
+		stopConnector(t, item.command, item.output, item.directory)
+		if !item.harness.disconnected.Load() {
+			t.Errorf("%s did not cancel its wait and revoke its connector", item.name)
+		}
+		if item.unbounded && item.harness.uploadCalls.Load() > 0 && item.lark {
+			t.Errorf("%s uploaded during a blocked Lark wait", item.name)
+		}
+		if item.unbounded && !item.lark && item.harness.uploadCalls.Load() != 1 {
+			t.Errorf("%s replayed a platform request during its blocked wait", item.name)
+		}
+		if item.unbounded && !item.repeated {
+			t.Logf("%s cancelled without an early replay", item.name)
+		}
+	}
+}
+
+func TestLarkConnectKeepsUnsupportedCLIVersionPrompt(t *testing.T) {
+	t.Setenv("LARK_FIXTURE_SCENARIO", "unsupported_version")
+	h := newConnectorHarness(t, "https://team.feishu.cn/docx/DocToken123")
+	cmd, output, _ := connectorProcess(t, h.server.URL)
+	if err := cmd.Wait(); err == nil {
+		t.Fatal("unsupported Lark CLI was accepted")
+	}
+	if !strings.Contains(output.String(), "LARK_CLI_VERSION_UNSUPPORTED") || !strings.Contains(output.String(), "当前连接器支持 Lark CLI 1.0.98") {
+		t.Fatalf("CLI version guidance changed: %s", output.String())
+	}
 }
 
 func TestLarkConnectRecognizesReadyCandidateWhenUploadHeartbeatConflicts(t *testing.T) {

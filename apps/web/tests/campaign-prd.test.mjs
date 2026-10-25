@@ -408,6 +408,29 @@ test("后台刷新保留明确失败原因，重新导入默认沿用当前 PRD 
   assert.match(controller.getSnapshot().error, /无权读取/);
 });
 
+test("PRD 修订持续变化时提示等待原文稳定，不误导重启 CLI", async (t) => {
+  const f = fixture(t, {
+    "GET /api/v1/lark-connectors": { items: [connector()] },
+    "GET /api/v1/campaigns/campaign/prd-snapshots": emptySnapshots,
+    "POST /api/v1/campaigns/campaign/prd-imports": task(),
+    "GET /api/v1/prd-imports/import-1": {
+      ...task("failed"),
+      errorCode: "LARK_VERSION_CHANGED",
+    },
+  });
+  const controller = f.create();
+  await controller.load();
+  controller.setURL(task().url);
+  controller.acknowledgeSharing(true);
+  await controller.startImport();
+  await controller.poll();
+  assert.match(
+    controller.getSnapshot().error,
+    /PRD.*读取.*持续变更.*稳定.*重新导入/,
+  );
+  assert.doesNotMatch(controller.getSnapshot().error, /CLI|重启/);
+});
+
 test("重叠的状态刷新共用一次读取，旧状态不能覆盖已就绪候选", async (t) => {
   let resolveRead;
   let reads = 0;
