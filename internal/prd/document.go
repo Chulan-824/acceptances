@@ -31,7 +31,7 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return Document{}, errors.New("invalid PRD references")
 		}
-		value, removed := removePrivateMetadata(value)
+		value, removed := removePrivateMetadata(value, isMediaElement(strings.TrimSuffix(strings.ToLower(group), "s")))
 		result.Excluded = result.Excluded || removed
 		result.Source.ReferenceMap[group], _ = json.Marshal(value)
 	}
@@ -43,6 +43,7 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 	encoder := xml.NewEncoder(&content)
 	depth, dropped, titleDepth := 0, 0, 0
 	seen := make(map[string]bool)
+	resourceAliases := make(map[string][]int)
 	for {
 		token, err := decoder.Token()
 		if err == io.EOF {
@@ -80,14 +81,13 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 				attributes[attr.Name.Local] = attr.Value
 			}
 			if reference := attributes["ref"]; reference != "" {
-				for _, raw := range result.Source.ReferenceMap {
-					var references map[string]map[string]any
-					if json.Unmarshal(raw, &references) == nil {
-						for key, value := range references[reference] {
-							if text, ok := value.(string); ok && attributes[key] == "" {
-								attributes[key] = text
-							}
-						}
+				values, _, err := referenceValue(name, reference, result.Source.ReferenceMap)
+				if err != nil {
+					return Document{}, err
+				}
+				for key, value := range values {
+					if text, ok := value.(string); ok && attributes[key] == "" {
+						attributes[key] = text
 					}
 				}
 			}
@@ -95,9 +95,17 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 			if blockID == "" {
 				blockID = attributes["id"]
 			}
-			if resource, ok := documentResource(name, attributes, len(result.Resources)); ok && !seen[resource.Reference] {
+			if resource, ok := documentResource(name, attributes, len(result.Resources)); ok && !seen[resource.Kind+"\x00"+resource.Reference] {
+				alias := resource.Reference
+				seen[resource.Kind+"\x00"+alias] = true
+				if previous := resourceAliases[alias]; len(previous) > 0 {
+					for _, index := range previous {
+						result.Resources[index].Reference = result.Resources[index].Kind + ":" + alias
+					}
+					resource.Reference = resource.Kind + ":" + alias
+				}
+				resourceAliases[alias] = append(resourceAliases[alias], len(result.Resources))
 				result.Resources = append(result.Resources, resource)
-				seen[resource.Reference] = true
 				if len(result.Resources) > MaxResources {
 					return Document{}, errors.New("PRD contains too many resources")
 				}
@@ -171,25 +179,68 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 	return result, nil
 }
 
-func removePrivateMetadata(value any) (any, bool) {
+// Reference aliases are scoped to their block-type group in the CLI response.
+// If a future format is ambiguous, reject it rather than selecting a map entry.
+func referenceValue(element, alias string, groups map[string]json.RawMessage) (map[string]any, string, error) {
+	type match struct {
+		group string
+		value map[string]any
+	}
+	var matches, preferred []match
+	category := func(name string) string {
+		name = strings.TrimSuffix(strings.ToLower(name), "s")
+		switch name {
+		case "img", "image":
+			return "image"
+		case "a", "link":
+			return "link"
+		}
+		return name
+	}
+	for group, raw := range groups {
+		var values map[string]map[string]any
+		if json.Unmarshal(raw, &values) != nil {
+			return nil, "", errors.New("invalid PRD reference group")
+		}
+		if value, ok := values[alias]; ok {
+			item := match{group, value}
+			matches = append(matches, item)
+			if category(group) == category(element) {
+				preferred = append(preferred, item)
+			}
+		}
+	}
+	if len(preferred) == 1 {
+		return preferred[0].value, preferred[0].group, nil
+	}
+	if len(matches) == 1 {
+		return matches[0].value, matches[0].group, nil
+	}
+	if len(matches) == 0 {
+		return nil, "", nil
+	}
+	return nil, "", errors.New("ambiguous PRD reference alias")
+}
+
+func removePrivateMetadata(value any, media bool) (any, bool) {
 	removed := false
 	switch value := value.(type) {
 	case map[string]any:
 		for key, nested := range value {
 			lower := strings.ToLower(key)
-			if strings.Contains(lower, "comment") || slices.Contains([]string{"url", "src", "download_url", "downloadurl", "access_token", "refresh_token", "authorization", "app_secret"}, lower) {
+			if strings.Contains(lower, "comment") || slices.Contains([]string{"access_token", "refresh_token", "authorization", "app_secret"}, lower) || media && slices.Contains([]string{"url", "src", "download_url", "downloadurl"}, lower) {
 				delete(value, key)
 				removed = true
 				continue
 			}
-			clean, changed := removePrivateMetadata(nested)
+			clean, changed := removePrivateMetadata(nested, media)
 			value[key] = clean
 			removed = removed || changed
 		}
 		return value, removed
 	case []any:
 		for index, nested := range value {
-			clean, changed := removePrivateMetadata(nested)
+			clean, changed := removePrivateMetadata(nested, media)
 			value[index] = clean
 			removed = removed || changed
 		}
