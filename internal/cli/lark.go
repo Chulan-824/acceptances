@@ -16,6 +16,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -165,10 +166,29 @@ func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
 	ctx, cancel := context.WithCancelCause(timeoutCtx)
 	defer cancel(nil)
 	expiry, _ := time.Parse(time.RFC3339Nano, claim.LeaseExpiresAt)
+	var leaseMu sync.Mutex
 	// Expiry cancels every task operation, including synchronous recovery calls
 	// that can keep the select below waiting on an upstream Retry-After.
-	lease := time.AfterFunc(time.Until(expiry), func() { cancel(larkProblem("IMPORT_LEASE_EXPIRED")) })
+	lease := time.AfterFunc(time.Until(expiry), func() {
+		leaseMu.Lock()
+		defer leaseMu.Unlock()
+		// Reset cannot stop an already-running callback. Check the current
+		// deadline under the renewal lock so an old callback cannot revoke it.
+		if !time.Now().Before(expiry) {
+			cancel(larkProblem("IMPORT_LEASE_EXPIRED"))
+		}
+	})
 	defer lease.Stop()
+	renewLease := func(next *prd.Claim) bool {
+		leaseMu.Lock()
+		defer leaseMu.Unlock()
+		if ctx.Err() != nil {
+			return false
+		}
+		expiry, _ = time.Parse(time.RFC3339Nano, next.LeaseExpiresAt)
+		lease.Reset(time.Until(expiry))
+		return true
+	}
 	result := make(chan larkOutcome, 1)
 	running := true
 	go func() { bundle, err := c.reader.fetch(ctx, claim.URL); result <- larkOutcome{bundle, err} }()
@@ -221,8 +241,9 @@ func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
 			if next == nil {
 				return larkProblem("IMPORT_LEASE_EXPIRED")
 			}
-			expiry, _ = time.Parse(time.RFC3339Nano, next.LeaseExpiresAt)
-			lease.Reset(time.Until(expiry))
+			if !renewLease(next) {
+				continue
+			}
 		case outcome := <-result:
 			running = false
 			if ctx.Err() != nil {
@@ -261,8 +282,9 @@ func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
 			if next == nil {
 				return larkProblem("IMPORT_LEASE_EXPIRED")
 			}
-			expiry, _ = time.Parse(time.RFC3339Nano, next.LeaseExpiresAt)
-			lease.Reset(time.Until(expiry))
+			if !renewLease(next) {
+				continue
+			}
 			phase, running = "uploading", true
 			go func() { result <- larkOutcome{err: c.upload(ctx, claim, outcome.bundle)} }()
 		}
