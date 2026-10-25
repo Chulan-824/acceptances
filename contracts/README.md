@@ -4,6 +4,8 @@
 
 正式冻结、交付效力和独立业务说明接口见[交付 API](delivery.md)。这些材料复用现有 evidence，不扩展严格 Report schema。
 
+个人本机连接器、URL 导入任务和共享需求快照见 [Lark PRD 导入](lark-prd.md)。PRD 与 Run、Evidence 和交付后业务说明分别保存。
+
 ## 用户与会话
 
 - `POST /auth/register`：JSON `{username,password,client?}`，注册成功返回 201 `{user}` 并自动登录。用户名去除首尾空白、英文转小写，3–32 个 Unicode 字符，允许字母、数字和 `_ . -`；密码至少 7 个 Unicode 字符，不限制字符组合，最多 72 字节。

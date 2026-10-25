@@ -145,13 +145,15 @@ lark-cli --profile <固定profile> docs +fetch --doc <规范化URL> --doc-format
 
 建议追加迁移，保留现有 ID、作者、Run、Review 和冻结快照：
 
-| 对象                              | 必要信息                                                                                                                                               | 生命周期                                                     |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| lark_connectors                   | 服务生成 ID、平台 user_id、连接凭据摘要、显示名称、协议/CLI 版本、last_seen_at、状态                                                                   | 只有当前用户可查看和断开；失联不代表平台会话失效             |
-| prd_imports                       | Campaign、请求 user_id、指定 connector_id、clientRequestId、规范 URL、状态、attempt、领取凭据摘要、租约/截止时间、结果元数据、确认快照 ID 及安全错误码 | 同一次请求的可恢复任务；确认后保留，作为快照的读取来源       |
-| prd_import_files                  | import_id、合法单层 filename、blob_id、媒体类型、用途、大小和摘要                                                                                      | 新的文件 owner；待确认时仅本人可读，确认后通过 Snapshot 读取 |
-| prd_snapshots                     | Campaign、唯一 import_id、来源标识、标题、revision_id、内容摘要、normalizerVersion、完整性/缺口、服务端确认时间、确认 user_id                          | 确认后不可变；指向已封存 import 文件，复用 blob 不复制字节   |
-| campaigns.current_prd_snapshot_id | 可空快照 ID                                                                                                                                            | 确认时原子更新；不改变 status、latestRunId 或 description    |
+| 对象               | 必要信息                                                                                                                                               | 生命周期                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| lark_connectors    | 服务生成 ID、平台 user_id、连接凭据摘要、显示名称、协议/CLI 版本、last_seen_at、状态                                                                   | 只有当前用户可查看和断开；失联不代表平台会话失效             |
+| prd_imports        | Campaign、请求 user_id、指定 connector_id、clientRequestId、规范 URL、状态、attempt、领取凭据摘要、租约/截止时间、结果元数据、确认快照 ID 及安全错误码 | 同一次请求的可恢复任务；确认后保留，作为快照的读取来源       |
+| prd_import_files   | import_id、合法单层 filename、blob_id、媒体类型、用途、大小和摘要                                                                                      | 新的文件 owner；待确认时仅本人可读，确认后通过 Snapshot 读取 |
+| prd_snapshots      | Campaign、唯一 import_id、来源标识、标题、revision_id、内容摘要、normalizerVersion、完整性/缺口、服务端确认时间、确认 user_id                          | 确认后不可变；指向已封存 import 文件，复用 blob 不复制字节   |
+| campaign_prd_heads | 可空快照 ID                                                                                                                                            | 确认时原子更新；不改变 status、latestRunId 或 description    |
+
+物理实现使用 campaign_prd_heads 保存每个 Campaign 的当前 snapshot_id，以复合外键保证归属，避免 Campaign、Import 和 Snapshot 之间形成循环外键。Web 从 SnapshotList.currentSnapshotId 读取指针，既有 Campaign 四个接口无需因此改写。
 
 读取时间由客户端报告，平台导入/确认时间由服务端记录，二者分开。数据中只记录必要来源，不存 Lark access/refresh token、应用 secret 或认证输出。revision_id 使用可保留其精度的字符串合同。
 
