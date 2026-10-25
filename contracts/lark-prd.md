@@ -34,6 +34,8 @@
 
 Claim 包含 importId、campaignId、url、attempt、claimToken、leaseExpiresAt。轮询续租返回同一 Claim，不表示要重复执行同一任务。连接器进程重新启动后重新注册，旧任务不能静默转给另一电脑。
 
+连接器撤销或正常退出结束其 queued/fetching 任务；已封存的 ready 候选仍可由原导入人在 24 小时有效期内确认，无需连接器继续在线。
+
 ## 内容合同
 
 result 为 multipart/form-data，总请求不超过 128 MiB：
