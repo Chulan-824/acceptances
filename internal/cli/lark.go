@@ -28,6 +28,8 @@ type larkError struct {
 	Delay           time.Duration
 }
 
+const maxRetryDelay = time.Duration(1<<63 - 1)
+
 func (e *larkError) Error() string       { return e.Code }
 func larkProblem(code string) *larkError { return &larkError{Code: code} }
 
@@ -399,17 +401,28 @@ func larkBackoff(attempt int, delay time.Duration) time.Duration {
 	if delay <= 0 {
 		delay = time.Second * time.Duration(1<<attempt)
 	}
-	if delay > 60*time.Second {
-		delay = 60 * time.Second
-	}
-	return delay + time.Duration(rand.IntN(250))*time.Millisecond
+	jitter := time.Duration(rand.IntN(250)) * time.Millisecond
+	return delay + min(jitter, maxRetryDelay-delay)
 }
 func retryAfter(value string) time.Duration {
-	if n, err := strconv.Atoi(value); err == nil && n > 0 {
-		return time.Duration(min(n, 60)) * time.Second
+	if delay := retryAfterSeconds(strings.TrimSpace(value)); delay > 0 {
+		return delay
 	}
 	if at, err := http.ParseTime(value); err == nil {
-		return max(0, min(time.Until(at), 60*time.Second))
+		return max(0, time.Until(at))
 	}
 	return 0
+}
+
+func retryAfterSeconds(value string) time.Duration {
+	seconds, err := strconv.ParseUint(value, 10, 64)
+	// An upstream wait beyond Duration's range must not wrap to an immediate
+	// retry. The task/lease context or signal ends this wait first.
+	if errors.Is(err, strconv.ErrRange) || err == nil && seconds > uint64(maxRetryDelay/time.Second) {
+		return maxRetryDelay
+	}
+	if err != nil {
+		return 0
+	}
+	return time.Duration(seconds) * time.Second
 }
