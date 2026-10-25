@@ -228,6 +228,7 @@ func TestPRDLocalConnectorPublishesForItsOwnUser(t *testing.T) {
 }
 
 const prdControlledLark = `#!/usr/bin/env node
+const fs = require("node:fs");
 const args = process.argv.slice(2);
 const send = value => process.stdout.write(JSON.stringify(value) + "\n");
 if (args.includes("--version") || args[0] === "version") {
@@ -238,7 +239,11 @@ if (args.includes("--version") || args[0] === "version") {
   send({appId:"cli_synthetic",brand:"feishu",identity:"user",identities:{user:{openId:"ou_synthetic_reader",verified:true,available:true}}});
 } else if (args.includes("+fetch")) {
   const format = args[args.indexOf("--doc-format")+1];
-  send({ok:true,identity:"user",data:{document:{document_id:"docxSyntheticConnector01",revision_id:42,content:format==="xml"?"<title>合成 PRD</title><p>成员本机正文。</p>":"# 合成 PRD\n\n成员本机正文。\n",reference_map:{}}}});
+  send({ok:true,identity:"user",data:{document:{document_id:"docxSyntheticConnector01",revision_id:42,content:format==="xml"?"<title>合成 PRD</title><p>成员本机正文。</p><table><tr><th>能力</th><th>结果</th></tr><tr><td>URL 导入</td><td>待确认后共享</td></tr></table><img ref=\"image-1\"/>":"# 合成 PRD\n\n成员本机正文。\n\n| 能力 | 结果 |\n| --- | --- |\n| URL 导入 | 待确认后共享 |\n\n![合成图片](ImageSynthetic01)\n",reference_map:{images:{"image-1":{token:"ImageSynthetic01"}}}}}});
+} else if (args.includes("+media-download")) {
+  const output = args[args.indexOf("--output")+1] + ".png";
+  fs.writeFileSync(output,Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII=","base64"));
+  send({ok:true,identity:"user",data:{path:output}});
 } else {
   process.stderr.write(JSON.stringify({ok:false,error:{type:"invalid_parameters",code:"SYNTHETIC_COMMAND_NOT_SUPPORTED"}})+"\n");
   process.exitCode=2;
