@@ -154,6 +154,7 @@ func (s *Server) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/projects/{id}/repositories", s.repositories)
 	m.HandleFunc("POST /api/v1/projects/{id}/repositories", s.repositories)
 	handler.NewCampaign(service.NewCampaign(dao.NewCampaign(s.db), &s.mu)).Register(m)
+	handler.NewPRD(service.NewPRD(dao.NewPRD(s.db, s.deliveryTransaction), &s.mu, s.stagePRDFiles), s.servePRDFile).Register(m)
 	m.HandleFunc("POST /api/v1/campaigns/{id}/runs", s.submitRun)
 	m.HandleFunc("GET /api/v1/campaigns/{id}/runs", s.listRuns)
 	m.HandleFunc("GET /api/v1/runs/{id}", s.getRun)
