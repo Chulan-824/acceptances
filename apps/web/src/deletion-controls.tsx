@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useCampaignRun } from "./campaign-run";
+import { DeletionPreviewContent } from "./deletion-preview";
 import {
   deletionKey,
   deletionLabels,
@@ -78,16 +79,7 @@ export function DeleteButton({
           {preview && (
             <>
               <AlertDialogDescription>
-                将永久删除 {preview.projects} 个项目、{preview.campaigns}{" "}
-                个需求、{preview.runs} 次验证、{preview.evidence} 个附件和{" "}
-                {preview.reviews} 条反馈。无法恢复。
-                {(preview.retainedDeliveries ?? 0) > 0 && (
-                  <span className="block">
-                    保留 {preview.retainedDeliveries} 份交付快照及{" "}
-                    {preview.retainedDocuments ?? 0}{" "}
-                    份交付文档。对应交付将失效，仍可从交付版本查看历史及复制证据。
-                  </span>
-                )}
+                <DeletionPreviewContent preview={preview} />
               </AlertDialogDescription>
               <div className="actions">
                 <AlertDialogCancel autoFocus onClick={actions.cancel}>
