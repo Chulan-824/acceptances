@@ -3,149 +3,16 @@ package api_test
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"fmt"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/Chulan-824/acceptances/internal/api"
-	"github.com/go-sql-driver/mysql"
-	"github.com/google/uuid"
 )
-
-func isolatedMySQL(t *testing.T) (string, *sql.DB) {
-	t.Helper()
-	path := os.Getenv("ACCEPTANCES_MYSQL_TEST_DSN_FILE")
-	if path == "" {
-		t.Skip("set ACCEPTANCES_MYSQL_TEST_DSN_FILE to run against Docker MySQL")
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg, err := mysql.ParseDSN(strings.TrimSpace(string(data)))
-	if err != nil {
-		t.Fatal("invalid test MySQL configuration")
-	}
-	admin, err := sql.Open("mysql", cfg.FormatDSN())
-	if err != nil {
-		t.Fatal(err)
-	}
-	name := "acceptances_test_" + strings.ReplaceAll(uuid.NewString(), "-", "")
-	if _, err = admin.Exec("CREATE DATABASE " + name + " CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin"); err != nil {
-		admin.Close()
-		t.Fatal(err)
-	}
-	cfg.DBName = name
-	dsn := cfg.FormatDSN()
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { db.Close(); admin.Exec("DROP DATABASE " + name); admin.Close() })
-	return dsn, db
-}
-
-func TestMySQLMigrationPreservesArchive(t *testing.T) {
-	dsn, db := isolatedMySQL(t)
-	app, pid, cid, dir := deliveryTestSetup(t)
-	f := newDeliveryFixture(t, pid, cid)
-	f.Report.Description = "迁移保留中文与 emoji 🧭"
-	f.finalize(t)
-	rid := publishDeliveryFixture(t, app, cid, "existing-report", f)
-	for _, kind := range []string{"rejected", "pending", "accepted"} {
-		request(t, app, "POST", "/api/v1/runs/"+rid+"/reviews", `{"checkId":"fixture-export--download","kind":"`+kind+`","body":"Explicit original review"}`, 201)
-	}
-	legacy, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = legacy.Exec("UPDATE reviews SET created_at='2026-10-13T09:00:00.123456789Z'"); err != nil {
-		t.Fatal(err)
-	}
-	legacy.Close()
-	snapshot := freezeFixture(t, app, rid, "existing-freeze")
-	did := snapshot["id"].(string)
-	document := request(t, app, "POST", "/api/v1/deliveries/"+did+"/documents", `{"requestId":"existing-document"}`, 201)
-	before := request(t, app, "GET", "/api/v1/runs/"+rid, "", 200)
-	app.Close()
-	result, err := api.MigrateSQLiteToMySQL(context.Background(), dir, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.Rows["runs"] != 1 || result.Rows["reviews"] != 3 || result.Rows["business_documents"] != 1 || result.Files == 0 {
-		t.Fatal(result)
-	}
-	if _, err = os.Stat(filepath.Join(result.Backup, "data/archive.db")); err != nil {
-		t.Fatal(err)
-	}
-	if _, err = os.Stat(filepath.Join(dir, "archive.db")); err != nil {
-		t.Fatal("source SQLite was removed")
-	}
-	replay, err := api.MigrateSQLiteToMySQL(context.Background(), dir, dsn)
-	if err != nil || !replay.AlreadyImported {
-		t.Fatalf("migration retry: %+v %v", replay, err)
-	}
-	files, err := api.MigrateFilesToMySQL(t.Context(), dir, dsn)
-	if err != nil || files.Files != 13 || files.Objects == 0 {
-		t.Fatalf("file migration: %+v %v", files, err)
-	}
-	again, err := api.MigrateFilesToMySQL(t.Context(), dir, dsn)
-	if err != nil || !again.AlreadyActive || again.Bytes != files.Bytes || again.ImportID != files.ImportID {
-		t.Fatalf("file migration retry: %+v %v", again, err)
-	}
-	app, err = api.OpenMySQL(dir, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { app.Close() }()
-	after := request(t, app, "GET", "/api/v1/runs/"+rid, "", 200)
-	if fixtureJSON(t, before) != fixtureJSON(t, after) {
-		t.Fatal("Run, review order or timestamps changed during import")
-	}
-	got := request(t, app, "GET", "/api/v1/deliveries/"+did, "", 200)
-	if fixtureJSON(t, snapshot) != fixtureJSON(t, got) {
-		t.Fatal("frozen snapshot changed during import")
-	}
-	upload(t, app, cid, "existing-report", fixtureJSON(t, f.Report), f.Files, 200)
-	upload(t, app, cid, "existing-report", fixtureJSON(t, f.Report), map[string]string{}, 400)
-	for _, query := range []string{
-		"UPDATE delivery_snapshots SET payload='{}' WHERE id='" + did + "'",
-		"DELETE FROM delivery_snapshots WHERE id='" + did + "'",
-		"UPDATE business_documents SET status='failed' WHERE id='" + document["id"].(string) + "'",
-	} {
-		if _, err = db.Exec(query); err == nil {
-			t.Fatal("immutable archive accepted mutation")
-		}
-	}
-	request(t, app, "POST", "/api/v1/runs/"+rid+"/reviews", `{"checkId":"fixture-export--download","kind":"pending"}`, 201)
-	got = request(t, app, "GET", "/api/v1/deliveries/"+did, "", 200)
-	if got["status"] != "invalidated" || got["sha256"] != snapshot["sha256"] {
-		t.Fatal(got)
-	}
-	request(t, app, "DELETE", "/api/v1/projects/"+pid, "", 204)
-	for _, path := range []string{"/api/v1/deliveries/" + did, "/api/v1/documents/" + document["id"].(string)} {
-		request(t, app, "GET", path, "", 200)
-	}
-	for _, path := range []string{"/api/v1/deliveries/" + did + "/evidence/screen.png", "/api/v1/documents/" + document["id"].(string) + "/html"} {
-		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, localRequest("GET", path, nil))
-		if w.Code != 200 {
-			t.Fatalf("retained file %s: %d", path, w.Code)
-		}
-	}
-	app.Close()
-	app, err = api.OpenMySQL(dir, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	request(t, app, "GET", "/api/v1/deliveries/"+did, "", 200)
-}
 
 func TestMySQLIdentityConcurrencyAndOwnership(t *testing.T) {
 	dsn, db := isolatedMySQL(t)
@@ -209,29 +76,6 @@ func TestMySQLIdentityConcurrencyAndOwnership(t *testing.T) {
 	entries, err := os.ReadDir(empty)
 	if err != nil || len(entries) != 0 {
 		t.Fatalf("database-only startup wrote local files: %v %v", entries, err)
-	}
-}
-
-func TestMySQLMigrationRejectsDifferentDestination(t *testing.T) {
-	dsn, _ := isolatedMySQL(t)
-	app, err := api.OpenMySQL(t.TempDir(), dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	request(t, app, "POST", "/api/v1/projects", `{"name":"Existing destination"}`, 201)
-	app.Close()
-	source, _, _, dir := deliveryTestSetup(t)
-	source.Close()
-	if _, err = api.MigrateSQLiteToMySQL(context.Background(), dir, dsn); err == nil {
-		t.Fatal("different destination was overwritten")
-	}
-	// No binding is created when a destination contains unrelated records.
-	if _, err = os.Stat(filepath.Join(dir, ".mysql-storage.json")); !os.IsNotExist(err) {
-		t.Fatal("failed import bound source directory")
-	}
-	data, err := os.ReadFile(filepath.Join(dir, "archive.db"))
-	if err != nil || len(data) == 0 {
-		t.Fatal("source database was lost")
 	}
 }
 
@@ -305,21 +149,25 @@ func TestMySQLRequestCancellationAndLeaseLoss(t *testing.T) {
 	}
 }
 
-// Exercise the retained filesystem adapter explicitly, rather than relying on
-// the old default for newly created MySQL archives.
-func openLegacyMySQL(t *testing.T, dir, dsn string) *api.Server {
-	t.Helper()
-	source, err := api.Open(dir)
+func TestMySQLReviewDecisionsUseSaveOrderWhenTimestampsMatch(t *testing.T) {
+	app, _, cid, dir := deliveryTestSetup(t)
+	rid := upload(t, app, cid, "equal-timestamps", report, map[string]string{"log.txt": "observations"}, 201)["id"].(string)
+	path := "/api/v1/runs/" + rid
+	request(t, app, "POST", path+"/reviews", `{"checkId":"c1","kind":"accepted","body":"first"}`, 201)
+	request(t, app, "POST", path+"/reviews", `{"checkId":"c1","kind":"rejected","body":"later"}`, 201)
+	app.Close()
+	db := artifactDB(t, dir)
+	if _, err := db.Exec("UPDATE reviews SET created_at='2026-10-25T00:00:00Z',id=CASE kind WHEN 'accepted' THEN 'z-first' ELSE 'a-later' END WHERE check_id='c1'"); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	source.Close()
-	if _, err = api.MigrateSQLiteToMySQL(t.Context(), dir, dsn); err != nil {
-		t.Fatal(err)
+	defer reopened.Close()
+	run := request(t, reopened, "GET", path, "", 200)
+	current := run["checkReviews"].([]any)[0].(map[string]any)
+	if run["status"] != "rejected" || current["lastReviewId"] != "a-later" {
+		t.Fatal(run)
 	}
-	app, err := api.OpenMySQL(dir, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return app
 }

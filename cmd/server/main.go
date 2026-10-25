@@ -38,17 +38,13 @@ func run() error {
 	dsnFile := os.Getenv("ACCEPTANCES_MYSQL_DSN_FILE")
 	dsn := os.Getenv("ACCEPTANCES_MYSQL_DSN")
 	if driver == "" {
-		driver = "sqlite"
-		if dsnFile != "" || dsn != "" {
-			driver = "mysql"
-		}
+		driver = "mysql"
 	}
-	flags.StringVar(&driver, "database", driver, "数据库：mysql 或 sqlite")
+	flags.StringVar(&driver, "database", driver, "数据库：仅支持 mysql")
 	flags.StringVar(&dsnFile, "mysql-dsn-file", dsnFile, "MySQL 连接串文件，内容不写入日志")
-	importSQLite := flags.Bool("migrate-sqlite", false, "备份并迁移数据目录中的 SQLite 到空 MySQL，完成后退出")
 	importFiles := flags.Bool("migrate-files", false, "保留源文件并全量迁入当前 MySQL，回读验证后切换存储")
 	flags.StringVar(&listen, "listen", listen, "监听地址")
-	flags.StringVar(&dir, "data-dir", dir, "归档附件目录，SQLite 模式下也保存数据库")
+	flags.StringVar(&dir, "data-dir", dir, "旧版 MySQL 附件目录")
 	webDir := flags.String("web-dir", "apps/web/dist", "Web 构建目录，空值禁用页面")
 	if err := flags.Parse(os.Args[1:]); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -59,8 +55,8 @@ func run() error {
 	if flags.NArg() != 0 {
 		return fmt.Errorf("不支持额外参数")
 	}
-	if driver != "sqlite" && driver != "mysql" {
-		return fmt.Errorf("database 必须是 mysql 或 sqlite")
+	if driver != "mysql" {
+		return fmt.Errorf("database 仅支持 mysql")
 	}
 	if dsnFile != "" {
 		if dsn != "" {
@@ -72,31 +68,10 @@ func run() error {
 		}
 		dsn = string(data)
 	}
-	if driver == "mysql" && dsn == "" {
+	if dsn == "" {
 		return fmt.Errorf("MySQL 模式需要连接配置")
 	}
-	if driver == "sqlite" && dsn != "" {
-		return fmt.Errorf("SQLite 模式不能同时配置 MySQL")
-	}
-	if *importSQLite {
-		if *importFiles {
-			return fmt.Errorf("SQLite 业务迁移和文件迁移须分开执行")
-		}
-		if driver != "mysql" {
-			return fmt.Errorf("迁移需要 --database=mysql")
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-		defer cancel()
-		result, err := api.MigrateSQLiteToMySQL(ctx, dir, dsn)
-		if err != nil {
-			return err
-		}
-		return json.NewEncoder(os.Stdout).Encode(result)
-	}
 	if *importFiles {
-		if driver != "mysql" {
-			return fmt.Errorf("文件迁移需要 --database=mysql")
-		}
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		defer cancel()
 		result, err := api.MigrateFilesToMySQL(ctx, dir, dsn)
@@ -105,13 +80,7 @@ func run() error {
 		}
 		return json.NewEncoder(os.Stdout).Encode(result)
 	}
-	var app *api.Server
-	var err error
-	if driver == "mysql" {
-		app, err = api.OpenMySQL(dir, dsn)
-	} else {
-		app, err = api.Open(dir)
-	}
+	app, err := api.OpenMySQL(dir, dsn)
 	if err != nil {
 		return err
 	}

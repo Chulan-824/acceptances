@@ -25,7 +25,7 @@ type deliveryFixture struct {
 func deliveryTestSetup(t *testing.T) (*api.Server, string, string, string) {
 	t.Helper()
 	dir := t.TempDir()
-	app, err := api.Open(dir)
+	app, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}

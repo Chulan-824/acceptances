@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"path/filepath"
+	"github.com/Chulan-824/acceptances/internal/testmysql"
 	"reflect"
 	"testing"
 
@@ -15,20 +15,15 @@ import (
 
 func campaignDatabase(t *testing.T) (*sql.DB, *dao.Campaign) {
 	t.Helper()
-	dir := t.TempDir()
-	app, err := api.Open(dir)
+	dsn, db := testmysql.New(t)
+	app, err := api.OpenMySQL(t.TempDir(), dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := app.Close(); err != nil {
 		t.Fatal(err)
 	}
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, "archive.db"))+"?_pragma=foreign_keys(1)")
-	if err != nil {
-		t.Fatal(err)
-	}
-	db.SetMaxOpenConns(1)
-	t.Cleanup(func() { db.Close() })
+
 	for _, id := range []string{"project", "other"} {
 		if _, err := db.ExecContext(t.Context(), "INSERT INTO projects(id,name,description,created_at) VALUES(?,?,?,?)", id, id, "", "2026-01-01T00:00:00Z"); err != nil {
 			t.Fatal(err)

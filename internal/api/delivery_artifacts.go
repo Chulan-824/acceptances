@@ -41,7 +41,6 @@ type deliveryArtifactRef struct {
 type deliveryArtifacts struct {
 	db         *sql.DB
 	dir        string
-	mysql      bool
 	checkpoint func(phase, path string) error
 }
 
@@ -69,12 +68,10 @@ func (a *deliveryArtifacts) publicationStatus(ref deliveryArtifactRef) (string, 
 	default:
 		return "", fmt.Errorf("unknown delivery artifact kind %q", ref.kind)
 	}
-	if a.mysql {
-		// A locking read waits for an ambiguous COMMIT on another connection.
-		// A non-locking read could miss that still-uncommitted owner and delete
-		// files which become durable a moment later.
-		query += " FOR UPDATE"
-	}
+	// A locking read waits for an ambiguous COMMIT on another connection.
+	// A non-locking read could miss that still-uncommitted owner and delete
+	// files which become durable a moment later.
+	query += " FOR UPDATE"
 	// Cleanup must remain possible after the publishing request is cancelled.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

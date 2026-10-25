@@ -29,13 +29,13 @@ func TestArchiveDirectoryLockHelper(t *testing.T) {
 		}
 		app, err = api.OpenMySQL(dir, string(dsn))
 	} else {
-		app, err = api.Open(dir)
+		t.Fatal("missing isolated MySQL DSN")
 	}
 	if err == nil {
 		app.Close()
 		t.Fatal("another process took the active archive directory")
 	}
-	if !strings.Contains(err.Error(), "archive directory is already in use") {
+	if !strings.Contains(err.Error(), "archive directory is already in use") && !strings.Contains(err.Error(), "MySQL archive is already in use") {
 		t.Fatal("startup failed for a reason other than the directory lock:", err)
 	}
 }
@@ -64,12 +64,12 @@ func assertArchiveLockedInOtherProcess(t *testing.T, dir, dsn string) {
 
 func TestArchiveDirectoryOwnershipIncludesRequestCleanup(t *testing.T) {
 	dir := t.TempDir()
-	app, err := api.Open(dir)
+	app, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer app.Close()
-	assertArchiveLockedInOtherProcess(t, dir, "")
+	assertArchiveLockedInOtherProcess(t, dir, archiveDSN(t, dir))
 	reached, resume, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
 	var resumeOnce sync.Once
 	unblock := func() { resumeOnce.Do(func() { close(resume) }) }
@@ -86,15 +86,15 @@ func TestArchiveDirectoryOwnershipIncludesRequestCleanup(t *testing.T) {
 	if err = app.Close(); err != nil {
 		t.Fatal(err)
 	}
-	assertArchiveLockedInOtherProcess(t, dir, "")
+	assertArchiveLockedInOtherProcess(t, dir, archiveDSN(t, dir))
 	unblock()
 	<-done
-	replacement, err := api.Open(dir)
+	replacement, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer replacement.Close()
 	app.Close() // A stale repeated Close must not release the new owner's lock.
-	assertArchiveLockedInOtherProcess(t, dir, "")
+	assertArchiveLockedInOtherProcess(t, dir, archiveDSN(t, dir))
 	request(t, app, "GET", "/api/v1/projects", "", 503)
 }

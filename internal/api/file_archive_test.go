@@ -96,16 +96,16 @@ func TestMySQLFilesRangesDedupAndPublication(t *testing.T) {
 
 func TestMySQLFileMigrationRejectsChangedSourceAndResumes(t *testing.T) {
 	dsn, db := isolatedMySQL(t)
-	source, pid, cid, dir := deliveryTestSetup(t)
+	dir := t.TempDir()
+	source := openLegacyMySQL(t, dir, dsn)
+	pid := request(t, source, "POST", "/api/v1/projects", `{"name":"file migration"}`, 201)["id"].(string)
+	cid := request(t, source, "POST", "/api/v1/projects/"+pid+"/campaigns", `{"title":"file migration"}`, 201)["id"].(string)
 	f := newDeliveryFixture(t, pid, cid)
 	f.finalize(t)
 	rid := publishDeliveryFixture(t, source, cid, "migration-resume", f)
 	request(t, source, "POST", "/api/v1/runs/"+rid+"/accept-all", `{}`, 200)
 	freezeFixture(t, source, rid, "migration-resume-freeze")
 	source.Close()
-	if _, err := api.MigrateSQLiteToMySQL(t.Context(), dir, dsn); err != nil {
-		t.Fatal(err)
-	}
 	path := filepath.Join(dir, "deliveries")
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -156,7 +156,7 @@ func TestMySQLFileMigrationRejectsChangedSourceAndResumes(t *testing.T) {
 	if err = db.QueryRow("SELECT blob_id FROM run_files WHERE run_id=? AND filename='screen.png'", rid).Scan(&retained); err != nil || retained != key {
 		t.Fatal("resume overwrote existing reference", retained, err)
 	}
-	for _, entry := range []string{filepath.Join(dir, "archive.db"), image, filepath.Join(files.Backup, "data/archive.db")} {
+	for _, entry := range []string{image, filepath.Join(files.Backup, "data/deliveries", entries[0].Name(), "evidence/screen.png")} {
 		if _, err = os.Stat(entry); err != nil {
 			t.Fatal("source/backup removed", entry, err)
 		}
@@ -216,25 +216,4 @@ func TestMySQLInterruptedFileUploadNeverPublishes(t *testing.T) {
 		}
 	}
 	upload(t, app, cid, "interrupted-sql", report, map[string]string{"log.txt": "complete"}, 201)
-}
-
-func TestMySQLSQLiteImportRejectsInitializedFileArchive(t *testing.T) {
-	dsn, db := isolatedMySQL(t)
-	app, err := api.OpenMySQL(t.TempDir(), dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	app.Close()
-	source, _, _, dir := deliveryTestSetup(t)
-	source.Close()
-	if _, err = api.MigrateSQLiteToMySQL(t.Context(), dir, dsn); err == nil || !strings.Contains(err.Error(), "file backend is already MySQL") {
-		t.Fatal("initialized file archive accepted metadata without file contents:", err)
-	}
-	var count int
-	if err = db.QueryRow("SELECT COUNT(*) FROM projects").Scan(&count); err != nil || count != 0 {
-		t.Fatal("refused import changed destination", count, err)
-	}
-	if _, err = os.Stat(filepath.Join(dir, ".mysql-storage.json")); !os.IsNotExist(err) {
-		t.Fatal("refused import bound source directory", err)
-	}
 }

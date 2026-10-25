@@ -2,7 +2,7 @@
 
 个人本机使用的验证报告归档工具。Agent 在业务目录执行验证，通过 CLI 保存报告与证据；用户在 Web 查看 Project → Campaign → Run，逐项人工评审、评论或作废。
 
-Go 同时提供 API 和 React Web，MySQL 保存元数据，本地持久卷保存证据与离线文档。本地开发由 Docker 提供 MySQL，不需要产品账号、token 或对象存储。全部检查项人工通过才整轮通过；只有最新完整范围 Run 全部人工通过，需求才整体通过。保存成功与 Agent 检查通过分别显示，局部复验不合并历史结果。
+Go 同时提供 API 和 React Web，MySQL 保存业务元数据、证据与离线文档的完整内容。本地开发由 Docker 提供 MySQL，不需要产品账号、token 或对象存储。全部检查项人工通过才整轮通过；只有最新完整范围 Run 全部人工通过，需求才整体通过。保存成功与 Agent 检查通过分别显示，局部复验不合并历史结果。
 
 ## 本机启动
 
@@ -12,14 +12,14 @@ Go 同时提供 API 和 React Web，MySQL 保存元数据，本地持久卷保�
 make docker-up
 ```
 
-打开 <http://127.0.0.1:8765> 创建 Project。全新数据首次启动自动初始化，旧 SQLite 卷先按 [MySQL 迁移说明](docs/mysql-storage.md) 停写、备份并运行 `make docker-migrate`。服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；业务和完整文件保存在 `acceptances_mysql-data`；`acceptances_app-data` 保留旧归档及备份。普通重启或 `down` 保留数据，不要使用 `down -v`，除非确实要删除该项目全部记录。
+打开 <http://127.0.0.1:8765> 创建 Project。全新数据首次启动自动初始化；已有数据按 [MySQL 存储与恢复](docs/mysql-storage.md) 核对目标并保存一致备份。服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；业务和完整文件保存在 `acceptances_mysql-data`。普通重启或 `down` 保留数据，不要使用 `down -v`，除非明确要删除该项目全部记录。
 
 ```sh
 curl --fail http://127.0.0.1:8765/health/ready
 docker compose -f deploy/compose.yaml restart app
 ```
 
-现有开发数据按 `make dev-stop` → `make mysql-migrate` → `make dev-up` 迁移。导入前自动备份整个数据目录，逐表校验并保留原 SQLite；不会重置已有人工判断。旧附件还须运行 `make dev-stop` → `make mysql-files-migrate` → `make dev-up`；切换后完整 MySQL 备份包含全部文件。旧目录和凭据继续保留，完整步骤见 [MySQL 存储与迁移](docs/mysql-storage.md)。
+当前版本仅使用 MySQL，不提供 SQLite 启动、升级或导入。旧 MySQL 附件可通过 `make dev-stop` → `make mysql-files-migrate` → `make dev-up` 迁入数据库；完整数据库备份包含全部文件。保留当前凭据和必要备份，详见 [MySQL 存储与恢复](docs/mysql-storage.md)。
 
 ## 关联业务项目
 
@@ -80,14 +80,14 @@ make test SUITE=platform
 
 ## 目录
 
-| 目录                        | 职责                                     |
-| --------------------------- | ---------------------------------------- |
-| cmd/server、cmd/acceptances | 服务和 CLI 入口                          |
-| internal                    | 报告、MySQL/SQLite、本地证据与 HTTP 实现 |
-| apps/web                    | React Web                                |
-| packages/api-client         | Web 使用的 HTTP 客户端与类型             |
-| deploy                      | 应用与 MySQL 的构建和 Compose            |
-| skills/acceptances-v1       | 宿主机 Agent 接入                        |
+| 目录                        | 职责                              |
+| --------------------------- | --------------------------------- |
+| cmd/server、cmd/acceptances | 服务和 CLI 入口                   |
+| internal                    | 报告、MySQL、归档文件与 HTTP 实现 |
+| apps/web                    | React Web                         |
+| packages/api-client         | Web 使用的 HTTP 客户端与类型      |
+| deploy                      | 应用与 MySQL 的构建和 Compose     |
+| skills/acceptances-v1       | 宿主机 Agent 接入                 |
 
 领域词汇见 [GLOSSARY](GLOSSARY.md)，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md) 和[逐项评审决策](docs/adr/0002-per-check-human-review.md)。旧 V1 文档及 Git 历史保留为历史依据，不用于补回已删除能力。
 

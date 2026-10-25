@@ -1,5 +1,7 @@
 # 本地报告归档与逐项评审实施交接
 
+> 存储更新（2026-10-25）：当前版本仅使用 MySQL。下文 SQLite 升级记录仅作历史说明，对应代码及入口已移除；当前验证命令与恢复约定以 [工具链](toolchain.md) 和 [MySQL 存储](mysql-storage.md) 为准。
+
 本地归档基线见 `.scratch/local-simplification/spec.md` 与 [ADR-0001](adr/0001-local-report-archive.md)，逐项评审以 `.scratch/per-check-human-review/spec.md` 和 [ADR-0002](adr/0002-per-check-human-review.md) 为准，批量人工通过的批量例外见 [ADR-0003](adr/0003-bulk-human-acceptance.md)。本文件描述可执行验收步骤；实际通过、失败、阻塞和未运行结果记录在对应工单，不能把本文当通过证据。
 
 2026-10-11 逐项评审已完成实现、隔离真实 API/浏览器验证和保留数据的日常升级，具体证据见[验证报告](../artifacts/per-check-human-review/verification/REPORT.md)。日常旧报告的检查项仍待用户逐项评审。

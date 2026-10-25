@@ -11,11 +11,13 @@ import (
 
 	"github.com/Chulan-824/acceptances/internal/api"
 	"github.com/Chulan-824/acceptances/internal/httpserver"
+	"github.com/Chulan-824/acceptances/internal/testmysql"
 )
 
 func TestCampaignRoutingAndArchiveGuard(t *testing.T) {
 	t.Parallel()
-	app, err := api.Open(t.TempDir())
+	dsn, _ := testmysql.New(t)
+	app, err := api.OpenMySQL(t.TempDir(), dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

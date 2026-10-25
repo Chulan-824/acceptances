@@ -1,5 +1,12 @@
 import { execFileSync } from "node:child_process";
 const suite = process.argv[2] || "all";
+if (
+  ["all", "http", "mysql", "platform", "services", "browser"].includes(suite)
+) {
+  execFileSync("make", ["mysql-up"], { stdio: "inherit" });
+  process.env.ACCEPTANCES_MYSQL_TEST_DSN_FILE ||=
+    process.cwd() + "/.cache/mysql/dev.dsn";
+}
 const targets = {
   all: ["./..."],
   http: [
@@ -34,36 +41,20 @@ if (suite === "services") {
     stdio: "inherit",
   });
 }
+targets.mysql = targets.http;
 if (targets[suite]) {
-  execFileSync("go", ["test", ...targets[suite], "-count=1", "-timeout=120s"], {
-    stdio: "inherit",
-  });
+  execFileSync(
+    "go",
+    ["test", ...targets[suite], "-count=1", "-timeout=240s", "-parallel=4"],
+    {
+      stdio: "inherit",
+    },
+  );
 } else if (suite === "web" || suite === "services") {
   // The selected Node tests already ran above.
 } else if (suite === "browser") {
   execFileSync("make", ["build"], { stdio: "inherit" });
   execFileSync("node", ["scripts/v1/browser-check.mjs"], { stdio: "inherit" });
-} else if (suite === "mysql") {
-  execFileSync("make", ["mysql-up"], { stdio: "inherit" });
-  execFileSync(
-    "go",
-    [
-      "test",
-      "./internal/api",
-      "-run",
-      "^TestMySQL",
-      "-count=1",
-      "-timeout=180s",
-    ],
-    {
-      stdio: "inherit",
-      env: {
-        ...process.env,
-        ACCEPTANCES_MYSQL_TEST_DSN_FILE:
-          process.cwd() + "/.cache/mysql/dev.dsn",
-      },
-    },
-  );
 } else if (suite === "agent") {
   await import("./agent-check.mjs");
 } else if (suite === "platform") {

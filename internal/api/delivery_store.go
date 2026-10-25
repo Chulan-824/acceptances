@@ -23,7 +23,7 @@ func (s *Server) delivery(key string) (DeliverySnapshot, error) {
 		return snapshot, err
 	}
 	snapshot.Events = []DeliveryEvent{}
-	rows, err := s.db.Query("SELECT id,kind,reason,reference,created_at FROM delivery_events WHERE delivery_id=? ORDER BY "+s.orderColumn(), key)
+	rows, err := s.db.Query("SELECT id,kind,reason,reference,created_at FROM delivery_events WHERE delivery_id=? ORDER BY seq", key)
 	if err != nil {
 		return snapshot, err
 	}
@@ -73,7 +73,7 @@ func (s *Server) listDeliveries(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deliverySummaries(ctx context.Context, where string, args ...any) ([]DeliverySummary, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT id,version,status,created_at,project_id,campaign_id,source_run_id,successor_id,payload FROM delivery_snapshots WHERE "+where+" ORDER BY created_at DESC,"+s.orderColumn()+" DESC", args...)
+	rows, err := s.db.QueryContext(ctx, "SELECT id,version,status,created_at,project_id,campaign_id,source_run_id,successor_id,payload FROM delivery_snapshots WHERE "+where+" ORDER BY created_at DESC,seq DESC", args...)
 	if err != nil {
 		return nil, err
 	}

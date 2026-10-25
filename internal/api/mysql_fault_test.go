@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -19,117 +18,6 @@ import (
 
 	"github.com/Chulan-824/acceptances/internal/api"
 )
-
-func TestMySQLMigrationRejectsActiveCheckpointedSource(t *testing.T) {
-	dsn, target := isolatedMySQL(t)
-	source, _, _, dir := deliveryTestSetup(t)
-	legacy := artifactDB(t, dir)
-	artifactSQL(t, legacy, "PRAGMA wal_checkpoint(TRUNCATE)")
-	info, err := os.Stat(filepath.Join(dir, "archive.db-wal"))
-	if err != nil || info.Size() != 0 {
-		t.Fatalf("checkpoint: %v %v", info, err)
-	}
-	if _, err = api.MigrateSQLiteToMySQL(context.Background(), dir, dsn); err == nil {
-		t.Fatal("migration accepted a running SQLite server with an empty WAL")
-	}
-	request(t, source, "POST", "/api/v1/projects", `{"name":"source remains usable after refused migration"}`, 201)
-	var tables int
-	if err = target.QueryRow("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()").Scan(&tables); err != nil || tables != 0 {
-		t.Fatalf("refused migration touched destination: tables=%d error=%v", tables, err)
-	}
-	if _, err = os.Stat(filepath.Join(dir, ".mysql-storage.json")); !errors.Is(err, os.ErrNotExist) {
-		t.Fatal("refused migration bound the active source")
-	}
-	legacy.Close()
-	source.Close()
-	if _, err = api.MigrateSQLiteToMySQL(context.Background(), dir, dsn); err != nil {
-		t.Fatal("migration after source shutdown:", err)
-	}
-	if reopened, err := api.Open(dir); err == nil {
-		reopened.Close()
-		t.Fatal("migrated source reopened for SQLite writes")
-	}
-}
-
-func TestMySQLMigrationLocksLegacySQLiteThroughImport(t *testing.T) {
-	dsn, target := isolatedMySQL(t)
-	source, _, _, dir := deliveryTestSetup(t)
-	source.Close()
-	path := filepath.Join(dir, "archive.db")
-	original, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// This connection represents a server from before directory locks existed.
-	legacy := artifactDB(t, dir)
-	var count int
-	if err = legacy.QueryRow("SELECT COUNT(*) FROM projects").Scan(&count); err != nil {
-		t.Fatal(err)
-	}
-	if _, err = api.MigrateSQLiteToMySQL(context.Background(), dir, dsn); err == nil || !strings.Contains(err.Error(), "exclusively lock SQLite source") {
-		t.Fatal("idle legacy WAL connection was not rejected:", err)
-	}
-	legacy.Close()
-	bootstrap := openLegacyMySQL(t, t.TempDir(), dsn)
-	bootstrap.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	blocker, err := target.Conn(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer blocker.Close()
-	if _, err = blocker.ExecContext(ctx, "LOCK TABLES projects WRITE"); err != nil {
-		t.Fatal(err)
-	}
-	defer blocker.ExecContext(context.Background(), "UNLOCK TABLES")
-	type imported struct {
-		result api.MySQLImportResult
-		err    error
-	}
-	done := make(chan imported, 1)
-	go func() {
-		result, err := api.MigrateSQLiteToMySQL(ctx, dir, dsn)
-		done <- imported{result, err}
-	}()
-	// The destination lease is acquired only after SQLite's exclusive snapshot.
-	for {
-		var owned bool
-		if err = target.QueryRowContext(ctx, "SELECT IS_USED_LOCK(CONCAT('acceptances:',LEFT(SHA2(DATABASE(),256),48))) IS NOT NULL").Scan(&owned); err != nil {
-			t.Fatal(err)
-		}
-		if owned {
-			break
-		}
-		select {
-		case result := <-done:
-			t.Fatal("migration ended before destination checkpoint:", result.err)
-		case <-time.After(10 * time.Millisecond):
-		}
-	}
-	writer := artifactDB(t, dir)
-	if _, err = writer.Exec("INSERT INTO projects VALUES('late','late','','2026-10-23T00:00:00Z')"); err == nil || !strings.Contains(err.Error(), "locked") {
-		t.Fatal("source write was not rejected by the migration lock:", err)
-	}
-	writer.Close()
-	assertArchiveLockedInOtherProcess(t, dir, "")
-	if _, err = blocker.ExecContext(ctx, "UNLOCK TABLES"); err != nil {
-		t.Fatal(err)
-	}
-	result := <-done
-	if result.err != nil {
-		t.Fatal(result.err)
-	}
-	for _, file := range []string{path, filepath.Join(result.result.Backup, "data/archive.db")} {
-		data, err := os.ReadFile(file)
-		if err != nil || !bytes.Equal(data, original) {
-			t.Fatalf("migration changed source bytes or its backup: %s %v", file, err)
-		}
-	}
-	if err = target.QueryRow("SELECT COUNT(*) FROM projects").Scan(&count); err != nil || count != 1 {
-		t.Fatalf("unexpected imported data: %d %v", count, err)
-	}
-}
 
 func TestMySQLLeaseLossDuringPublication(t *testing.T) {
 	for _, kind := range []string{"deliveries", "documents"} {

@@ -3,7 +3,6 @@ package api_test
 import (
 	"database/sql"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -91,7 +90,7 @@ func TestLegacyFailedTestReportRetriesOriginalTemplate(t *testing.T) {
 	request(t, app, "POST", "/api/v1/runs/"+runID+"/accept-all", `{}`, 200)
 	snapshot := freezeFixture(t, app, runID, "legacy-report-freeze")
 	deliveryID := snapshot["id"].(string)
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	db, err := sql.Open("mysql", archiveDSN(t, dir))
 	if err != nil {
 		t.Fatal(err)
 	}

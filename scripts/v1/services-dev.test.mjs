@@ -1,3 +1,4 @@
+import { createMySQLTestDatabase } from "./mysql-test-database.mjs";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { execFile } from "node:child_process";
@@ -35,12 +36,15 @@ test(
       t.skip("已有开发服务记录，保留当前会话；停止后再运行此检查");
       return;
     }
+    const database = await createMySQLTestDatabase();
+    t.after(() => database.close());
     const directory = await mkdtemp(join(tmpdir(), "acceptances-dev-test-"));
     const apiPort = await freePort();
     let webPort = await freePort();
     while (webPort === apiPort) webPort = await freePort();
     const env = {
       ...process.env,
+      ...database.environment,
       ACCEPTANCES_DEV_API_PORT: String(apiPort),
       ACCEPTANCES_DEV_WEB_PORT: String(webPort),
       ACCEPTANCES_DATA_DIR: join(directory, "data"),

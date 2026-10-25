@@ -305,13 +305,11 @@ func (b *fileBatch) publishRun(ctx context.Context, owner fileOwner, persist fun
 	b.stage = ""
 	err := b.s.deliveryTransaction(ctx, persist)
 	if err != nil {
-		if b.s.mysql {
-			check, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			var key string
-			if readErr := b.s.db.QueryRowContext(check, "SELECT id FROM runs WHERE id=? FOR UPDATE", owner.id).Scan(&key); !errors.Is(readErr, sql.ErrNoRows) {
-				return err
-			}
+		check, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		var key string
+		if readErr := b.s.db.QueryRowContext(check, "SELECT id FROM runs WHERE id=? FOR UPDATE", owner.id).Scan(&key); !errors.Is(readErr, sql.ErrNoRows) {
+			return err
 		}
 		_ = os.RemoveAll(target)
 	}

@@ -18,7 +18,7 @@ import (
 
 func TestCampaignContract(t *testing.T) {
 	t.Parallel()
-	app, err := api.Open(t.TempDir())
+	app, err := openArchive(t, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestMySQLCampaignContract(t *testing.T) {
 
 func TestCampaignSharedMutationLock(t *testing.T) {
 	t.Parallel()
-	app, err := api.Open(t.TempDir())
+	app, err := openArchive(t, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

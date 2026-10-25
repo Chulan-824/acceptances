@@ -59,11 +59,11 @@ CLI 原样传递 API JSON，`publish` 原样上传报告并添加回执 `webUrl`
 
 ## 存储升级
 
-当前日常服务使用 Docker MySQL。原 SQLite 保留数据迁移、备份和回退边界见 [MySQL 存储](../mysql-storage.md)，不改变 CLI/skill 的 HTTP 协议。
+当前日常服务使用 Docker MySQL。当前数据库备份和恢复边界见 [MySQL 存储](../mysql-storage.md)，不改变 CLI/skill 的 HTTP 协议。
 
-### 历史 SQLite 逐项评审升级
+### 数据库兼容
 
-逐项评审使用增量迁移，报告和附件保留原样。旧整轮接受、拒绝保留为历史，各项开始待审并重算 Run 和 Campaign；作废保持作废。迁移版本保证重启不会再次清空新增人审。旧报告缺少 `scopeType` 仍可提交，视为范围未知，原包重试继续使用原内容。
+当前运行时仅支持 MySQL。历史 SQLite 升级记录保留于 Git，不再提供对应启动或导入入口。旧报告缺少 `scopeType` 仍可提交，视为范围未知，原包重试继续使用原内容。
 
 日常运行库升级先保存一致的数据库与附件备份，核对真实数据卷，按[实施交接](../v1-implementation-handoff.md)验证迁移。仅编辑源码不表示容器、宿主机 CLI 或已安装 skill 已升级。
 

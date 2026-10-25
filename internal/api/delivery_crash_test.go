@@ -18,6 +18,7 @@ import (
 
 type artifactCrashRequest struct {
 	Directory string
+	DSNFile   string
 	Path      string
 	Body      string
 	Phase     string
@@ -38,7 +39,11 @@ func TestDeliveryArtifactCrashHelper(t *testing.T) {
 	if err = json.Unmarshal(raw, &input); err != nil {
 		t.Fatal(err)
 	}
-	app, err := api.Open(input.Directory)
+	dsn, err := os.ReadFile(input.DSNFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	app, err := api.OpenMySQL(input.Directory, string(dsn))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,6 +74,10 @@ func TestDeliveryArtifactCrashRecovery(t *testing.T) {
 					input.Path, input.Body = "/api/v1/deliveries/"+deliveryID+"/documents", `{"requestId":"crash-document"}`
 				}
 				app.Close()
+				input.DSNFile = filepath.Join(t.TempDir(), "connection.dsn")
+				if err := os.WriteFile(input.DSNFile, []byte(archiveDSN(t, dir)), 0600); err != nil {
+					t.Fatal(err)
+				}
 				configPath := filepath.Join(t.TempDir(), "crash-request.json")
 				if err := os.WriteFile(configPath, []byte(fixtureJSON(t, input)), 0600); err != nil {
 					t.Fatal(err)
@@ -105,7 +114,7 @@ func TestDeliveryArtifactCrashRecovery(t *testing.T) {
 						t.Fatal("wrong pre-recovery document state", status)
 					}
 				}
-				reopened, err := api.Open(dir)
+				reopened, err := openArchive(t, dir)
 				if err != nil {
 					t.Fatal(err)
 				}

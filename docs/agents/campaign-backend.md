@@ -32,10 +32,10 @@ Gin 关闭额外路径重定向，使用 `URL.EscapedPath` 匹配；参数继续
 
 命令和证据边界以 [工具链指南](../toolchain.md) 为准。
 
-`SUITE=http` 覆盖 `api`、`handler`、`service`、`dao`、`httpserver`。Service 测试覆盖业务边界、错误原因和并发结果；DAO 测试使用实际迁移生成的隔离 SQLite 数据库；HTTP 测试覆盖真实入口、HEAD、编码路径、fallback 和请求保护。
+`SUITE=http` 覆盖 `api`、`handler`、`service`、`dao`、`httpserver`。Service 测试覆盖业务边界、错误原因和并发结果；DAO 测试使用实际迁移生成的隔离 MySQL 数据库；HTTP 测试覆盖真实入口、HEAD、编码路径、fallback 和请求保护。
 
 `SUITE=mysql` 包含相同 Campaign 契约、原始描述及普通/空/最大长度描述的重复保存、历史不可变及租约丢失后四个接口拒绝访问的检查。每个测试创建专用数据库。数据库集成沿用项目当前测试分组，不额外引入 build tag。
 
-共享锁装配回归使用 `Server.Handler()` 的真实注册入口，在 SQLite 和 MySQL 上交错执行旧模块的 Campaign 删除/最新 Run 批量接受与描述 PATCH。测试暂缓旧接口响应：此时事务已提交，旧 Handler 仍持有共享锁，避免数据库锁掩盖错误装配；PATCH 必须等待，并在释放后返回删除后的 404，或同时保留新描述与已接受状态。同步屏障仅存在于测试的请求体和 ResponseWriter 中，没有业务测试钩子。若以后调整旧 Handler 的锁范围，应同步调整屏障位置，继续验证新旧模块的互斥关系。
+共享锁装配回归使用 `Server.Handler()` 的真实注册入口，在 MySQL 上交错执行旧模块的 Campaign 删除/最新 Run 批量接受与描述 PATCH。测试暂缓旧接口响应：此时事务已提交，旧 Handler 仍持有共享锁，避免数据库锁掩盖错误装配；PATCH 必须等待，并在释放后返回删除后的 404，或同时保留新描述与已接受状态。同步屏障仅存在于测试的请求体和 ResponseWriter 中，没有业务测试钩子。若以后调整旧 Handler 的锁范围，应同步调整屏障位置，继续验证新旧模块的互斥关系。
 
 Web 当前通过 CLI/API 创建 Campaign，没有创建需求或编辑描述的表单。浏览器验证应区分同源 API 操作和页面导航、刷新、历史报告显示，不把 API 调用写成表单操作。

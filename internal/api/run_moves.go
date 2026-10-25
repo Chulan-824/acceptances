@@ -138,7 +138,7 @@ func (s *Server) applyRunMove(ctx context.Context, tx *sql.Tx, runID string, in 
 		return move, false, err
 	}
 	var referenced bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM runs WHERE `+s.followUpSourceSQL()+`=?)`, runID).Scan(&referenced); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM runs WHERE JSON_UNQUOTE(JSON_EXTRACT(report,'$.followUp.sourceRunId'))=?)`, runID).Scan(&referenced); err != nil {
 		return move, false, err
 	}
 	if doc.FollowUp != nil || referenced {
@@ -162,7 +162,7 @@ func (s *Server) applyRunMove(ctx context.Context, tx *sql.Tx, runID string, in 
 func (s *Server) refreshCampaignAfterMove(ctx context.Context, tx *sql.Tx, campaignID string) error {
 	var latest, raw, status string
 	// Publication order is unchanged by moving an existing row.
-	err := tx.QueryRowContext(ctx, `SELECT id,report,status FROM runs WHERE campaign_id=? AND NOT EXISTS(SELECT 1 FROM run_consolidations c WHERE c.source_run_id=runs.id) ORDER BY `+s.orderColumn()+` DESC LIMIT 1`, campaignID).Scan(&latest, &raw, &status)
+	err := tx.QueryRowContext(ctx, `SELECT id,report,status FROM runs WHERE campaign_id=? AND NOT EXISTS(SELECT 1 FROM run_consolidations c WHERE c.source_run_id=runs.id) ORDER BY seq DESC LIMIT 1`, campaignID).Scan(&latest, &raw, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		latest = ""
 		status = "pending"
@@ -182,7 +182,7 @@ func (s *Server) refreshCampaignAfterMove(ctx context.Context, tx *sql.Tx, campa
 }
 
 func (s *Server) runMoves(runID string) ([]RunMove, error) {
-	rows, err := s.db.Query(`SELECT id,run_id,request_id,from_campaign_id,to_campaign_id,reason,created_at FROM run_moves WHERE run_id=? ORDER BY `+s.orderColumn(), runID)
+	rows, err := s.db.Query(`SELECT id,run_id,request_id,from_campaign_id,to_campaign_id,reason,created_at FROM run_moves WHERE run_id=? ORDER BY seq`, runID)
 	if err != nil {
 		return nil, err
 	}

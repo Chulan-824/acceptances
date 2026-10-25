@@ -359,7 +359,7 @@ func (s *Server) run(key string) (Run, error) {
 	}
 	v.Reviews = []Review{}
 	// Save order decides the latest judgment, even when timestamps are identical.
-	rows, e := s.db.Query("SELECT id,run_id,kind,body,created_at,check_id,legacy FROM reviews WHERE run_id=? ORDER BY "+s.orderColumn(), key)
+	rows, e := s.db.Query("SELECT id,run_id,kind,body,created_at,check_id,legacy FROM reviews WHERE run_id=? ORDER BY seq", key)
 	if e != nil {
 		return v, e
 	}

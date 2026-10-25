@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/Chulan-824/acceptances/internal/api"
 )
 
 func TestBusinessDocumentOfflineSafeAndIndependentlyVersioned(t *testing.T) {
@@ -121,7 +119,7 @@ func TestFailedDocumentRetriesSameVersionAndRestartRecoversGenerating(t *testing
 	if retried["id"] != failed["id"] || retried["version"] != failed["version"] || retried["attempts"] != float64(2) || retried["status"] != "succeeded" {
 		t.Fatal(retried)
 	}
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	db, err := sql.Open("mysql", archiveDSN(t, dir))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +131,7 @@ func TestFailedDocumentRetriesSameVersionAndRestartRecoversGenerating(t *testing
 	}
 	db.Close()
 	app.Close()
-	reopened, err := api.Open(dir)
+	reopened, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}

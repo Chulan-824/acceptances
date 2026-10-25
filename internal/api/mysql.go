@@ -25,7 +25,7 @@ func OpenMySQL(dir, dsn string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{db: db, mysql: true}
+	s := &Server{db: db}
 	s.dir, err = filepath.Abs(dir)
 	if err == nil {
 		err = s.acquireMySQLLease(context.Background())
@@ -42,7 +42,7 @@ func OpenMySQL(dir, dsn string) (*Server, error) {
 	if err == nil && !s.databaseFiles() {
 		s.directory, err = lockArchiveDirectory(s.dir)
 		if err == nil {
-			err = s.bindMySQLDirectory(false)
+			err = s.bindMySQLDirectory()
 		}
 	}
 	if err == nil && !s.databaseFiles() {
@@ -58,12 +58,12 @@ func OpenMySQL(dir, dsn string) (*Server, error) {
 			// A retained binding is still checked, but an empty local directory
 			// is valid after restoring a complete database-only archive.
 			if _, statErr := os.Stat(filepath.Join(s.dir, ".mysql-storage.json")); statErr == nil {
-				err = s.bindMySQLDirectory(false)
+				err = s.bindMySQLDirectory()
 			} else if !errors.Is(statErr, os.ErrNotExist) {
 				err = statErr
 			}
 		} else {
-			s.artifacts = &deliveryArtifacts{db: db, dir: s.dir, mysql: true}
+			s.artifacts = &deliveryArtifacts{db: db, dir: s.dir}
 		}
 	}
 	if err == nil {
@@ -151,9 +151,6 @@ type archiveLeaseQueryer interface {
 }
 
 func (s *Server) checkTransactionLease(ctx context.Context, db archiveLeaseQueryer) error {
-	if !s.mysql {
-		return nil
-	}
 	var owned int
 	// Request cancellation can close a MySQL connection. Keep request contexts
 	// away from the dedicated lease connection so an aborted fetch cannot release
@@ -263,7 +260,7 @@ type mysqlBinding struct {
 	Database  string `json:"database"`
 }
 
-func (s *Server) bindMySQLDirectory(imported bool) error {
+func (s *Server) bindMySQLDirectory() error {
 	var current mysqlBinding
 	if err := s.db.QueryRow("SELECT archive_id,DATABASE() FROM schema_migrations WHERE version=1").Scan(&current.ArchiveID, &current.Database); err != nil {
 		return err
@@ -283,29 +280,22 @@ func (s *Server) bindMySQLDirectory(imported bool) error {
 	if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	if !imported {
-		if _, err = os.Stat(filepath.Join(s.dir, "archive.db")); err == nil {
-			return fmt.Errorf("SQLite archive exists; run server --migrate-sqlite before starting MySQL")
-		} else if !errors.Is(err, os.ErrNotExist) {
+	for _, table := range archiveTables {
+		var count int
+		if err = s.db.QueryRow("SELECT COUNT(*) FROM " + table.name).Scan(&count); err != nil {
 			return err
 		}
-		for _, table := range archiveTables {
-			var count int
-			if err = s.db.QueryRow("SELECT COUNT(*) FROM " + table.name).Scan(&count); err != nil {
-				return err
-			}
-			if count != 0 {
-				return fmt.Errorf("MySQL archive is populated but this directory is not bound to it")
-			}
+		if count != 0 {
+			return fmt.Errorf("MySQL archive is populated but this directory is not bound to it")
 		}
-		for _, name := range []string{"evidence", "deliveries", "documents"} {
-			entries, readErr := os.ReadDir(filepath.Join(s.dir, name))
-			if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
-				return readErr
-			}
-			if len(entries) > 0 {
-				return fmt.Errorf("unbound archive files exist; refusing startup cleanup")
-			}
+	}
+	for _, name := range []string{"evidence", "deliveries", "documents"} {
+		entries, readErr := os.ReadDir(filepath.Join(s.dir, name))
+		if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
+			return readErr
+		}
+		if len(entries) > 0 {
+			return fmt.Errorf("unbound archive files exist; refusing startup cleanup")
 		}
 	}
 	if err = os.MkdirAll(s.dir, 0700); err != nil {
@@ -334,24 +324,7 @@ func (s *Server) bindMySQLDirectory(imported bool) error {
 	return syncDirectory(s.dir)
 }
 
-func (s *Server) orderColumn() string {
-	if s.mysql {
-		return "seq"
-	}
-	return "rowid"
-}
-
-func (s *Server) followUpSourceSQL() string {
-	if s.mysql {
-		return "JSON_UNQUOTE(JSON_EXTRACT(report,'$.followUp.sourceRunId'))"
-	}
-	return "json_extract(report,'$.followUp.sourceRunId')"
-}
-
 func (s *Server) lockArchiveRow(ctx context.Context, tx *sql.Tx, table, key string) error {
-	if !s.mysql {
-		return nil
-	}
 	var found string
 	return tx.QueryRowContext(ctx, "SELECT id FROM "+table+" WHERE id=? FOR UPDATE", key).Scan(&found)
 }

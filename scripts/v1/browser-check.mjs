@@ -26,10 +26,8 @@ assert.ok(
 );
 const selected = selectSuites(process.env.BROWSER_GROUPS || "all");
 assert.ok(
-  ["sqlite", "mysql"].includes(
-    process.env.ACCEPTANCES_BROWSER_DATABASE || "sqlite",
-  ),
-  "浏览器数据库只支持 sqlite 或 mysql",
+  (process.env.ACCEPTANCES_BROWSER_DATABASE || "mysql") === "mysql",
+  "浏览器数据库仅支持 mysql",
 );
 if (process.argv.includes("--list")) {
   for (const name of selected)
@@ -61,10 +59,7 @@ async function buildDigest(server, web) {
 }
 
 async function startServer(name, output, buildDirectory, onStop) {
-  const database =
-    process.env.ACCEPTANCES_BROWSER_DATABASE === "mysql"
-      ? await createMySQLTestDatabase()
-      : null;
+  const database = await createMySQLTestDatabase();
   try {
     const service = await startIsolatedServer({
       kind: "browser",
@@ -108,7 +103,7 @@ async function main() {
   const git = (...args) =>
     execFileSync("git", args, { encoding: "utf8" }).trim();
   const report = {
-    databaseEngine: process.env.ACCEPTANCES_BROWSER_DATABASE || "sqlite",
+    databaseEngine: "mysql",
     startedAt: new Date().toISOString(),
     sourceCommit: git("rev-parse", "HEAD"),
     dirty: Boolean(git("status", "--porcelain=v1")),

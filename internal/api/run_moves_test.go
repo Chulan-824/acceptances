@@ -52,7 +52,7 @@ func TestMoveRunRetainsFactsEvidenceReviewsAndDeliveryBindings(t *testing.T) {
 	before := readRun(t, app, runID)
 	prepBefore := request(t, app, "GET", "/api/v1/runs/"+runID+"/delivery-preparation", "", 200)
 	var storedReport, hash, submission, created string
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	db, err := sql.Open("mysql", archiveDSN(t, dir))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,12 +192,12 @@ func TestMoveRunAtomicRetryAndReopen(t *testing.T) {
 	f := newDeliveryFixture(t, pid, source)
 	f.finalize(t)
 	runID := publishDeliveryFixture(t, app, source, "atomic-move", f)
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	db, err := sql.Open("mysql", archiveDSN(t, dir))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if _, err = db.Exec(`CREATE TRIGGER fail_move BEFORE INSERT ON run_moves BEGIN SELECT RAISE(ABORT,'injected failure'); END;`); err != nil {
+	if _, err = db.Exec(`CREATE TRIGGER fail_move BEFORE INSERT ON run_moves FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected failure';`); err != nil {
 		t.Fatal(err)
 	}
 	body := moveInput(t, source, target, "atomic-request")
@@ -247,7 +247,7 @@ func TestMoveRunAtomicRetryAndReopen(t *testing.T) {
 		t.Fatal("audit mutable")
 	}
 	app.Close()
-	reopened, err := api.Open(dir)
+	reopened, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}

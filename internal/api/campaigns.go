@@ -38,10 +38,7 @@ func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
 		v := Repository{id(), key, in.Name, in.Source}
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		query := "INSERT INTO repositories(id,project_id,name,source) VALUES(?,?,?,?) ON CONFLICT(project_id,source) DO NOTHING"
-		if s.mysql {
-			query = "INSERT INTO repositories(id,project_id,name,source) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE id=id"
-		}
+		query := "INSERT INTO repositories(id,project_id,name,source) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE id=id"
 		_, e := s.db.ExecContext(r.Context(), query, v.ID, key, v.Name, v.Source)
 		if e != nil {
 			fail(w, 500, "SAVE_FAILED")

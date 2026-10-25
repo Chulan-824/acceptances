@@ -46,7 +46,7 @@ func (s *Server) deriveFeedbackResponses(v *Run) error {
 		}
 		v.SourceRunAvailable = &available
 	}
-	rows, err := s.db.Query("SELECT id,report FROM runs WHERE campaign_id=? AND id<>? ORDER BY "+s.orderColumn(), v.CampaignID, v.ID)
+	rows, err := s.db.Query("SELECT id,report FROM runs WHERE campaign_id=? AND id<>? ORDER BY seq", v.CampaignID, v.ID)
 	if err != nil {
 		return err
 	}

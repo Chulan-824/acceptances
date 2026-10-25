@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"database/sql"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -135,7 +134,7 @@ func TestBusinessGuideRetryUsesSavedContentAfterRestart(t *testing.T) {
 	if err := os.WriteFile(imagePath, []byte(f.Files["screen.png"]), 0600); err != nil {
 		t.Fatal(err)
 	}
-	reopened, err := api.Open(dir)
+	reopened, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,62 +142,5 @@ func TestBusinessGuideRetryUsesSavedContentAfterRestart(t *testing.T) {
 	retried := request(t, reopened, "POST", "/api/v1/documents/"+failed["id"].(string)+"/retry", `{}`, 201)
 	if retried["id"] != failed["id"] || retried["version"] != float64(1) || retried["attempts"] != float64(2) || retried["kind"] != "business_guide" || !strings.Contains(documentHTML(t, reopened, retried["id"].(string)).Body.String(), "订单列表") {
 		t.Fatal(retried)
-	}
-}
-
-func TestDocumentKindMigrationPreservesLegacyBytesAndVersions(t *testing.T) {
-	app, pid, cid, dir := deliveryTestSetup(t)
-	f := newDeliveryFixture(t, pid, cid)
-	f.finalize(t)
-	runID := publishDeliveryFixture(t, app, cid, "old-doc-fixture", f)
-	request(t, app, "POST", "/api/v1/runs/"+runID+"/accept-all", `{}`, 200)
-	snapshot := freezeFixture(t, app, runID, "old-doc-freeze")
-	deliveryID := snapshot["id"].(string)
-	one := request(t, app, "POST", "/api/v1/deliveries/"+deliveryID+"/documents", `{"requestId":"old-doc"}`, 201)
-	before := documentHTML(t, app, one["id"].(string)).Body.String()
-	app.Close()
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Restore the exact previous table shape to exercise the real migration.
-	_, err = db.Exec(`DROP TABLE run_consolidations; DROP TABLE run_moves;
-DROP TRIGGER immutable_successful_document; DROP TRIGGER immutable_document_input;
-ALTER TABLE business_documents RENAME TO current_documents;
-CREATE TABLE business_documents(id TEXT PRIMARY KEY,delivery_id TEXT NOT NULL REFERENCES delivery_snapshots(id),version INTEGER NOT NULL,request_id TEXT NOT NULL UNIQUE,template_version TEXT NOT NULL,status TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 1,error TEXT NOT NULL DEFAULT '',content_hash TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL,completed_at TEXT NOT NULL DEFAULT '',UNIQUE(delivery_id,version));
-INSERT INTO business_documents SELECT id,delivery_id,version,request_id,template_version,status,attempts,error,content_hash,created_at,completed_at FROM current_documents;
-DROP TABLE current_documents;
-CREATE TRIGGER immutable_successful_document BEFORE UPDATE ON business_documents WHEN OLD.status='succeeded' BEGIN SELECT RAISE(ABORT,'successful document is immutable'); END;
-PRAGMA user_version=3;`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	db.Close()
-	reopened, err := api.Open(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reopened.Close()
-	legacy := request(t, reopened, "GET", "/api/v1/documents/"+one["id"].(string), "", 200)
-	if legacy["kind"] != "test_report" || legacy["sha256"] != one["sha256"] || documentHTML(t, reopened, one["id"].(string)).Body.String() != before {
-		t.Fatal("migration changed legacy content")
-	}
-	guide := request(t, reopened, "POST", "/api/v1/deliveries/"+deliveryID+"/documents", `{"requestId":"migrated-guide","kind":"business_guide"}`, 201)
-	report := request(t, reopened, "POST", "/api/v1/deliveries/"+deliveryID+"/documents", `{"requestId":"migrated-report","kind":"test_report"}`, 201)
-	if guide["version"] != float64(1) || report["version"] != float64(2) {
-		t.Fatal(guide, report)
-	}
-	backups, err := filepath.Glob(filepath.Join(dir, "archive.before-v4.*.db"))
-	if err != nil || len(backups) != 1 {
-		t.Fatal(backups, err)
-	}
-	backup, err := sql.Open("sqlite", backups[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer backup.Close()
-	var version int
-	if err = backup.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 3 {
-		t.Fatal(version, err)
 	}
 }

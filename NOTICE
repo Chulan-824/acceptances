@@ -29,3 +29,7 @@ Copyright (c) 2024/06/17 - current LobeHub LLC. All rights reserved.
 ## 2026-10-22 MySQL 存储
 
 新增 Go MySQL Driver v1.9.3 和 filippo.io/edwards25519 v1.1.0，精确上游许可保存在 LICENSES/runtime，对应来源归档和摘要已追加到 docs/licensing/runtime-materials.json。Go MySQL Driver 使用 MPL-2.0；本次按原样依赖上游模块，其源码可由清单中的精确归档取得。独立 MySQL 服务采用固定摘要的官方镜像，本次仅在本机使用，保留镜像内通知，不包含于原应用镜像的历史核查范围。
+
+## 2026-10-25 MySQL 单一数据库
+
+SQLite 驱动及独有依赖已从当前构建和运行材料清单移除；历史归属记录继续保留于 Git。MySQL 驱动及其原有通知保持不变。

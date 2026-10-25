@@ -137,7 +137,7 @@ func TestDeliveryJudgmentWithdrawalNeverMutatesOrRestoresSnapshot(t *testing.T) 
 	if two["version"] != float64(2) || two["id"] == one["id"] {
 		t.Fatal(two)
 	}
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	db, err := sql.Open("mysql", archiveDSN(t, dir))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,12 +157,12 @@ func TestConcurrentFreezeAndAtomicFailure(t *testing.T) {
 	runID := publishDeliveryFixture(t, app, cid, "atomic", f)
 	request(t, app, "POST", "/api/v1/runs/"+runID+"/accept-all", `{}`, 200)
 	input := preparedFreeze(t, app, runID, "atomic-freeze")
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	db, err := sql.Open("mysql", archiveDSN(t, dir))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if _, err = db.Exec(`CREATE TRIGGER fail_freeze BEFORE INSERT ON delivery_events BEGIN SELECT RAISE(ABORT,'injected failure'); END;`); err != nil {
+	if _, err = db.Exec(`CREATE TRIGGER fail_freeze BEFORE INSERT ON delivery_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected failure';`); err != nil {
 		t.Fatal(err)
 	}
 	request(t, app, "POST", "/api/v1/runs/"+runID+"/deliveries", fixtureJSON(t, input), 500)

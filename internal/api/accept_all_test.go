@@ -3,13 +3,10 @@ package api_test
 import (
 	"database/sql"
 	"net/http/httptest"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/Chulan-824/acceptances/internal/api"
 )
 
 func TestAcceptAllPreservesHistoryAndOnlyAcceptsRemainingItems(t *testing.T) {
@@ -158,12 +155,12 @@ func TestAcceptAllRollsBackEveryWriteOnFailure(t *testing.T) {
 		name string
 		sql  string
 	}{
-		{"second-review", `CREATE TRIGGER fail_bulk BEFORE INSERT ON reviews WHEN NEW.check_id='b' BEGIN SELECT RAISE(ABORT,'injected review failure'); END;`},
-		{"campaign-update", `CREATE TRIGGER fail_bulk BEFORE UPDATE ON campaigns BEGIN SELECT RAISE(ABORT,'injected campaign failure'); END;`},
+		{"second-review", `CREATE TRIGGER fail_bulk BEFORE INSERT ON reviews FOR EACH ROW BEGIN IF NEW.check_id='b' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected review failure'; END IF; END;`},
+		{"campaign-update", `CREATE TRIGGER fail_bulk BEFORE UPDATE ON campaigns FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected campaign failure';`},
 	} {
 		t.Run(fault.name, func(t *testing.T) {
 			dir := t.TempDir()
-			app, err := api.Open(dir)
+			app, err := openArchive(t, dir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -173,7 +170,7 @@ func TestAcceptAllRollsBackEveryWriteOnFailure(t *testing.T) {
 			cid := campaign["id"].(string)
 			run := upload(t, app, cid, "rollback-bulk", reviewReport(t, "full", "passed", "failed"), map[string]string{"log.txt": "observations"}, 201)
 			path := "/api/v1/runs/" + run["id"].(string)
-			db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+			db, err := sql.Open("mysql", archiveDSN(t, dir))
 			if err != nil {
 				t.Fatal(err)
 			}

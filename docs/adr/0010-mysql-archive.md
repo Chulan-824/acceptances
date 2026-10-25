@@ -2,6 +2,8 @@
 status: superseded-in-part
 ---
 
+> SQLite 兼容与源数据保留部分已由 [ADR-0012](0012-mysql-only.md) 替代；本文保留原决策历史。
+
 # MySQL 保存归档元数据，本地文件保留证据
 
 2026-10-22，用户确认将现有本地存储迁移到 MySQL，保留并迁移现有数据，本地开发使用 Docker MySQL，并要求真实接口和页面验证，暂不提交代码。

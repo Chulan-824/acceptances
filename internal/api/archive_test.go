@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"github.com/Chulan-824/acceptances/internal/api"
 	"io"
@@ -17,7 +16,7 @@ import (
 
 func TestProjectSurvivesRestart(t *testing.T) {
 	dir := t.TempDir()
-	app, err := api.Open(dir)
+	app, err := openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +28,7 @@ func TestProjectSurvivesRestart(t *testing.T) {
 	var project map[string]any
 	json.Unmarshal(w.Body.Bytes(), &project)
 	app.Close()
-	app, err = api.Open(dir)
+	app, err = openArchive(t, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +56,7 @@ func request(t *testing.T, app *api.Server, method, path, body string, want int)
 }
 func setup(t *testing.T) (*api.Server, string, string) {
 	t.Helper()
-	app, e := api.Open(t.TempDir())
+	app, e := openArchive(t, t.TempDir())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -244,7 +243,7 @@ func TestInterruptedUploadNeverVisible(t *testing.T) {
 }
 func TestArchiveAndEvidenceSurviveRestart(t *testing.T) {
 	dir := t.TempDir()
-	app, e := api.Open(dir)
+	app, e := openArchive(t, dir)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -254,7 +253,7 @@ func TestArchiveAndEvidenceSurviveRestart(t *testing.T) {
 	rid := v["id"].(string)
 	request(t, app, "POST", "/api/v1/runs/"+rid+"/reviews", `{"checkId":"c1","kind":"rejected","body":"fix it"}`, 201)
 	app.Close()
-	app, e = api.Open(dir)
+	app, e = openArchive(t, dir)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -294,26 +293,27 @@ func TestReportImmutableAndInvalidInputRejected(t *testing.T) {
 
 func TestFutureDatabaseVersionRejected(t *testing.T) {
 	dir := t.TempDir()
-	db, e := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	app, e := openArchive(t, dir)
 	if e != nil {
 		t.Fatal(e)
 	}
-	if _, e = db.Exec("PRAGMA user_version=99"); e != nil {
+	app.Close()
+	db := artifactDB(t, dir)
+	if _, e = db.Exec("INSERT INTO schema_migrations(version,checksum,archive_id,dirty) SELECT 99,checksum,archive_id,0 FROM schema_migrations WHERE version=1"); e != nil {
 		t.Fatal(e)
 	}
-	db.Close()
-	app, e := api.Open(dir)
+	app, e = openArchive(t, dir)
 	if e == nil {
 		app.Close()
 		t.Fatal("future database opened")
 	}
-	if !strings.Contains(e.Error(), "newer than supported") {
+	if !strings.Contains(e.Error(), "schema is newer") {
 		t.Fatal(e)
 	}
 }
 func TestStorageFailureDoesNotPublishPartialRun(t *testing.T) {
 	dir := t.TempDir()
-	app, e := api.Open(dir)
+	app, e := openArchive(t, dir)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -364,11 +364,11 @@ func TestStorageFailureIsNotResourceNotFound(t *testing.T) {
 	}
 	for _, endpoint := range endpoints {
 		t.Run(endpoint.method+endpoint.path, func(t *testing.T) {
-			response := request(t, app, endpoint.method, "/api/v1"+endpoint.path, endpoint.body, 500)
-			if response["code"] != "READ_FAILED" {
+			response := request(t, app, endpoint.method, "/api/v1"+endpoint.path, endpoint.body, 503)
+			if response["code"] != "ARCHIVE_UNAVAILABLE" {
 				t.Fatal(response)
 			}
 		})
 	}
-	upload(t, app, cid, "closed-upload", report, map[string]string{"log.txt": "evidence"}, 500)
+	upload(t, app, cid, "closed-upload", report, map[string]string{"log.txt": "evidence"}, 503)
 }

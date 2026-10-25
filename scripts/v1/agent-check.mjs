@@ -29,7 +29,7 @@ writeFileSync(
       environmentClass: "isolated-helper-and-go",
       limitations: [
         "HTTP helper tests use a controlled local service; not deployed Docker or browser acceptance",
-        "HTTP integration tests use isolated SQLite storage via SUITE=http",
+        "HTTP integration tests use isolated MySQL storage via SUITE=http",
         "Jev selection checks use an offline doctor fixture; no Chrome or official model calls",
       ],
     },

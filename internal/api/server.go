@@ -6,13 +6,9 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
-	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -20,7 +16,6 @@ import (
 	"github.com/Chulan-824/acceptances/internal/dao"
 	"github.com/Chulan-824/acceptances/internal/handler"
 	"github.com/Chulan-824/acceptances/internal/service"
-	_ "modernc.org/sqlite"
 )
 
 type Server struct {
@@ -29,7 +24,6 @@ type Server struct {
 	mu        sync.Mutex
 	artifacts *deliveryArtifacts
 	files     *fileArchive
-	mysql     bool
 	lease     *sql.Conn
 	leaseName string
 	leaseID   uint64
@@ -44,97 +38,6 @@ type Project struct {
 	CreatedAt   string `json:"createdAt"`
 }
 
-func Open(dir string) (_ *Server, err error) {
-	absoluteDir, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, err
-	}
-	dir = absoluteDir
-	directory, err := lockArchiveDirectory(dir)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err != nil {
-			directory.stop()
-			_ = directory.release()
-		}
-	}()
-	if _, err := os.Stat(filepath.Join(dir, ".mysql-storage.json")); err == nil {
-		return nil, fmt.Errorf("archive directory has migrated to MySQL; use MySQL or restore a backup into a separate directory")
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return nil, err
-	}
-	if err := os.MkdirAll(filepath.Join(dir, "evidence"), 0700); err != nil {
-		return nil, err
-	}
-	for _, name := range []string{"deliveries", "documents"} {
-		if err := os.MkdirAll(filepath.Join(dir, name), 0700); err != nil {
-			return nil, err
-		}
-	}
-	databaseURL := url.URL{Scheme: "file", Path: filepath.ToSlash(filepath.Join(dir, "archive.db"))}
-	// These settings belong to each connection, including replacements after a
-	// failed transaction. WAL is persistent and is initialized below.
-	databaseURL.RawQuery = url.Values{"_pragma": {"foreign_keys(1)", "busy_timeout(5000)"}}.Encode()
-	db, err := sql.Open("sqlite", databaseURL.String())
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	s := &Server{db: db, dir: dir, directory: directory, artifacts: &deliveryArtifacts{db: db, dir: dir}}
-	if _, err = db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
-		db.Close()
-		return nil, err
-	}
-	var version int
-	if err = db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if version > 6 {
-		db.Close()
-		return nil, fmt.Errorf("database schema version %d is newer than supported version 6", version)
-	}
-	if version == 0 {
-		if _, err = db.Exec(`BEGIN;
-
- CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY,name TEXT NOT NULL,description TEXT NOT NULL,created_at TEXT NOT NULL);
- CREATE TABLE IF NOT EXISTS repositories (id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,name TEXT NOT NULL,source TEXT NOT NULL,UNIQUE(project_id,source));
- CREATE TABLE IF NOT EXISTS campaigns (id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,title TEXT NOT NULL,description TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',latest_run_id TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL);
- CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY,campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,submission_id TEXT NOT NULL UNIQUE,hash TEXT NOT NULL,report TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',void_reason TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL);
- CREATE TABLE IF NOT EXISTS reviews (id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,kind TEXT NOT NULL,body TEXT NOT NULL,created_at TEXT NOT NULL);
- PRAGMA user_version=1; COMMIT;`); err != nil {
-			db.Close()
-			return nil, err
-		}
-	}
-	if err = s.migrateCheckReviews(version == 1); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if err = s.migrateDeliveries(version != 0); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if err = s.migrateDocumentKinds(version != 0); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if err = s.migrateRunMoves(version != 0); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if err = s.migrateRunConsolidations(version != 0); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if err = s.cleanupOrphans(); err != nil {
-		db.Close()
-		return nil, err
-	}
-	return s, nil
-}
 func (s *Server) Close() error {
 	s.closeOnce.Do(func() {
 		if s.directory != nil {
@@ -154,10 +57,7 @@ func (s *Server) Close() error {
 	return s.closeErr
 }
 func (s *Server) Ready(ctx context.Context) error {
-	if s.mysql {
-		return s.checkMySQLLease(ctx)
-	}
-	return s.db.PingContext(ctx)
+	return s.checkMySQLLease(ctx)
 }
 func id() string {
 	b := make([]byte, 16)
@@ -205,11 +105,9 @@ func (s *Server) Guard(next http.Handler) http.Handler {
 				slog.ErrorContext(r.Context(), "release archive directory", "error", err)
 			}
 		}()
-		if s.mysql {
-			if err := s.checkMySQLLease(r.Context()); err != nil {
-				fail(w, http.StatusServiceUnavailable, "ARCHIVE_UNAVAILABLE")
-				return
-			}
+		if err := s.checkMySQLLease(r.Context()); err != nil {
+			fail(w, http.StatusServiceUnavailable, "ARCHIVE_UNAVAILABLE")
+			return
 		}
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Cache-Control", "no-store")

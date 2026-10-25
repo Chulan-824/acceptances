@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/Chulan-824/acceptances/internal/api"
 )
 
 func TestArtifactRecoveryPreservesEveryDeliveryEffectAndSuccessfulDamage(t *testing.T) {
@@ -34,7 +32,7 @@ func TestArtifactRecoveryPreservesEveryDeliveryEffectAndSuccessfulDamage(t *test
 					}
 				}
 				app.Close()
-				reopened, err := api.Open(dir)
+				reopened, err := openArchive(t, dir)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -99,7 +97,7 @@ func TestArtifactRecoveryFailsClosedAndCanBeRetried(t *testing.T) {
 				}
 				t.Cleanup(func() { os.Chmod(protected, 0700) })
 			}
-			opened, err := api.Open(dir)
+			opened, err := openArchive(t, dir)
 			if err == nil {
 				opened.Close()
 				t.Fatal("Open succeeded despite an unresolved recovery failure")
@@ -112,7 +110,7 @@ func TestArtifactRecoveryFailsClosedAndCanBeRetried(t *testing.T) {
 			} else if err = os.Chmod(protected, 0700); err != nil {
 				t.Fatal(err)
 			}
-			reopened, err := api.Open(dir)
+			reopened, err := openArchive(t, dir)
 			if err != nil {
 				t.Fatal(err)
 			}

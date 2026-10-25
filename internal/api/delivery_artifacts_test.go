@@ -25,7 +25,7 @@ func readyArtifactRun(t *testing.T) (*api.Server, string, string) {
 
 func artifactDB(t *testing.T, dir string) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite", filepath.Join(dir, "archive.db"))
+	db, err := sql.Open("mysql", archiveDSN(t, dir))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestDocumentFinalUpdateAndFailureStateErrors(t *testing.T) {
 			if failState {
 				condition = "NEW.status IN ('succeeded','failed')"
 			}
-			artifactSQL(t, db, "CREATE TRIGGER reject_document BEFORE UPDATE ON business_documents WHEN "+condition+" BEGIN SELECT RAISE(ABORT,'document state fault'); END")
+			artifactSQL(t, db, "CREATE TRIGGER reject_document BEFORE UPDATE ON business_documents FOR EACH ROW BEGIN IF "+condition+" THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='document state fault'; END IF; END")
 			want := 200
 			if failState {
 				want = 500
@@ -178,7 +178,7 @@ func TestDocumentFinalUpdateAndFailureStateErrors(t *testing.T) {
 			artifactEntries(t, filepath.Join(dir, "documents"), 0)
 			artifactSQL(t, db, "DROP TRIGGER reject_document")
 			app.Close()
-			reopened, err := api.Open(dir)
+			reopened, err := openArchive(t, dir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -230,7 +230,7 @@ func TestArtifactCleanupUsesDurableOwnershipAfterRequestErrors(t *testing.T) {
 				}
 				artifactEntries(t, filepath.Join(dir, kind), wantFiles)
 				app.Close()
-				reopened, err := api.Open(dir)
+				reopened, err := openArchive(t, dir)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -279,24 +279,22 @@ func TestDocumentRenderingAllowsInvalidationButRejectsConcurrentGeneration(t *te
 	noArtifactStages(t, dir)
 }
 
-func TestSnapshotCommitFailureReleasesUncommittedOwnership(t *testing.T) {
+func TestSnapshotTransactionFailureReleasesUncommittedOwnership(t *testing.T) {
 	app, runID, dir := readyArtifactRun(t)
 	db := artifactDB(t, dir)
-	// All statements succeed, but COMMIT rejects a deferred foreign key.
-	artifactSQL(t, db, `CREATE TABLE commit_parent(id INTEGER PRIMARY KEY);
-CREATE TABLE commit_guard(id INTEGER REFERENCES commit_parent(id) DEFERRABLE INITIALLY DEFERRED);
-CREATE TRIGGER reject_commit AFTER INSERT ON delivery_events BEGIN INSERT INTO commit_guard VALUES(42); END;`)
+	// MySQL rejects the final statement; the complete transaction must roll back.
+	artifactSQL(t, db, `CREATE TRIGGER reject_commit BEFORE INSERT ON delivery_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='transaction fault';`)
 	input := fixtureJSON(t, preparedFreeze(t, app, runID, "commit-failure"))
 	path := "/api/v1/runs/" + runID + "/deliveries"
 	for range 2 {
 		request(t, app, "POST", path, input, 500)
 		if len(request(t, app, "GET", "/api/v1/deliveries", "", 200)["items"].([]any)) != 0 {
-			t.Fatal("failed COMMIT leaked an uncommitted snapshot through the pooled connection")
+			t.Fatal("failed transaction leaked an uncommitted snapshot through the pooled connection")
 		}
-		for _, table := range []string{"delivery_snapshots", "delivery_requests", "delivery_events", "commit_guard"} {
+		for _, table := range []string{"delivery_snapshots", "delivery_requests", "delivery_events"} {
 			var count int
 			if err := db.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != 0 {
-				t.Fatalf("%s after failed commit: %d, %v", table, count, err)
+				t.Fatalf("%s after failed transaction: %d, %v", table, count, err)
 			}
 		}
 		artifactEntries(t, filepath.Join(dir, "deliveries"), 0)
@@ -308,13 +306,11 @@ CREATE TRIGGER reject_commit AFTER INSERT ON delivery_events BEGIN INSERT INTO c
 	}
 }
 
-func TestDocumentReservationCommitFailureDoesNotConsumeVersion(t *testing.T) {
+func TestDocumentReservationFailureDoesNotConsumeVersion(t *testing.T) {
 	app, runID, dir := readyArtifactRun(t)
 	deliveryID := freezeFixture(t, app, runID, "freeze")["id"].(string)
 	db := artifactDB(t, dir)
-	artifactSQL(t, db, `CREATE TABLE commit_parent(id INTEGER PRIMARY KEY);
-CREATE TABLE commit_guard(id INTEGER REFERENCES commit_parent(id) DEFERRABLE INITIALLY DEFERRED);
-CREATE TRIGGER reject_commit AFTER INSERT ON business_documents BEGIN INSERT INTO commit_guard VALUES(42); END;`)
+	artifactSQL(t, db, `CREATE TRIGGER reject_commit BEFORE INSERT ON business_documents FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='transaction fault';`)
 	path := "/api/v1/deliveries/" + deliveryID + "/documents"
 	for range 2 {
 		request(t, app, "POST", path, `{"requestId":"reserve"}`, 500)

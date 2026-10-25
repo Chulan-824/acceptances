@@ -7,8 +7,7 @@ import (
 	"errors"
 )
 
-// deliveryTransaction ends the SQLite transaction before file ownership can be
-// checked. Both snapshot publication and document reservation depend on this.
+// deliveryTransaction checks archive ownership before and after each write.
 func (s *Server) deliveryTransaction(ctx context.Context, write func(*sql.Tx) error) (err error) {
 	conn, err := s.db.Conn(ctx)
 	if err != nil {
@@ -36,9 +35,7 @@ func (s *Server) deliveryTransaction(ctx context.Context, write func(*sql.Tx) er
 	}
 	err = tx.Commit()
 	if err != nil {
-		// SQLite can leave a transaction open after COMMIT fails, while
-		// database/sql considers this Tx done and refuses Rollback. Discard
-		// that exact connection before checking durable file ownership.
+		// Discard a connection with an uncertain COMMIT before checking ownership.
 		_ = conn.Raw(func(any) error { return driver.ErrBadConn })
 	}
 	return err

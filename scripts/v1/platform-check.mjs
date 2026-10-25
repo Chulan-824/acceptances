@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createHash } from "node:crypto";
+import { createMySQLTestDatabase } from "./mysql-test-database.mjs";
 import { startIsolatedServer } from "./services.mjs";
 
 const startedAt = new Date().toISOString();
@@ -25,12 +26,15 @@ const version = JSON.parse(
   }),
 );
 assert.ok(version, "CLI 应返回 JSON 版本信息");
-const service = await startIsolatedServer({
-  kind: "platform",
-  binary: resolve("build/server"),
-  web: resolve("apps/web/dist"),
-});
+const database = await createMySQLTestDatabase();
+let service;
 try {
+  service = await startIsolatedServer({
+    environment: database.environment,
+    kind: "platform",
+    binary: resolve("build/server"),
+    web: resolve("apps/web/dist"),
+  });
   const get = (path) =>
     fetch(`${service.base}${path}`, { signal: AbortSignal.timeout(5000) });
   assert.equal((await get("/health/live")).status, 200);
@@ -74,5 +78,9 @@ try {
   );
   console.log("当前原生平台基础检查通过；完整 T1–T9 仍需其余证据。");
 } finally {
-  await service.stop();
+  try {
+    await service?.stop();
+  } finally {
+    await database.close();
+  }
 }

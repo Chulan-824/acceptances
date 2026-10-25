@@ -141,7 +141,7 @@ func (s *Server) sourceFileManifest(ctx context.Context) (fileImportManifest, er
 		return manifest, err
 	}
 	for _, table := range archiveTables {
-		rows, err := readArchiveTable(ctx, s.db, table, true)
+		rows, err := readArchiveTable(ctx, s.db, table)
 		if err != nil {
 			return manifest, err
 		}
@@ -230,9 +230,8 @@ func (s *Server) sourceFileManifest(ctx context.Context) (fileImportManifest, er
 	return manifest, nil
 }
 
-// MigrateFilesToMySQL leaves SQLite, source attachments and existing backups
-// intact. It requires a stopped writer and binds the import to the current
-// MySQL archive, never replaying the stale SQLite business records.
+// MigrateFilesToMySQL retains source attachments and backups while moving
+// legacy MySQL file storage into the database. It requires a stopped writer.
 func MigrateFilesToMySQL(ctx context.Context, dir, dsn string) (result FileImportResult, err error) {
 	dir, err = filepath.Abs(dir)
 	if err != nil {
@@ -247,7 +246,7 @@ func MigrateFilesToMySQL(ctx context.Context, dir, dsn string) (result FileImpor
 	if err != nil {
 		return result, err
 	}
-	s := &Server{db: db, dir: dir, mysql: true}
+	s := &Server{db: db, dir: dir}
 	defer s.Close()
 	if err = s.acquireMySQLLease(ctx); err != nil {
 		return result, err
@@ -263,7 +262,7 @@ func MigrateFilesToMySQL(ctx context.Context, dir, dsn string) (result FileImpor
 		result.AlreadyActive = err == nil
 		return result, err
 	}
-	if err = s.bindMySQLDirectory(false); err != nil {
+	if err = s.bindMySQLDirectory(); err != nil {
 		return result, err
 	}
 	manifest, err := s.sourceFileManifest(ctx)

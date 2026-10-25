@@ -1,5 +1,7 @@
 # 正式交付与业务说明交接
 
+> 存储更新（2026-10-25）：当前版本仅使用 MySQL。下文 SQLite 升级记录仅作历史说明，对应代码及入口已移除；当前验证命令与恢复约定以 [工具链](toolchain.md) 和 [MySQL 存储](mysql-storage.md) 为准。
+
 2026-10-13，按用户确认及“后续待确认的都按照推荐先实现”的授权完成源码实现和平台隔离验证。未安装、升级日常服务、部署、提交或推送，未执行业务项目真实回归。产品规则见 [ADR-0005](adr/0005-freeze-current-traceable-run.md)、[ADR-0006](adr/0006-project-stable-feature-check-identities.md)、[ADR-0007](adr/0007-delivery-effects-and-retention.md)。
 
 ## 使用入口

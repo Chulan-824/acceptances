@@ -161,4 +161,4 @@ for (const scenario of scenarios) {
 
 ## Docker MySQL 回归
 
-先运行 `make mysql-up`，再使用 `ACCEPTANCES_BROWSER_DATABASE=mysql BROWSER_GROUPS=layout,review,media,preview,lifecycle,deletion-real,delivery pnpm test:browser`。每组使用随机 `acceptances_test_` 数据库与独立文件目录，停止服务后只删除该组创建的数据库。总回执记录 `databaseEngine`，真实 Go API 和受控 HTTP 场景的证据分类保持不变。默认浏览器回归仍使用隔离 SQLite；它不能代替 MySQL 回归。
+先运行 `make mysql-up`，再使用 `ACCEPTANCES_BROWSER_DATABASE=mysql BROWSER_GROUPS=layout,review,media,preview,lifecycle,deletion-real,delivery pnpm test:browser`。每组使用随机 `acceptances_test_` 数据库与独立文件目录，停止服务后只删除该组创建的数据库。总回执记录 `databaseEngine`，真实 Go API 和受控 HTTP 场景的证据分类保持不变。保留的脚本回归入口也只使用隔离 MySQL；运行此类脚本仍需用户明确授权。
