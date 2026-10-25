@@ -28,7 +28,7 @@ type binding struct {
 	RepositoryID string `json:"repositoryId"`
 	Source       string `json:"source"`
 }
-type client struct{ base, web string }
+type client struct{ base, web, token string }
 
 func Run(args []string, out, log io.Writer) int {
 	result, err := run(args, log)
@@ -50,6 +50,7 @@ func Run(args []string, out, log io.Writer) int {
 func run(args []string, log io.Writer) (any, error) {
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
 		return map[string]any{"commands": []string{
+			"login --username <name> --password-stdin [--url <server>]", "whoami [--url <server>]", "logout [--url <server>]",
 			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...] [--web-url ...]",
 			"context [--repo .]", "campaigns [--title <new-title>] [--description ...] [--repo .]",
 			"validate --bundle <directory> [--formal] [--project <id>] [--campaign <id>]", "publish --bundle <directory> --campaign <title-or-id> [--formal] [--repo .]", "status --run <id> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
@@ -62,6 +63,8 @@ func run(args []string, log io.Writer) (any, error) {
 	f.SetOutput(log)
 	endpoint := f.String("url", "", "API URL (default saved association or http://127.0.0.1:8765)")
 	webEndpoint := f.String("web-url", "", "Web URL for human review (default saved association or API URL)")
+	username := f.String("username", "", "account username")
+	passwordStdin := f.Bool("password-stdin", false, "read login password from stdin")
 	repo := f.String("repo", ".", "business directory")
 	project := f.String("project", "", "project name or ID")
 	campaign := f.String("campaign", "", "campaign title or ID")
@@ -79,6 +82,9 @@ func run(args []string, log io.Writer) (any, error) {
 	}
 	if f.NArg() != 0 {
 		return nil, fmt.Errorf("unexpected positional arguments")
+	}
+	if args[0] == "login" || args[0] == "logout" || args[0] == "whoami" {
+		return authCommand(args[0], *endpoint, *username, *passwordStdin, os.Stdin)
 	}
 	if args[0] == "validate" {
 		if *bundle == "" {
@@ -128,6 +134,9 @@ func run(args []string, log io.Writer) (any, error) {
 		}
 	}
 	c := client{base: base, web: strings.TrimRight(web, "/")}
+	if err := c.loadSession(); err != nil {
+		return nil, err
+	}
 	if args[0] == "projects" {
 		return c.request("GET", "/projects", nil, "")
 	}
@@ -251,6 +260,9 @@ func (c client) request(method, path string, body io.Reader, contentType string)
 	if err != nil {
 		return nil, err
 	}
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
@@ -263,6 +275,15 @@ func (c client) request(method, path string, body io.Reader, contentType string)
 	raw, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode == http.StatusUnauthorized {
+		if path == "/auth/login" {
+			return nil, fmt.Errorf("用户名或密码不正确")
+		}
+		return nil, fmt.Errorf("登录已失效或尚未登录；请运行 acceptances login --url %s --username <账号> --password-stdin", c.base)
+	}
+	if res.StatusCode == http.StatusNoContent {
+		return nil, nil
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		return nil, fmt.Errorf("HTTP %d: %s", res.StatusCode, strings.TrimSpace(string(raw)))
@@ -332,7 +353,8 @@ func repositoryVersion(repo, source string) map[string]any {
 	}
 	return v
 }
-func bindingPath(source string) (string, error) {
+func bindingPath(source string) (string, error) { return configPath("links", source) }
+func configPath(kind, key string) (string, error) {
 	root := os.Getenv("ACCEPTANCES_CONFIG_DIR")
 	if root == "" {
 		var err error
@@ -342,7 +364,7 @@ func bindingPath(source string) (string, error) {
 		}
 		root = filepath.Join(root, "acceptances")
 	}
-	return filepath.Join(root, "links", fmt.Sprintf("%x.json", sha256.Sum256([]byte(source)))), nil
+	return filepath.Join(root, kind, fmt.Sprintf("%x.json", sha256.Sum256([]byte(key)))), nil
 }
 func saveJSON(path string, value any) error {
 	raw, err := json.MarshalIndent(value, "", "  ")

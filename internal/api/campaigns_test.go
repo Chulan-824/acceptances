@@ -37,7 +37,7 @@ func checkCampaignContract(t *testing.T, app *api.Server) {
 	if first["title"] != "  原始标题  " || first["description"] != "原始描述" || first["status"] != "pending" || first["latestRunId"] != "" || first["projectId"] != project["id"] {
 		t.Fatalf("created campaign: %v", first)
 	}
-	if len(first) != 7 || first["id"] == "" || first["createdAt"] == "" {
+	if len(first) != 8 || first["createdBy"].(map[string]any)["username"] != "fixture" || first["id"] == "" || first["createdAt"] == "" {
 		t.Fatalf("campaign response fields: %v", first)
 	}
 	idPath := "/api/v1/campaigns/" + first["id"].(string)
@@ -178,7 +178,7 @@ func checkCampaignSharedMutationLock(t *testing.T, app *api.Server) {
 			legacy := &campaignResponseGate{ResponseRecorder: httptest.NewRecorder(), reached: make(chan int, 1), resume: resume}
 			legacyDone := make(chan struct{})
 			// Use separate real registrations: neither test supplies the Service's lock.
-			legacyHandler, patchHandler := app.Handler(), app.Handler()
+			legacyHandler, patchHandler := authenticatedHandler(t, app), authenticatedHandler(t, app)
 			requests.Go(func() {
 				defer close(legacyDone)
 				legacyHandler.ServeHTTP(legacy, localRequest(tc.method, legacyPath, strings.NewReader(`{}`)).WithContext(ctx))

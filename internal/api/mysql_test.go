@@ -46,7 +46,7 @@ func TestMySQLIdentityConcurrencyAndOwnership(t *testing.T) {
 	for range 4 {
 		group.Go(func() {
 			w := httptest.NewRecorder()
-			app.Handler().ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+rid+"/deliveries", strings.NewReader(body)))
+			authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+rid+"/deliveries", strings.NewReader(body)))
 			results <- w.Code
 		})
 	}
@@ -69,7 +69,7 @@ func TestMySQLIdentityConcurrencyAndOwnership(t *testing.T) {
 	}
 	defer reopened.Close()
 	w := httptest.NewRecorder()
-	reopened.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+rid+"/evidence/screen.png", nil))
+	authenticatedHandler(t, reopened).ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+rid+"/evidence/screen.png", nil))
 	if w.Code != 200 || w.Body.Len() == 0 {
 		t.Fatal("database-only restart lost evidence:", w.Code)
 	}

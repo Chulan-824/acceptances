@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/Chulan-824/acceptances/internal/model"
 	"net/http"
 	"strings"
 )
@@ -108,7 +109,7 @@ func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	review := Review{ID: id(), RunID: v.ID, Kind: in.Kind, Body: in.Body, CreatedAt: now(), CheckID: in.CheckID}
+	review := Review{ID: id(), RunID: v.ID, Kind: in.Kind, Body: in.Body, CreatedAt: now(), CheckID: in.CheckID, CreatedBy: model.CurrentUser(r.Context())}
 	v.Reviews = append(v.Reviews, review)
 	v.deriveCheckReviews()
 	tx, e := s.db.BeginTx(r.Context(), nil)
@@ -121,7 +122,7 @@ func (s *Server) review(w http.ResponseWriter, r *http.Request) {
 		fail(w, 500, "SAVE_FAILED")
 		return
 	}
-	_, e = tx.ExecContext(r.Context(), "INSERT INTO reviews(id,run_id,kind,body,created_at,check_id,legacy) VALUES(?,?,?,?,?,?,0)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt, review.CheckID)
+	_, e = tx.ExecContext(r.Context(), "INSERT INTO reviews(id,run_id,kind,body,created_at,check_id,legacy,created_by) VALUES(?,?,?,?,?,?,0,?)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt, review.CheckID, model.CurrentUserID(r.Context()))
 	if e == nil && in.Kind != "comment" {
 		_, e = tx.ExecContext(r.Context(), "UPDATE runs SET status=? WHERE id=?", v.humanStatus(), v.ID)
 		if e == nil {

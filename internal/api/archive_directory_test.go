@@ -96,5 +96,9 @@ func TestArchiveDirectoryOwnershipIncludesRequestCleanup(t *testing.T) {
 	defer replacement.Close()
 	app.Close() // A stale repeated Close must not release the new owner's lock.
 	assertArchiveLockedInOtherProcess(t, dir, archiveDSN(t, dir))
-	request(t, app, "GET", "/api/v1/projects", "", 503)
+	response := httptest.NewRecorder()
+	app.Handler().ServeHTTP(response, localRequest("GET", "/api/v1/projects", nil))
+	if response.Code != 503 {
+		t.Fatalf("closed archive: %d", response.Code)
+	}
 }

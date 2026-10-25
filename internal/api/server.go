@@ -9,33 +9,39 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Chulan-824/acceptances/internal/dao"
 	"github.com/Chulan-824/acceptances/internal/handler"
+	"github.com/Chulan-824/acceptances/internal/model"
 	"github.com/Chulan-824/acceptances/internal/service"
 )
 
 type Server struct {
-	db        *sql.DB
-	dir       string
-	mu        sync.Mutex
-	artifacts *deliveryArtifacts
-	files     *fileArchive
-	lease     *sql.Conn
-	leaseName string
-	leaseID   uint64
-	directory *archiveDirectory
-	closeOnce sync.Once
-	closeErr  error
+	publicOrigin string
+	authMu       sync.Mutex
+	authAttempts map[string]authAttempt
+	db           *sql.DB
+	dir          string
+	mu           sync.Mutex
+	artifacts    *deliveryArtifacts
+	files        *fileArchive
+	lease        *sql.Conn
+	leaseName    string
+	leaseID      uint64
+	directory    *archiveDirectory
+	closeOnce    sync.Once
+	closeErr     error
 }
 type Project struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"createdAt"`
+	CreatedBy   *model.User `json:"createdBy,omitempty"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	CreatedAt   string      `json:"createdAt"`
 }
 
 func (s *Server) Close() error {
@@ -116,18 +122,31 @@ func (s *Server) Guard(next http.Handler) http.Handler {
 			host = parsed
 		}
 		ip := net.ParseIP(host)
-		if host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+		allowedHost := host == "localhost" || (ip != nil && ip.IsLoopback())
+		if s.publicOrigin != "" {
+			origin, _ := url.Parse(s.publicOrigin)
+			allowedHost = allowedHost || r.Host == origin.Host
+		}
+		if !allowedHost {
 			fail(w, 403, "LOCAL_HOST_REQUIRED")
 			return
 		}
-		if r.Header.Get("Origin") != "" && r.Header.Get("Origin") != "http://"+r.Host && r.Header.Get("Origin") != "https://"+r.Host {
+		if r.Header.Get("Origin") != "" && r.Header.Get("Origin") != "http://"+r.Host && r.Header.Get("Origin") != "https://"+r.Host && r.Header.Get("Origin") != s.publicOrigin {
 			fail(w, 403, "ORIGIN_NOT_ALLOWED")
 			return
+		}
+		if strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/api/v1/auth/register" && r.URL.Path != "/api/v1/auth/login" && r.URL.Path != "/api/v1/capabilities" {
+			var ok bool
+			r, ok = s.authenticate(w, r)
+			if !ok {
+				return
+			}
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 func (s *Server) Register(m *http.ServeMux) {
+	s.registerAuth(m)
 	m.HandleFunc("POST /api/v1/projects", s.createProject)
 	m.HandleFunc("GET /api/v1/projects", s.listProjects)
 	m.HandleFunc("GET /api/v1/dashboard", s.dashboard)
@@ -163,8 +182,8 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "NAME_REQUIRED")
 		return
 	}
-	p = Project{id(), input.Name, input.Description, now()}
-	if _, e := s.db.ExecContext(r.Context(), "INSERT INTO projects(id,name,description,created_at) VALUES(?,?,?,?)", p.ID, p.Name, p.Description, p.CreatedAt); e != nil {
+	p = Project{ID: id(), Name: input.Name, Description: input.Description, CreatedAt: now(), CreatedBy: model.CurrentUser(r.Context())}
+	if _, e := s.db.ExecContext(r.Context(), "INSERT INTO projects(id,name,description,created_at,created_by) VALUES(?,?,?,?,?)", p.ID, p.Name, p.Description, p.CreatedAt, model.CurrentUserID(r.Context())); e != nil {
 		fail(w, 500, "SAVE_FAILED")
 		return
 	}
@@ -180,11 +199,15 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) project(key string) (Project, error) {
 	var p Project
-	e := s.db.QueryRow("SELECT id,name,description,created_at FROM projects WHERE id=?", key).Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt)
+	var user model.User
+	e := s.db.QueryRow("SELECT p.id,p.name,p.description,p.created_at,COALESCE(u.id,''),COALESCE(u.username,'') FROM projects p LEFT JOIN users u ON u.id=p.created_by WHERE p.id=?", key).Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt, &user.ID, &user.Username)
+	if user.ID != "" {
+		p.CreatedBy = &user
+	}
 	return p, e
 }
 func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
-	rows, e := s.db.QueryContext(r.Context(), "SELECT id,name,description,created_at FROM projects ORDER BY created_at,id")
+	rows, e := s.db.QueryContext(r.Context(), "SELECT p.id,p.name,p.description,p.created_at,COALESCE(u.id,''),COALESCE(u.username,'') FROM projects p LEFT JOIN users u ON u.id=p.created_by ORDER BY p.created_at,p.id")
 	if e != nil {
 		fail(w, 500, "READ_FAILED")
 		return
@@ -193,9 +216,13 @@ func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
 	out := []Project{}
 	for rows.Next() {
 		var p Project
-		if e = rows.Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt); e != nil {
+		var user model.User
+		if e = rows.Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt, &user.ID, &user.Username); e != nil {
 			fail(w, 500, "READ_FAILED")
 			return
+		}
+		if user.ID != "" {
+			p.CreatedBy = &user
 		}
 		out = append(out, p)
 	}

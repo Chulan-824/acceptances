@@ -1,3 +1,4 @@
+import { AuthBoundary } from "./auth";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -117,7 +118,9 @@ function CampaignRunNavigation({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <TooltipProvider>
-      <App />
+      <AuthBoundary>
+        <App />
+      </AuthBoundary>
     </TooltipProvider>
   </StrictMode>,
 );

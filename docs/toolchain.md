@@ -64,6 +64,8 @@ Jev 的安全、严格路径和统计逻辑单测也属于上述离线补检。�
 
 构建前执行 `pnpm install --frozen-lockfile --ignore-scripts`。Make 使用精确 `GOTOOLCHAIN`，Go 缓存位于 `.cache`。首次构建可能下载工具链和依赖。
 
+Go 测试每个包的超时为 600 秒，包含隔离库结构初始化及真实账号认证；单个失败仍返回非零。
+
 运行验证按静态检查、进程内 HTTP 集成、原生进程、Docker、真实浏览器分别报告。归档源码 commit、dirty 状态、构建产物摘要、命令和实际结果；仅在本机执行不代表其他架构已验证。真实产品验收按 [T1–T9 及逐项评审交接](v1-implementation-handoff.md) 记录，日常运行库迁移结果单独报告。
 
 `make test SUITE=agent` 在临时安装目标验证 CLI 与 skill，并运行隔离 CLI 测试及可选 Jev 的离线选择测试，不升级日常安装。Jev 选择测试使用受控 doctor，验证已配置、缺配置、执行器失效、超时及诊断脱敏，不连接 Chrome 或官方模型；不能据此声称真实回归通过。`make test SUITE=e2e` 只核对外部驱动回执与证据文件，逐项评审、范围及反馈关联必须由真实浏览器操作和 API 断言覆盖。源码更新后的日常安装使用 `make replace-skill`，替换结果以安装器回执为准。
@@ -74,7 +76,7 @@ Jev 的安全、严格路径和统计逻辑单测也属于上述离线补检。�
 
 构建仍调用现有 `make docker-build`，上下文切换到源码副本，使用 Dockerfile 锁定的运行时和依赖，不依赖宿主机的 Web dist 或 Go 二进制。检查从副本中的实际 Compose 配置生成临时配置，保留镜像、启动参数、健康检查及运行限制，替换为随机项目名、临时凭据、专用网络和数据卷，只发布随机的 `127.0.0.1` 应用端口，不发布 MySQL 端口。不调用日常 `make docker-up` 或凭据准备器。
 
-容器就绪后检查 live/ready、首页根节点、生产 JS/CSS 入口、可解析的 ESM/CSS 本地资源引用、四个 Geist 字体与字体许可文件、未知 API 404 和镜像内 CLI 版本。HTTP 状态、资源类型和字体签名均需符合预期，避免把 SPA 的 HTML 回退当作静态资源成功；原生 `make test SUITE=platform` 复用相同 HTTP 检查。构建缺少 COPY/embed 输入、启动失败、资源缺失均返回非零。
+容器就绪后检查 live/ready、首页根节点、生产 JS/CSS 入口、可解析的 ESM/CSS 本地资源引用、四个 Geist 字体与字体许可文件、未认证 API 401 和镜像内 CLI 版本。HTTP 状态、资源类型和字体签名均需符合预期，避免把 SPA 的 HTML 回退当作静态资源成功；原生 `make test SUITE=platform` 复用相同 HTTP 检查。构建缺少 COPY/embed 输入、启动失败、资源缺失均返回非零。
 
 成功与失败都会尝试回收本轮项目的容器、卷、网络和镜像，并核对资源未残留；清理失败也算检查失败，保留私有临时目录供恢复清理，不归档其中的凭据。日志、无凭据的生成配置、源码副本和 `result.json` 位于 `artifacts/release-check/<随机项目名>/`。Ctrl-C/SIGTERM 会进入清理，外部命令受超时限制；SIGKILL、Docker 守护进程不可用或宿主机中断仍可能需要根据回执中的项目名手动清理。
 

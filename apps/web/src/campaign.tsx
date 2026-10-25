@@ -92,7 +92,9 @@ export function Campaign({
                 <div className="campaign-status-line">
                   <span>需求评审</span>
                   <Status value={campaign.data.status} context="campaign" />
-                  <span className="muted">每轮独立保存与评审</span>
+                  <span className="muted">
+                    创建人：{campaign.data.createdBy?.username || "历史记录"}
+                  </span>
                 </div>
                 <p className="prose">
                   {campaign.data.description || "暂无需求说明。"}

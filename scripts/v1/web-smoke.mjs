@@ -111,6 +111,6 @@ export async function checkWeb(base, request = fetch) {
   const unknown = await request(new URL("/api/v1/unknown", base), {
     signal: AbortSignal.timeout(5000),
   });
-  assert.equal(unknown.status, 404);
+  assert.equal(unknown.status, 401);
   return receipts;
 }

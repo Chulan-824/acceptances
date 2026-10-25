@@ -51,7 +51,7 @@ func TestConsolidationPreservesFactsHistoryAndEvidence(t *testing.T) {
 	}
 	for name, data := range f.Files {
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+source+"/evidence/"+name, nil))
+		authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+source+"/evidence/"+name, nil))
 		if w.Code != 200 || w.Body.String() != data {
 			t.Fatalf("source evidence changed %s", name)
 		}
@@ -188,7 +188,7 @@ func TestConsolidationRollbackConcurrencyAndConflict(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			w := httptest.NewRecorder()
-			app.Handler().ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+primary+"/consolidate", strings.NewReader(body)))
+			authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+primary+"/consolidate", strings.NewReader(body)))
 			codes <- w.Code
 		}()
 	}

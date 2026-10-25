@@ -26,7 +26,7 @@ func guideFixture() api.BusinessGuide {
 func documentHTML(t *testing.T, app *api.Server, key string) *httptest.ResponseRecorder {
 	t.Helper()
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/documents/"+key+"/html?download=1", nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/documents/"+key+"/html?download=1", nil))
 	if w.Code != 200 {
 		t.Fatalf("document HTML: %d %s", w.Code, w.Body.String())
 	}

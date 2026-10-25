@@ -161,6 +161,8 @@ function webFixture() {
     files.set(`/fonts/geist/${font}.woff2`, ["font/woff2", "wOF2fixture"]);
   }
   const request = async (url) => {
+    if (url.pathname === "/api/v1/unknown")
+      return new Response('{"code":"AUTH_REQUIRED"}', { status: 401 });
     const entry = files.get(url.pathname);
     return entry
       ? new Response(entry[1], { headers: { "content-type": entry[0] } })

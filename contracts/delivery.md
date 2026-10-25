@@ -1,6 +1,6 @@
 # 交付快照、业务指南与测试报告 API
 
-与原报告归档 API 共用 /api/v1 和本机 Host/Origin 限制，无新增账号或身份隔离。Report schema 保持不变；素材作为平铺 evidence 随真实 Run 发布，冻结材料格式见[正式交付材料](../skills/acceptances-v1/references/delivery.md)。业务指南的独立文稿见下文。
+与原报告归档 API 共用 /api/v1、账号会话及 Host/Origin 校验。包括独立快照、附件和文档下载在内的业务路由均要求登录；当前所有登录用户共享访问与操作能力。Report schema 保持不变；素材作为平铺 evidence 随真实 Run 发布，冻结材料格式见[正式交付材料](../skills/acceptances-v1/references/delivery.md)。业务指南的独立文稿见下文。
 
 ## 准备与明确冻结
 

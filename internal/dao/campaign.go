@@ -28,7 +28,7 @@ func (d *Campaign) ProjectExists(ctx context.Context, id string) (bool, error) {
 }
 
 func (d *Campaign) Create(ctx context.Context, v model.Campaign) error {
-	_, err := d.db.ExecContext(ctx, "INSERT INTO campaigns(id,project_id,title,description,status,latest_run_id,created_at) VALUES(?,?,?,?,?,?,?)", v.ID, v.ProjectID, v.Title, v.Description, v.Status, v.LatestRunID, v.CreatedAt)
+	_, err := d.db.ExecContext(ctx, "INSERT INTO campaigns(id,project_id,title,description,status,latest_run_id,created_at,created_by) VALUES(?,?,?,?,?,?,?,?)", v.ID, v.ProjectID, v.Title, v.Description, v.Status, v.LatestRunID, v.CreatedAt, model.CurrentUserID(ctx))
 	if err != nil {
 		return fmt.Errorf("insert campaign: %w", err)
 	}
@@ -36,7 +36,7 @@ func (d *Campaign) Create(ctx context.Context, v model.Campaign) error {
 }
 
 func (d *Campaign) List(ctx context.Context, projectID string) ([]model.Campaign, error) {
-	rows, err := d.db.QueryContext(ctx, "SELECT id,project_id,title,description,status,latest_run_id,created_at FROM campaigns WHERE project_id=? ORDER BY created_at DESC,id", projectID)
+	rows, err := d.db.QueryContext(ctx, "SELECT c.id,c.project_id,c.title,c.description,c.status,c.latest_run_id,c.created_at,COALESCE(u.id,''),COALESCE(u.username,'') FROM campaigns c LEFT JOIN users u ON u.id=c.created_by WHERE c.project_id=? ORDER BY c.created_at DESC,c.id", projectID)
 	if err != nil {
 		return nil, fmt.Errorf("list campaigns: %w", err)
 	}
@@ -44,8 +44,12 @@ func (d *Campaign) List(ctx context.Context, projectID string) ([]model.Campaign
 	out := []model.Campaign{}
 	for rows.Next() {
 		var v model.Campaign
-		if err := rows.Scan(&v.ID, &v.ProjectID, &v.Title, &v.Description, &v.Status, &v.LatestRunID, &v.CreatedAt); err != nil {
+		var user model.User
+		if err := rows.Scan(&v.ID, &v.ProjectID, &v.Title, &v.Description, &v.Status, &v.LatestRunID, &v.CreatedAt, &user.ID, &user.Username); err != nil {
 			return nil, fmt.Errorf("scan campaign: %w", err)
+		}
+		if user.ID != "" {
+			v.CreatedBy = &user
 		}
 		out = append(out, v)
 	}
@@ -57,12 +61,16 @@ func (d *Campaign) List(ctx context.Context, projectID string) ([]model.Campaign
 
 func (d *Campaign) Get(ctx context.Context, id string) (model.Campaign, error) {
 	var v model.Campaign
-	err := d.db.QueryRowContext(ctx, "SELECT id,project_id,title,description,status,latest_run_id,created_at FROM campaigns WHERE id=?", id).Scan(&v.ID, &v.ProjectID, &v.Title, &v.Description, &v.Status, &v.LatestRunID, &v.CreatedAt)
+	var user model.User
+	err := d.db.QueryRowContext(ctx, "SELECT c.id,c.project_id,c.title,c.description,c.status,c.latest_run_id,c.created_at,COALESCE(u.id,''),COALESCE(u.username,'') FROM campaigns c LEFT JOIN users u ON u.id=c.created_by WHERE c.id=?", id).Scan(&v.ID, &v.ProjectID, &v.Title, &v.Description, &v.Status, &v.LatestRunID, &v.CreatedAt, &user.ID, &user.Username)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.Campaign{}, model.ErrCampaignNotFound
 	}
 	if err != nil {
 		return model.Campaign{}, fmt.Errorf("read campaign: %w", err)
+	}
+	if user.ID != "" {
+		v.CreatedBy = &user
 	}
 	return v, nil
 }

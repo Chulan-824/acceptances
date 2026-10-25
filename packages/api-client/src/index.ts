@@ -1,4 +1,9 @@
+export interface User {
+  id: string;
+  username: string;
+}
 export interface Project {
+  createdBy?: User;
   id: string;
   name: string;
   description: string;
@@ -12,6 +17,7 @@ export interface Repository {
 }
 export type ReviewStatus = "pending" | "accepted" | "rejected";
 export interface Campaign {
+  createdBy?: User;
   id: string;
   projectId: string;
   title: string;
@@ -21,6 +27,7 @@ export interface Campaign {
   createdAt: string;
 }
 export interface Review {
+  createdBy?: User;
   id: string;
   runId: string;
   checkId?: string;
@@ -95,6 +102,7 @@ export interface ConsolidatedRun extends RunConsolidation {
   evidenceCount: number;
 }
 export interface Run {
+  createdBy?: User;
   consolidatedInto?: RunConsolidation;
   consolidatedRuns?: ConsolidatedRun[];
   moves?: RunMove[];
@@ -171,6 +179,13 @@ export async function request<T>(
   }
   if (!response.ok) {
     const error = await response.json().catch(() => null);
+    if (
+      response.status === 401 &&
+      error?.code === "AUTH_REQUIRED" &&
+      typeof window !== "undefined"
+    ) {
+      window.dispatchEvent(new Event("acceptances:unauthorized"));
+    }
     throw new RequestError(
       typeof error?.message === "string" && error.message
         ? error.message

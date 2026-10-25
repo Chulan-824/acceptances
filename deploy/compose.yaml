@@ -10,7 +10,7 @@ services:
       - "127.0.0.1:8765:8765"
     environment:
       ACCEPTANCES_DATA_DIR: /var/lib/acceptances
-      ACCEPTANCES_PUBLIC_ORIGIN: http://127.0.0.1:8765
+      ACCEPTANCES_PUBLIC_ORIGIN: ${ACCEPTANCES_PUBLIC_ORIGIN:-http://127.0.0.1:8765}
       ACCEPTANCES_DB_DRIVER: mysql
       ACCEPTANCES_MYSQL_DSN_FILE: /run/secrets/mysql_dsn
     secrets:

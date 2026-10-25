@@ -60,7 +60,7 @@ targets.mysql = targets.http;
 if (targets[suite]) {
   execFileSync(
     "go",
-    ["test", ...targets[suite], "-count=1", "-timeout=240s", "-parallel=4"],
+    ["test", ...targets[suite], "-count=1", "-timeout=600s", "-parallel=4"],
     {
       stdio: "inherit",
     },

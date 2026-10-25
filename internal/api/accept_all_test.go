@@ -51,7 +51,7 @@ func TestAcceptAllPreservesHistoryAndOnlyAcceptsRemainingItems(t *testing.T) {
 	// The new bulk action must not relax the individual judgment gate.
 	request(t, app, "POST", path+"/reviews", `{"checkId":"b","kind":"accepted"}`, 400)
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", path+"/evidence/log.txt", nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", path+"/evidence/log.txt", nil))
 	if w.Code != 200 || w.Body.String() != "original observations" {
 		t.Fatal("bulk action altered evidence", w.Code, w.Body.String())
 	}
@@ -117,7 +117,7 @@ func TestConcurrentAcceptAllDoesNotDuplicateJudgments(t *testing.T) {
 	for range 8 {
 		group.Go(func() {
 			w := httptest.NewRecorder()
-			app.Handler().ServeHTTP(w, localRequest("POST", path+"/accept-all", strings.NewReader(`{}`)))
+			authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", path+"/accept-all", strings.NewReader(`{}`)))
 			results <- w
 		})
 	}

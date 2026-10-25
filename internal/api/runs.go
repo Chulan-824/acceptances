@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Chulan-824/acceptances/internal/model"
 	"io"
 	"mime"
 	"net/http"
@@ -60,13 +61,14 @@ type RunFeedbackResponse struct {
 	CheckIDs    []string `json:"checkIds"`
 }
 type Review struct {
-	ID        string `json:"id"`
-	RunID     string `json:"runId"`
-	Kind      string `json:"kind"`
-	Body      string `json:"body"`
-	CreatedAt string `json:"createdAt"`
-	CheckID   string `json:"checkId,omitempty"`
-	Legacy    bool   `json:"legacy"`
+	CreatedBy *model.User `json:"createdBy,omitempty"`
+	ID        string      `json:"id"`
+	RunID     string      `json:"runId"`
+	Kind      string      `json:"kind"`
+	Body      string      `json:"body"`
+	CreatedAt string      `json:"createdAt"`
+	CheckID   string      `json:"checkId,omitempty"`
+	Legacy    bool        `json:"legacy"`
 }
 type CheckReview struct {
 	CheckID      string `json:"checkId"`
@@ -79,6 +81,7 @@ type ReviewCounts struct {
 	Rejected int `json:"rejected"`
 }
 type Run struct {
+	CreatedBy          *model.User           `json:"createdBy,omitempty"`
 	ConsolidatedInto   *RunConsolidation     `json:"consolidatedInto,omitempty"`
 	ConsolidatedRuns   []ConsolidatedRun     `json:"consolidatedRuns,omitempty"`
 	Moves              []RunMove             `json:"moves,omitempty"`
@@ -325,7 +328,7 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 	if !s.validateFollowUpSource(w, r, doc.FollowUp) {
 		return
 	}
-	v := Run{ID: id(), CampaignID: r.PathValue("id"), SubmissionID: submission, Report: doc, Status: "pending", CreatedAt: now(), Reviews: []Review{}, FeedbackResponses: []RunFeedbackResponse{}}
+	v := Run{ID: id(), CampaignID: r.PathValue("id"), SubmissionID: submission, Report: doc, Status: "pending", CreatedAt: now(), CreatedBy: model.CurrentUser(r.Context()), Reviews: []Review{}, FeedbackResponses: []RunFeedbackResponse{}}
 	if doc.FollowUp != nil {
 		available := true
 		v.SourceRunAvailable = &available
@@ -334,7 +337,7 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 		if err := s.lockArchiveRow(r.Context(), tx, "campaigns", v.CampaignID); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(r.Context(), "INSERT INTO runs(id,campaign_id,submission_id,hash,report,status,void_reason,created_at) VALUES(?,?,?,?,?,'pending','',?)", v.ID, v.CampaignID, v.SubmissionID, digest, string(canonical), v.CreatedAt); err != nil {
+		if _, err := tx.ExecContext(r.Context(), "INSERT INTO runs(id,campaign_id,submission_id,hash,report,status,void_reason,created_at,created_by) VALUES(?,?,?,?,?,'pending','',?,?)", v.ID, v.CampaignID, v.SubmissionID, digest, string(canonical), v.CreatedAt, model.CurrentUserID(r.Context())); err != nil {
 			return err
 		}
 		_, err := tx.ExecContext(r.Context(), "UPDATE campaigns SET latest_run_id=?,status='pending' WHERE id=?", v.ID, v.CampaignID)
@@ -350,7 +353,11 @@ func (s *Server) submitRun(w http.ResponseWriter, r *http.Request) {
 func (s *Server) run(key string) (Run, error) {
 	var v Run
 	var raw string
-	e := s.db.QueryRow("SELECT id,campaign_id,submission_id,report,status,void_reason,created_at FROM runs WHERE id=?", key).Scan(&v.ID, &v.CampaignID, &v.SubmissionID, &raw, &v.Status, &v.VoidReason, &v.CreatedAt)
+	var user model.User
+	e := s.db.QueryRow("SELECT r.id,r.campaign_id,r.submission_id,r.report,r.status,r.void_reason,r.created_at,COALESCE(u.id,''),COALESCE(u.username,'') FROM runs r LEFT JOIN users u ON u.id=r.created_by WHERE r.id=?", key).Scan(&v.ID, &v.CampaignID, &v.SubmissionID, &raw, &v.Status, &v.VoidReason, &v.CreatedAt, &user.ID, &user.Username)
+	if user.ID != "" {
+		v.CreatedBy = &user
+	}
 	if e != nil {
 		return v, e
 	}
@@ -359,15 +366,19 @@ func (s *Server) run(key string) (Run, error) {
 	}
 	v.Reviews = []Review{}
 	// Save order decides the latest judgment, even when timestamps are identical.
-	rows, e := s.db.Query("SELECT id,run_id,kind,body,created_at,check_id,legacy FROM reviews WHERE run_id=? ORDER BY seq", key)
+	rows, e := s.db.Query("SELECT r.id,r.run_id,r.kind,r.body,r.created_at,r.check_id,r.legacy,COALESCE(u.id,''),COALESCE(u.username,'') FROM reviews r LEFT JOIN users u ON u.id=r.created_by WHERE r.run_id=? ORDER BY r.seq", key)
 	if e != nil {
 		return v, e
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var review Review
-		if e = rows.Scan(&review.ID, &review.RunID, &review.Kind, &review.Body, &review.CreatedAt, &review.CheckID, &review.Legacy); e != nil {
+		var user model.User
+		if e = rows.Scan(&review.ID, &review.RunID, &review.Kind, &review.Body, &review.CreatedAt, &review.CheckID, &review.Legacy, &user.ID, &user.Username); e != nil {
 			return v, e
+		}
+		if user.ID != "" {
+			review.CreatedBy = &user
 		}
 		v.Reviews = append(v.Reviews, review)
 	}

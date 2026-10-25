@@ -54,7 +54,7 @@ func TestDeliveryArtifactCrashHelper(t *testing.T) {
 		}
 		return nil
 	})
-	server := httptest.NewServer(app.Handler())
+	server := httptest.NewServer(authenticatedHandler(t, app))
 	defer server.Close()
 	response, err := http.Post(server.URL+input.Path, "application/json", strings.NewReader(input.Body))
 	if err == nil {
@@ -147,7 +147,7 @@ func TestDeliveryArtifactCrashRecovery(t *testing.T) {
 					readPath = "/api/v1/documents/" + documentID + "/html"
 				}
 				w := httptest.NewRecorder()
-				reopened.Handler().ServeHTTP(w, localRequest("GET", readPath, nil))
+				authenticatedHandler(t, reopened).ServeHTTP(w, localRequest("GET", readPath, nil))
 				if w.Code != 200 || w.Body.Len() == 0 || kind == "documents" && fixtureDigest(w.Body.String()) != replayed["sha256"] {
 					t.Fatal("recovered artifact cannot be verified", w.Code)
 				}

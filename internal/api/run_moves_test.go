@@ -73,7 +73,7 @@ func TestMoveRunRetainsFactsEvidenceReviewsAndDeliveryBindings(t *testing.T) {
 			t.Fatalf("evidence changed: %s %v", name, err)
 		}
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+runID+"/evidence/"+name, nil))
+		authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+runID+"/evidence/"+name, nil))
 		if w.Code != 200 || w.Body.String() != data {
 			t.Fatalf("evidence API changed: %s", name)
 		}
@@ -218,7 +218,7 @@ func TestMoveRunAtomicRetryAndReopen(t *testing.T) {
 		go func() {
 			defer wait.Done()
 			w := httptest.NewRecorder()
-			app.Handler().ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+runID+"/move", strings.NewReader(body)))
+			authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+runID+"/move", strings.NewReader(body)))
 			var v map[string]any
 			json.Unmarshal(w.Body.Bytes(), &v)
 			if w.Code != 200 && w.Code != 201 {

@@ -177,6 +177,7 @@ export function Run({
 
       <ConsolidatedRuns run={run} runPath={runPath} />
       <div className="report-version-line" ref={reportTop}>
+        <span>提交人：{run.createdBy?.username || "历史记录"}</span>
         {report.versions?.map((version, index) => (
           <span key={index} title={`${version.repository} · ${version.commit}`}>
             <Icon name="file" />

@@ -1,8 +1,8 @@
 # 本地项目与 Agent 接入
 
-先按 README 启动服务，在 Web 创建 Project。安装新版 CLI 和 `acceptances-v1` skill 后，从业务目录调用 skill，选择已有 Project。关联保存在宿主机，后续调用复用；同仓库 worktree 共用关联，多仓库可归属同一 Project。
+先按 README 启动服务，在 Web 注册并登录后创建 Project。安装新版 CLI 和 `acceptances-v1` skill 后，从业务目录调用 skill，选择已有 Project。关联保存在宿主机，后续调用复用；同仓库 worktree 共用关联，多仓库可归属同一 Project。
 
-不需要账号、token 或旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/acceptances-v1/SKILL.md)和[报告格式](../../skills/acceptances-v1/references/report.md) 为准。
+CLI 需要与 Web 相同的平台账号。先在本机执行 `acceptances login --url <API地址> --username <用户名> --password-stdin`，由用户通过标准输入提供密码；会话按服务地址保存在私有配置文件中，Agent 不读取或回显凭据。后续命令复用会话；401 时请用户重新登录。CLI 不需要旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/acceptances-v1/SKILL.md)和[报告格式](../../skills/acceptances-v1/references/report.md) 为准。
 
 浏览器验证按 skill 的 [可选 Jev 执行](../../skills/acceptances-v1/references/jev-browser.md) 先探测执行者本机配置，可用时优先尝试 Jev；无 Key、无执行器或调用不可用时，继续原有真实浏览器流程。安装器仅记录可选源码路径，迁移后可用 `ACCEPTANCES_JEV_ROOT` 指向本机已有源码；不分发私有配置，也不要求其他使用者安装 Jev。部署服务不提供共享 Key。
 
@@ -67,4 +67,4 @@ CLI `publish` 原样上传报告；`publish`、只读 `status` 和 `move-run` �
 
 日常运行库升级先保存一致的数据库与附件备份，核对真实数据卷，按[实施交接](../v1-implementation-handoff.md)验证迁移。仅编辑源码不表示容器、宿主机 CLI 或已安装 skill 已升级。
 
-无认证意味着人工决定是流程约定，不是身份隔离保证。Agent 不自动替用户接受报告。验证指令不授权 Agent 修改业务代码。
+当前所有登录用户具有相同操作能力，记录操作身份，但不拆分提交与人工评审权限。Agent 不自动替用户接受报告。验证指令不授权 Agent 修改业务代码。

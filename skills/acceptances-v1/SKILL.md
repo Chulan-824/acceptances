@@ -11,7 +11,7 @@ Acceptances 保存验证事实供人验收。Project 关联一个或多个 Repos
 
 ## 流程
 
-1. 定位 CLI：先用 `command -v acceptances`；未在 PATH 时使用本 skill 目录下 `bin/acceptances`。执行 `acceptances help` 获取命令。CLI 不依赖 Acceptances 源码、Node、token 或契约目录。
+1. 定位 CLI：先用 `command -v acceptances`；未在 PATH 时使用本 skill 目录下 `bin/acceptances`。执行 `acceptances help` 获取命令。CLI 不依赖 Acceptances 源码、Node 或契约目录。API 需要账号会话；用户先在 Web 注册，再在本机执行 `acceptances login --url <API地址> --username <用户名> --password-stdin`。密码由用户在本机通过标准输入提供，Agent 不索取密码、不读取或回显会话文件。遇到 401 请用户重新登录，不绕过认证；按 API 地址保存会话。
 2. 在业务目录运行 `acceptances context`。若未关联，运行 `acceptances projects`，按用户已指明的产品选择 Project，用 `acceptances link --project <名称或ID>` 建立关联。多个匹配且上下文无法判断时再询问；没有 Project 时请用户在 Web 创建。`--url` 指向 API；API 与 Web 地址不同时，在 `link` 同时传 `--web-url <Web地址>`（本地开发例如 `--url http://127.0.0.1:8765 --web-url http://127.0.0.1:5173`）。两个地址保存在关联中；同源部署可省略 `--web-url`，默认沿用 API 地址。旧关联端口不正确时，重新执行同一 Project 的 `link` 更新地址，不创建 Campaign 或 Run。关联自动保存在宿主机，同仓库 worktree 共用；不同仓库分别关联同一 Project。
 3. 运行 `acceptances campaigns` 查找本次需求；按既有交付选择 Campaign，新需求用 `acceptances campaigns --title <标题> --description <说明>` 创建。复验继续使用原 Campaign。
 4. 首次验证直接按需求执行。用户要求根据人工反馈修复或复验时，先按 [反馈处理](references/feedback.md) 读取指定来源 Run 的当前逐项判断和评论，确认本次处理范围与修复授权；复验继续归属原 Campaign。

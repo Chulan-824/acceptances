@@ -12,7 +12,7 @@ Go 同时提供 API 和 React Web，MySQL 保存业务元数据、证据与离�
 make docker-up
 ```
 
-打开 <http://127.0.0.1:8765> 创建 Project。全新数据首次启动自动初始化；已有数据按 [MySQL 存储与恢复](docs/mysql-storage.md) 核对目标并保存一致备份。服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；业务和完整文件保存在 `acceptances_mysql-data`。普通重启或 `down` 保留数据，不要使用 `down -v`，除非明确要删除该项目全部记录。
+打开 <http://127.0.0.1:8765> 注册账号并登录，然后创建 Project 和需求。所有登录用户共享全部项目和操作能力，当前没有项目授权或数据隔离。全新数据首次启动自动初始化；已有数据按 [MySQL 存储与恢复](docs/mysql-storage.md) 核对目标并保存一致备份。服务仅绑定本机端口。应用以非 root 用户运行，代码层只读；业务和完整文件保存在 `acceptances_mysql-data`。普通重启或 `down` 保留数据，不要使用 `down -v`，除非明确要删除该项目全部记录。
 
 ```sh
 curl --fail http://127.0.0.1:8765/health/ready
@@ -20,6 +20,12 @@ docker compose -f deploy/compose.yaml restart app
 ```
 
 当前版本仅使用 MySQL，不提供 SQLite 启动、升级或导入。旧 MySQL 附件可通过 `make dev-stop` → `make mysql-files-migrate` → `make dev-up` 迁入数据库；完整数据库备份包含全部文件。保留当前凭据和必要备份，详见 [MySQL 存储与恢复](docs/mysql-storage.md)。
+
+## 团队访问
+
+VPS 使用 HTTPS 反向代理，设置 `ACCEPTANCES_PUBLIC_ORIGIN=https://你的域名` 并保留原始 Host，应用继续监听内网端口。Compose 可通过宿主环境变量 `ACCEPTANCES_PUBLIC_ORIGIN` 覆盖默认本机地址；不要将 MySQL 或内部应用端口直接公开。开放注册意味着访问入口的人都能注册并操作全部数据，初期应通过公司网络或网关限制入口。
+
+旧库启动时自动追加用户相关表及可空的作者关联，不改写旧数据和冻结快照；升级前仍须保存一致备份。当前不提供密码找回、账号停用或公司 SSO。稳定用户 ID 与密码凭据已分开，后续可增加公司身份绑定。
 
 ## 关联业务项目
 
@@ -33,11 +39,13 @@ make install-skill
 
 安装器交付新版 CLI 和 `acceptances-v1` skill，已有安装时默认拒绝覆盖。替换旧版 CLI 和 skill，在本仓库执行 `make replace-skill`（等价于 `python3 scripts/v1/install-skill.py --replace`）。安装路径以命令输出为准。
 
+浏览器注册账号后，先在本机执行 `acceptances login --url <服务地址> --username <用户名> --password-stdin`，通过标准输入传入密码（不要把密码写在参数或聊天中）。会话保存在用户配置目录的私有文件中，按服务地址分别保存，有效期七天；`whoami` 查看身份，`logout` 撤销当前 CLI 会话，均可指定 `--url`。Web 和 CLI 会话相互独立。
+
 切换到业务目录，在加载新版 skill 的聊天中说：
 
 > 使用 $acceptances-v1，将当前仓库关联到已有项目，并验证这次需求。需求依据是……，验证环境是……。
 
-首次由 skill 选择已有 Project，后续复用宿主机关联。同仓库 worktree 共用关联，多个仓库可关联同一个 Project。日常调用无需源码路径、UUID 或凭据。验证任务不自动授权修改业务代码或作出人工接受决定。
+首次由 skill 选择已有 Project，后续复用宿主机关联。同仓库 worktree 共用关联，多个仓库可关联同一个 Project。日常调用复用本机已登录会话，无需反复传入账号凭据。验证任务不自动授权修改业务代码或作出人工接受决定。
 
 操作流程见 [Agent 接入](docs/agents/v1-integration.md)。
 

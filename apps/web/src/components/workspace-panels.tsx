@@ -60,7 +60,7 @@ export function WorkspacePanels({
       elementRef={element}
       className="workspace acceptance-workbench"
       orientation="horizontal"
-      style={{ height: "100dvh" }}
+      style={{ height: "var(--workspace-height, 100dvh)" }}
     >
       <ResizablePanel
         id="deliveries"

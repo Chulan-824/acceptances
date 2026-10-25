@@ -1,10 +1,16 @@
 # Acceptances 领域词汇表
 
-本词汇表记录本地精简版已确认的领域用语。重构边界见 [ADR-0001](docs/adr/0001-local-report-archive.md)，完整方案见[设计记录](.scratch/local-simplification/spec.md)。逐项人工评审的规则见 [ADR-0002](docs/adr/0002-per-check-human-review.md)，一键交付见 [ADR-0003](docs/adr/0003-bulk-human-acceptance.md)。当前实现与验证状态见[实现交接](docs/v1-implementation-handoff.md)。
+本词汇表记录已确认的领域用语；词义确认不表示对应功能已经实现。重构边界见 [ADR-0001](docs/adr/0001-local-report-archive.md)，团队协作方向见 [ADR-0013](docs/adr/0013-team-project-access-and-stable-users.md)，原本地版方案见[设计记录](.scratch/local-simplification/spec.md)。逐项人工评审的规则见 [ADR-0002](docs/adr/0002-per-check-human-review.md)，一键交付见 [ADR-0003](docs/adr/0003-bulk-human-acceptance.md)。当前实现与验证状态见[实现交接](docs/v1-implementation-handoff.md)。
 
 ## Language
 
-**Project**：被验收的产品或系统，是需求交付与验证记录的共同归属。一个 Project 可以关联多个本地代码目录。
+**Team**：共同维护一组产品或系统的协作团队，是这些项目及其交付与验证资料的业务归属。
+
+**Project**：团队维护的一个产品或系统，是其需求交付与验证记录的共同归属。一个 Project 可以有多名协作成员，并关联多个代码来源。
+
+**User**：使用固定内部 ID 的平台账号。首期所有已登录用户共享工作台，业务记录关联其创建用户；登录凭据与用户身份分别保存。
+
+**Project Member**：后续按项目授权时表达成员关系的概念。首期不实现此关系，所有登录用户均可访问全部项目。
 
 **Repository**：Project 关联的一处代码来源。同一代码来源可以有多个本地工作目录，同一次需求交付可以涉及多个 Repository。
 

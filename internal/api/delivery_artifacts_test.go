@@ -216,7 +216,7 @@ func TestArtifactCleanupUsesDurableOwnershipAfterRequestErrors(t *testing.T) {
 					return nil
 				})
 				w := httptest.NewRecorder()
-				app.Handler().ServeHTTP(w, localRequest("POST", path, strings.NewReader(body)).WithContext(ctx))
+				authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", path, strings.NewReader(body)).WithContext(ctx))
 				wantHTTP := 500
 				if kind == "documents" && outcome != "unknown" {
 					wantHTTP = 200
@@ -263,7 +263,7 @@ func TestDocumentRenderingAllowsInvalidationButRejectsConcurrentGeneration(t *te
 	done := make(chan *httptest.ResponseRecorder, 1)
 	go func() {
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, localRequest("POST", "/api/v1/deliveries/"+deliveryID+"/documents", strings.NewReader(`{"requestId":"render"}`)))
+		authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", "/api/v1/deliveries/"+deliveryID+"/documents", strings.NewReader(`{"requestId":"render"}`)))
 		done <- w
 	}()
 	<-staged

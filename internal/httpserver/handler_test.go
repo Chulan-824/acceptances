@@ -27,6 +27,7 @@ func TestCampaignRoutingAndArchiveGuard(t *testing.T) {
 	t.Cleanup(server.Close)
 	client := server.Client()
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	token := ""
 	call := func(method, path, body, host, origin, accept string) (int, http.Header, string) {
 		t.Helper()
 		req, err := http.NewRequestWithContext(t.Context(), method, server.URL+path, strings.NewReader(body))
@@ -37,6 +38,10 @@ func TestCampaignRoutingAndArchiveGuard(t *testing.T) {
 			req.Host = host
 		}
 		req.Header.Set("Origin", origin)
+		req.Header.Set("Content-Type", "application/json")
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
 		req.Header.Set("Accept", accept)
 		res, err := client.Do(req)
 		if err != nil {
@@ -61,6 +66,12 @@ func TestCampaignRoutingAndArchiveGuard(t *testing.T) {
 		}
 		return v.ID
 	}
+	status, _, data := call("POST", "/api/v1/auth/register", `{"username":"routing","password":"routing test password","client":"cli"}`, "", "", "")
+	var session struct{ Token string }
+	if err := json.Unmarshal([]byte(data), &session); status != 201 || err != nil || session.Token == "" {
+		t.Fatalf("register: %d %s", status, data)
+	}
+	token = session.Token
 	pid := create("/api/v1/projects", `{"name":"routing"}`)
 	listPath := "/api/v1/projects/" + pid + "/campaigns"
 	cid := create(listPath, `{"title":"Campaign"}`)

@@ -1,0 +1,27 @@
+@reference "./style.css";
+
+@layer components {
+  .auth-page {
+    @apply min-h-[100dvh] flex items-center justify-center bg-surface-subtle p-6;
+  }
+  .auth-card {
+    @apply w-full max-w-[440px] rounded-default border border-border bg-card p-8;
+  }
+  .auth-card h1 {
+    @apply text-xl font-semibold mt-2 mb-3;
+  }
+  .auth-card form {
+    @apply mt-6;
+  }
+  .authenticated-workspace {
+    @apply flex h-[100dvh] flex-col;
+    --workspace-height: 100%;
+  }
+  .authenticated-workspace > .app-shell {
+    @apply flex-1 min-h-0;
+  }
+  .account-bar {
+    @apply shrink-0;
+    @apply flex min-h-12 items-center justify-between gap-4 border-b border-border bg-card px-6 text-sm;
+  }
+}

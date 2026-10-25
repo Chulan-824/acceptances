@@ -26,7 +26,7 @@ func TestBusinessDocumentOfflineSafeAndIndependentlyVersioned(t *testing.T) {
 	}
 	documentID := document["id"].(string)
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/documents/"+documentID+"/html?download=1", nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/documents/"+documentID+"/html?download=1", nil))
 	html := w.Body.String()
 	if w.Code != 200 || !strings.Contains(w.Header().Get("Content-Disposition"), "attachment") || !strings.Contains(w.Header().Get("Content-Security-Policy"), "sandbox") {
 		t.Fatal(w.Code, w.Header())
@@ -82,7 +82,7 @@ func TestDeliverySourceDeletionPreservesSnapshotsEvidenceAndDocuments(t *testing
 	}
 	for _, path := range []string{"/api/v1/deliveries/" + deliveryID + "/evidence/screen.png", "/api/v1/documents/" + document["id"].(string) + "/html"} {
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, localRequest("GET", path, nil))
+		authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", path, nil))
 		if w.Code != 200 || w.Body.Len() == 0 {
 			t.Fatal(path, w.Code)
 		}

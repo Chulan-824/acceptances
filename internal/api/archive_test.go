@@ -21,7 +21,7 @@ func TestProjectSurvivesRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("POST", "/api/v1/projects", strings.NewReader(`{"name":"Product"}`)))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", "/api/v1/projects", strings.NewReader(`{"name":"Product"}`)))
 	if w.Code != http.StatusCreated {
 		t.Fatalf("create: %d %s", w.Code, w.Body.String())
 	}
@@ -34,7 +34,7 @@ func TestProjectSurvivesRestart(t *testing.T) {
 	}
 	defer app.Close()
 	w = httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/projects/"+project["id"].(string), nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/projects/"+project["id"].(string), nil))
 	if w.Code != 200 || !strings.Contains(w.Body.String(), "Product") {
 		t.Fatalf("restart: %d %s", w.Code, w.Body.String())
 	}
@@ -42,7 +42,7 @@ func TestProjectSurvivesRestart(t *testing.T) {
 func request(t *testing.T, app *api.Server, method, path, body string, want int) map[string]any {
 	t.Helper()
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest(method, path, strings.NewReader(body)))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest(method, path, strings.NewReader(body)))
 	if w.Code != want {
 		t.Fatalf("%s %s: %d %s", method, path, w.Code, w.Body.String())
 	}
@@ -98,7 +98,7 @@ func upload(t *testing.T, app *api.Server, cid, sid, doc string, files map[strin
 	req := localRequest("POST", "/api/v1/campaigns/"+cid+"/runs", &b)
 	req.Header.Set("Content-Type", m.FormDataContentType())
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, req)
+	authenticatedHandler(t, app).ServeHTTP(w, req)
 	if w.Code != want {
 		t.Fatalf("upload: %d %s", w.Code, w.Body.String())
 	}
@@ -110,6 +110,9 @@ func TestCompleteReportAndIdempotentRetry(t *testing.T) {
 	app, _, cid := setup(t)
 	a := upload(t, app, cid, "attempt1", report, map[string]string{"log.txt": "failed as observed"}, 201)
 	b := upload(t, app, cid, "attempt1", report, map[string]string{"log.txt": "failed as observed"}, 200)
+	if a["createdBy"].(map[string]any)["username"] != "fixture" || b["createdBy"].(map[string]any)["username"] != "fixture" {
+		t.Fatal("run creator lost on retry")
+	}
 	if a["id"] != b["id"] {
 		t.Fatal("retry duplicated")
 	}
@@ -140,6 +143,9 @@ func TestReviewHistoryAndVoid(t *testing.T) {
 		t.Fatal(c)
 	}
 	old := request(t, app, "GET", "/api/v1/runs/"+aid, "", 200)
+	if old["reviews"].([]any)[0].(map[string]any)["createdBy"].(map[string]any)["username"] != "fixture" {
+		t.Fatal("review creator not persisted")
+	}
 	if old["status"] != "accepted" {
 		t.Fatal(old)
 	}
@@ -184,13 +190,13 @@ func TestEvidenceSafetyAndMissingAttachments(t *testing.T) {
 	upload(t, app, cid, "traversal", strings.ReplaceAll(report, "log.txt", "../log.txt"), map[string]string{"../log.txt": "bad"}, 400)
 	v := upload(t, app, cid, "html", strings.ReplaceAll(report, "log.txt", "page.html"), map[string]string{"page.html": "<script>alert(1)</script>"}, 201)
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+v["id"].(string)+"/evidence/page.html", nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+v["id"].(string)+"/evidence/page.html", nil))
 	if w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Disposition"), "attachment") || !strings.Contains(w.Header().Get("Content-Security-Policy"), "sandbox") {
 		t.Fatalf("unsafe evidence: %d %v", w.Code, w.Header())
 	}
 	request(t, app, "DELETE", "/api/v1/runs/"+v["id"].(string), "", 204)
 	w = httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+v["id"].(string)+"/evidence/page.html", nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+v["id"].(string)+"/evidence/page.html", nil))
 	if w.Code != 404 {
 		t.Fatal(w.Code)
 	}
@@ -207,7 +213,7 @@ func TestLocalHostAndOriginBoundary(t *testing.T) {
 		r := localRequest("GET", "/api/v1/projects", nil)
 		r.Host = host
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, r)
+		authenticatedHandler(t, app).ServeHTTP(w, r)
 		if w.Code != 403 {
 			t.Fatalf("accepted host %s: %d", host, w.Code)
 		}
@@ -215,7 +221,7 @@ func TestLocalHostAndOriginBoundary(t *testing.T) {
 	r := localRequest("POST", "/api/v1/projects", strings.NewReader(`{"name":"evil"}`))
 	r.Header.Set("Origin", "https://evil.example")
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, r)
+	authenticatedHandler(t, app).ServeHTTP(w, r)
 	if w.Code != 403 {
 		t.Fatal(w.Code)
 	}
@@ -231,7 +237,7 @@ func TestInterruptedUploadNeverVisible(t *testing.T) {
 	r := localRequest("POST", "/api/v1/campaigns/"+cid+"/runs", &b)
 	r.Header.Set("Content-Type", m.FormDataContentType())
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, r)
+	authenticatedHandler(t, app).ServeHTTP(w, r)
 	if w.Code != 400 {
 		t.Fatal(w.Code)
 	}
@@ -263,7 +269,7 @@ func TestArchiveAndEvidenceSurviveRestart(t *testing.T) {
 		t.Fatal(v)
 	}
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+rid+"/evidence/log.txt", nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", "/api/v1/runs/"+rid+"/evidence/log.txt", nil))
 	if w.Code != 200 || w.Body.String() != "persistent evidence" {
 		t.Fatal(w.Code, w.Body.String())
 	}
@@ -277,7 +283,7 @@ func TestReportImmutableAndInvalidInputRejected(t *testing.T) {
 	rid := v["id"].(string)
 	for _, method := range []string{"PUT", "PATCH"} {
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, localRequest(method, "/api/v1/runs/"+rid, strings.NewReader(`{}`)))
+		authenticatedHandler(t, app).ServeHTTP(w, localRequest(method, "/api/v1/runs/"+rid, strings.NewReader(`{}`)))
 		if w.Code != 405 {
 			t.Fatal(w.Code)
 		}

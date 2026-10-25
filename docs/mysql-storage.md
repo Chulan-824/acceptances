@@ -64,7 +64,7 @@ make dev-up
 
 ## 结构与事务
 
-业务结构位于 `db/migrations/mysql/001_archive.sql`，文件结构位于 `002_files.sql`，随服务通过 `db/embed.go` 打包。11 张业务表沿用现有职责，另有 `schema_migrations` 保存版本、校验和、归档身份及 dirty 状态。MySQL DDL 会隐式提交，因此失败后保留 dirty 并拒绝启动，须核对已执行语句后人工恢复，不自动忽略或重跑部分结构。
+业务结构位于 `db/migrations/mysql/001_archive.sql`，文件结构位于 `002_files.sql`，用户、密码凭据、会话及可空的创建人外键位于 `003_user_login.sql`，随服务通过 `db/embed.go` 打包。11 张业务表沿用现有职责，另有 `schema_migrations` 保存版本、校验和、归档身份及 dirty 状态。MySQL DDL 会隐式提交，因此失败后保留 dirty 并拒绝启动，须核对已执行语句后人工恢复，不自动忽略或重跑部分结构。
 
 UUID 与请求幂等键保持原值。数据库使用 InnoDB/utf8mb4，业务身份区分大小写。仓库来源全文保留，用 SHA-256 建唯一索引，读取时仍核对原文。六张依赖发布/追加顺序的表使用 `seq`；相同时间戳的评审仍按保存顺序取判断。
 

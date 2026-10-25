@@ -253,6 +253,9 @@ export function ReviewHistory({
           ) : (
             <Status value={review.kind} />
           )}
+          <span className="muted">
+            {review.createdBy?.username || "历史记录"}
+          </span>
           <TimelineDate dateTime={review.createdAt}>
             {formatDateTime(review.createdAt)}
           </TimelineDate>

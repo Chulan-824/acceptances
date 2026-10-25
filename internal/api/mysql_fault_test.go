@@ -58,7 +58,7 @@ func TestMySQLLeaseLossDuringPublication(t *testing.T) {
 				done := make(chan *httptest.ResponseRecorder, 1)
 				go func() {
 					w := httptest.NewRecorder()
-					app.Handler().ServeHTTP(w, localRequest("POST", path, strings.NewReader(body)))
+					authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", path, strings.NewReader(body)))
 					done <- w
 				}()
 				var target string
@@ -113,7 +113,7 @@ func TestMySQLLeaseLossDuringPublication(t *testing.T) {
 					}
 				}
 				w := httptest.NewRecorder()
-				replacement.Handler().ServeHTTP(w, localRequest("GET", readPath, nil))
+				authenticatedHandler(t, replacement).ServeHTTP(w, localRequest("GET", readPath, nil))
 				if w.Code != 200 || w.Body.Len() == 0 {
 					t.Fatal("retried publication lost files:", w.Code)
 				}

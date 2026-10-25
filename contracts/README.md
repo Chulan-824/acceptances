@@ -1,8 +1,17 @@
 # 本地归档 API
 
-服务仅供本机使用，无账号或 token。所有业务路由以 `/api/v1` 开头，JSON 字段采用 camelCase。列表返回 `{ "items": [] }`；错误返回 `{ "code": "...", "message": "..." }`。ID 由服务生成，格式为 UUID。
+浏览器使用会话 Cookie，CLI 使用 Bearer 会话凭据。业务 API 和附件要求登录，当前所有登录用户共享全部项目及操作能力。所有业务路由以 `/api/v1` 开头，JSON 字段采用 camelCase。列表返回 `{ "items": [] }`；错误返回 `{ "code": "...", "message": "..." }`。ID 由服务生成，格式为 UUID。
 
 正式冻结、交付效力和独立业务说明接口见[交付 API](delivery.md)。这些材料复用现有 evidence，不扩展严格 Report schema。
+
+## 用户与会话
+
+- `POST /auth/register`：JSON `{username,password,client?}`，注册成功返回 201 `{user}` 并自动登录。用户名去除首尾空白、英文转小写，3–32 个 Unicode 字符，允许字母、数字和 `_ . -`；密码至少 7 个 Unicode 字符，不限制字符组合，最多 72 字节。
+- `POST /auth/login`：同样输入，成功返回 200 `{user}`。账号或密码错误统一为 401 `LOGIN_FAILED`，重名注册返回 409 `USERNAME_TAKEN`。两接口要求 `application/json`，每个来源 IP 十分钟最多 30 次请求，超出返回 429。
+- `GET /auth/me`：返回当前 `{id,username}`；`POST /auth/logout`：撤销当前会话，返回 204。
+- 注册或登录携带 `client:"cli"` 时返回 `{user,token,expiresAt}`；普通浏览器通过 HttpOnly、SameSite=Strict Cookie 保持登录，HTTPS 入口设置 Secure。会话有效期七天，数据库保存 token 的 SHA-256 摘要。
+- 未登录或会话过期统一返回 401 `AUTH_REQUIRED`；Cookie 写请求必须携带同源 Origin，CLI Bearer 请求无需 Origin。所有业务及附件路由均受保护，登录页面、静态资源、健康检查和 capabilities 公开。
+- Project、Campaign、Run、Review 可包含 `createdBy:{id,username}`；旧记录缺省。该字段由服务端认证上下文设置，调用方不能指定。
 
 ## 项目与需求
 
@@ -89,13 +98,13 @@ Project、Campaign、Run 均有 `GET /{类型}/{id}/delete-preview`，返回 `{p
 
 ## 启动与边界
 
-- `ACCEPTANCES_DATA_DIR` 或 `--data-dir`：默认 `data`，包含 `archive.db` 与 `evidence/<run-id>/<filename>`。
+- `ACCEPTANCES_DATA_DIR` 或 `--data-dir`：默认 `data`，保留归档兼容目录；当前业务与附件使用 MySQL。
 - `ACCEPTANCES_LISTEN` 或 `--listen`：默认 `127.0.0.1:8765`。
 - `--web-dir`：默认 `apps/web/dist`，空字符串禁用页面。
 - `GET /health/live` 和 `GET /health/ready`：存活与数据库就绪。
 - `GET /api/v1/capabilities`：包含 `apiVersions: ["v1"]`、`phase: "local-archive"`、版本和提交标识。
 
-Host 仅接受 localhost 或回环 IP；浏览器 Origin 如存在必须与 Host 同源。CLI 无需 Origin。没有远程访问或反向代理配置。
+默认 Host 接受 localhost 或回环 IP。远程反向代理需设置 `ACCEPTANCES_PUBLIC_ORIGIN=https://你的域名`，保留原始 Host；服务只信任该配置的公共 Host 和 Origin，不信任任意转发头。远程配置必须使用 HTTPS，代理终止 TLS，应用端口和数据库仅供内网访问。
 
 ## 首页看板摘要
 

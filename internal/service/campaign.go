@@ -61,7 +61,7 @@ func (s *Campaign) Create(ctx context.Context, projectID, title, description str
 	v := model.Campaign{
 		ID: uuid.NewString(), ProjectID: projectID, Title: title,
 		Description: description, Status: "pending",
-		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano),
+		CreatedAt: time.Now().UTC().Format(time.RFC3339Nano), CreatedBy: model.CurrentUser(ctx),
 	}
 	if err := s.store.Create(ctx, v); err != nil {
 		return model.Campaign{}, fmt.Errorf("%w: %w", ErrSaveFailed, err)

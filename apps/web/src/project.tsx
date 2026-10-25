@@ -31,6 +31,7 @@ import {
   DeletionNotices,
 } from "./deletion-controls";
 import { useCampaignRun } from "./campaign-run";
+import { CampaignCreate } from "./campaign-create";
 import { Campaign } from "./campaign";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 import "./workbench.css";
@@ -147,6 +148,13 @@ export function Project({
           </div>
         </ActionMenu>
       </div>
+      <CampaignCreate
+        projectId={id}
+        onCreated={(campaign) => {
+          void actions.refreshCampaigns();
+          navigate(`${base}/campaigns/${campaign.id}`);
+        }}
+      />
       <div className="sidebar-search-row">
         <Label className="search-field">
           <span className="sr-only">搜索需求</span>
@@ -240,7 +248,7 @@ export function Project({
               description={
                 items.length
                   ? "请调整搜索或状态筛选。"
-                  : "先在业务目录执行真实验证，再通过 CLI 提交报告与附件。"
+                  : "点击创建需求，再通过 CLI 提交验证报告与附件。"
               }
             />
           )}
@@ -299,6 +307,9 @@ export function Project({
               </FrameHeader>
               <FramePanel variant="flat">
                 <p className="prose">{project.data.description}</p>
+                <p className="muted">
+                  创建人：{project.data.createdBy?.username || "历史记录"}
+                </p>
                 <h2>关联代码来源</h2>
                 {!repositories.data ? (
                   <Load error={repositories.error} />

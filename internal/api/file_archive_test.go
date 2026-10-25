@@ -50,7 +50,7 @@ func TestMySQLFilesRangesDedupAndPublication(t *testing.T) {
 			r.Header.Set("Range", tc.rang)
 		}
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, r)
+		authenticatedHandler(t, app).ServeHTTP(w, r)
 		if w.Code != tc.status || tc.status < 400 && w.Body.String() != tc.body {
 			t.Fatalf("%s %s %s: %d bytes=%d", tc.method, tc.name, tc.rang, w.Code, w.Body.Len())
 		}
@@ -83,7 +83,7 @@ func TestMySQLFilesRangesDedupAndPublication(t *testing.T) {
 	request(t, app, "DELETE", "/api/v1/projects/"+pid, "", 204)
 	for _, path := range []string{"/api/v1/deliveries/" + did + "/evidence/video.mp4", "/api/v1/documents/" + doc["id"].(string) + "/html"} {
 		w := httptest.NewRecorder()
-		app.Handler().ServeHTTP(w, localRequest("GET", path, nil))
+		authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", path, nil))
 		if w.Code != 200 || w.Body.Len() == 0 {
 			t.Fatal("retained frozen content", path, w.Code)
 		}
@@ -171,7 +171,7 @@ func TestMySQLFileMigrationRejectsChangedSourceAndResumes(t *testing.T) {
 	}
 	defer app.Close()
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, localRequest("GET", fmt.Sprintf("/api/v1/runs/%s/evidence/screen.png", rid), nil))
+	authenticatedHandler(t, app).ServeHTTP(w, localRequest("GET", fmt.Sprintf("/api/v1/runs/%s/evidence/screen.png", rid), nil))
 	if w.Code != 200 || !bytes.Equal(w.Body.Bytes(), data) {
 		t.Fatal("resumed content", w.Code)
 	}
@@ -205,7 +205,7 @@ func TestMySQLInterruptedFileUploadNeverPublishes(t *testing.T) {
 	r := localRequest("POST", "/api/v1/campaigns/"+cid+"/runs", &body)
 	r.Header.Set("Content-Type", writer.FormDataContentType())
 	w := httptest.NewRecorder()
-	app.Handler().ServeHTTP(w, r)
+	authenticatedHandler(t, app).ServeHTTP(w, r)
 	if w.Code != 400 {
 		t.Fatal("incomplete SQL upload", w.Code, w.Body.String())
 	}

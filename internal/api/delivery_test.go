@@ -185,7 +185,7 @@ func TestConcurrentFreezeAndAtomicFailure(t *testing.T) {
 		go func() {
 			defer wait.Done()
 			w := httptest.NewRecorder()
-			app.Handler().ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+runID+"/deliveries", strings.NewReader(body)))
+			authenticatedHandler(t, app).ServeHTTP(w, localRequest("POST", "/api/v1/runs/"+runID+"/deliveries", strings.NewReader(body)))
 			if w.Code != 200 && w.Code != 201 {
 				results <- "error:" + w.Body.String()
 				return

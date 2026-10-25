@@ -75,6 +75,10 @@ func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) campaign(key string) (Campaign, error) {
 	var v Campaign
-	e := s.db.QueryRow("SELECT id,project_id,title,description,status,latest_run_id,created_at FROM campaigns WHERE id=?", key).Scan(&v.ID, &v.ProjectID, &v.Title, &v.Description, &v.Status, &v.LatestRunID, &v.CreatedAt)
+	var user model.User
+	e := s.db.QueryRow("SELECT c.id,c.project_id,c.title,c.description,c.status,c.latest_run_id,c.created_at,COALESCE(u.id,''),COALESCE(u.username,'') FROM campaigns c LEFT JOIN users u ON u.id=c.created_by WHERE c.id=?", key).Scan(&v.ID, &v.ProjectID, &v.Title, &v.Description, &v.Status, &v.LatestRunID, &v.CreatedAt, &user.ID, &user.Username)
+	if user.ID != "" {
+		v.CreatedBy = &user
+	}
 	return v, e
 }

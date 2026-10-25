@@ -1,6 +1,9 @@
 package api
 
-import "net/http"
+import (
+	"github.com/Chulan-824/acceptances/internal/model"
+	"net/http"
+)
 
 const bulkAcceptanceBody = "批量人工通过：人工确认本轮全部检查项通过。"
 
@@ -38,7 +41,7 @@ func (s *Server) acceptAll(w http.ResponseWriter, r *http.Request) {
 		}
 		added = append(added, Review{
 			ID: id(), RunID: v.ID, CheckID: judgment.CheckID,
-			Kind: "accepted", Body: bulkAcceptanceBody, CreatedAt: createdAt,
+			Kind: "accepted", Body: bulkAcceptanceBody, CreatedAt: createdAt, CreatedBy: model.CurrentUser(r.Context()),
 		})
 	}
 	if len(added) == 0 {
@@ -59,7 +62,7 @@ func (s *Server) acceptAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, review := range added {
-		if _, err = tx.ExecContext(r.Context(), "INSERT INTO reviews(id,run_id,kind,body,created_at,check_id,legacy) VALUES(?,?,?,?,?,?,0)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt, review.CheckID); err != nil {
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO reviews(id,run_id,kind,body,created_at,check_id,legacy,created_by) VALUES(?,?,?,?,?,?,0,?)", review.ID, review.RunID, review.Kind, review.Body, review.CreatedAt, review.CheckID, model.CurrentUserID(r.Context())); err != nil {
 			break
 		}
 	}

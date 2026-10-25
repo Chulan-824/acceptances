@@ -26,7 +26,10 @@ func OpenMySQL(dir, dsn string) (*Server, error) {
 		return nil, err
 	}
 	s := &Server{db: db}
-	s.dir, err = filepath.Abs(dir)
+	s.publicOrigin, err = publicOrigin()
+	if err == nil {
+		s.dir, err = filepath.Abs(dir)
+	}
 	if err == nil {
 		err = s.acquireMySQLLease(context.Background())
 	}
