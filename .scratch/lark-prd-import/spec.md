@@ -1,6 +1,6 @@
 # Lark PRD URL 导入实施设计
 
-日期：2026-10-25。状态：调研与规划完成，现按用户调用的 implement-spec 开始实现。用户已确认公开 HTTP/隔离 MySQL、连接器 CLI/受控 Lark 子进程、Web 交互测试边界，并授权任务相关本地提交与合并；部署、推送和日常数据操作仍未授权。任务图见 [issues](issues/01-shared-contract.md)，协作合同见[implementation-contract](implementation-contract.md)。
+日期：2026-10-25。状态：本地实现和验证完成，真实 Lark、双成员电脑及 VPS 验收待进行。用户已确认公开 HTTP/隔离 MySQL、连接器 CLI/受控 Lark 子进程、Web 交互测试边界，并授权任务相关本地提交与合并；部署、推送和日常数据操作仍未授权。任务图见 [issues](issues/01-shared-contract.md)，协作合同见[implementation-contract](implementation-contract.md)。
 
 ## 结论与已确认边界
 
