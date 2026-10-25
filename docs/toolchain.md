@@ -28,6 +28,8 @@
 | `make test SUITE=platform` | 已构建二进制、临时数据初始化、Web 静态资源及正常停机  |
 | `make test SUITE=e2e`      | 调用外部真实浏览器驱动并校验回执                      |
 | `make docker-up`           | 构建并启动应用与 MySQL                                |
+| `make docker-build`        | 只构建发布镜像，不启动日常服务                        |
+| `make release-check`       | 源码副本构建及隔离 Docker 发布烟测                    |
 | `make install-skill`       | 安装宿主机 CLI 和 skill                               |
 
 旧 DTO、OpenAPI 和 sqlc 生成流程已移除。未知测试分组返回非零，不将未运行标记为通过。
@@ -65,6 +67,18 @@ Jev 的安全、严格路径和统计逻辑单测也属于上述离线补检。�
 运行验证按静态检查、进程内 HTTP 集成、原生进程、Docker、真实浏览器分别报告。归档源码 commit、dirty 状态、构建产物摘要、命令和实际结果；仅在本机执行不代表其他架构已验证。真实产品验收按 [T1–T9 及逐项评审交接](v1-implementation-handoff.md) 记录，日常运行库迁移结果单独报告。
 
 `make test SUITE=agent` 在临时安装目标验证 CLI 与 skill，并运行隔离 CLI 测试及可选 Jev 的离线选择测试，不升级日常安装。Jev 选择测试使用受控 doctor，验证已配置、缺配置、执行器失效、超时及诊断脱敏，不连接 Chrome 或官方模型；不能据此声称真实回归通过。`make test SUITE=e2e` 只核对外部驱动回执与证据文件，逐项评审、范围及反馈关联必须由真实浏览器操作和 API 断言覆盖。源码更新后的日常安装使用 `make replace-skill`，替换结果以安装器回执为准。
+
+## Docker 发布检查
+
+`make release-check` 是独立发布检查入口，不加入 `pnpm check` 或轻量提交检查。它先运行发布检查单测，再从当前 Git 工作区复制已跟踪文件和未忽略的新文件，排除 `.env*`、Git 元数据、本机依赖、缓存和构建产物。未提交改动会进入副本，删除的文件不进入；符号链接直接拒绝。源码文件列表、整体摘要、HEAD 和 dirty 状态写入回执，因此本地 dirty 验证不能声称验证了某个干净提交。
+
+构建仍调用现有 `make docker-build`，上下文切换到源码副本，使用 Dockerfile 锁定的运行时和依赖，不依赖宿主机的 Web dist 或 Go 二进制。检查从副本中的实际 Compose 配置生成临时配置，保留镜像、启动参数、健康检查及运行限制，替换为随机项目名、临时凭据、专用网络和数据卷，只发布随机的 `127.0.0.1` 应用端口，不发布 MySQL 端口。不调用日常 `make docker-up` 或凭据准备器。
+
+容器就绪后检查 live/ready、首页根节点、生产 JS/CSS 入口、可解析的 ESM/CSS 本地资源引用、四个 Geist 字体与字体许可文件、未知 API 404 和镜像内 CLI 版本。HTTP 状态、资源类型和字体签名均需符合预期，避免把 SPA 的 HTML 回退当作静态资源成功；原生 `make test SUITE=platform` 复用相同 HTTP 检查。构建缺少 COPY/embed 输入、启动失败、资源缺失均返回非零。
+
+成功与失败都会尝试回收本轮项目的容器、卷、网络和镜像，并核对资源未残留；清理失败也算检查失败，保留私有临时目录供恢复清理，不归档其中的凭据。日志、无凭据的生成配置、源码副本和 `result.json` 位于 `artifacts/release-check/<随机项目名>/`。Ctrl-C/SIGTERM 会进入清理，外部命令受超时限制；SIGKILL、Docker 守护进程不可用或宿主机中断仍可能需要根据回执中的项目名手动清理。
+
+GitHub Actions 的 `Release checks / docker` 独立于普通 Checks，在 PR 或 `main` 推送涉及 Docker/Compose、应用源码、依赖锁、发布脚本、许可材料时运行，也支持手动触发。CI 从 checkout 的源码执行同一 `make release-check`，无论成败均尝试通过官方 [upload-artifact](https://github.com/actions/upload-artifact) 归档证据，保留 7 天。该检查不推送镜像、不部署应用；本机运行不代表 GitHub 托管 runner、其他架构或完整业务验收已通过。
 
 ## 本机服务生命周期
 

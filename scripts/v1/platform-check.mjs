@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { createMySQLTestDatabase } from "./mysql-test-database.mjs";
 import { startIsolatedServer } from "./services.mjs";
+import { checkWeb } from "./web-smoke.mjs";
 
 const startedAt = new Date().toISOString();
 const hashes = {};
@@ -35,18 +36,7 @@ try {
     binary: resolve("build/server"),
     web: resolve("apps/web/dist"),
   });
-  const get = (path) =>
-    fetch(`${service.base}${path}`, { signal: AbortSignal.timeout(5000) });
-  assert.equal((await get("/health/live")).status, 200);
-  const ready = await get("/health/ready");
-  assert.equal(ready.status, 200, "首次启动应自动初始化并就绪");
-  const page = await get("/");
-  assert.equal(page.status, 200);
-  const html = await page.text();
-  const asset = html.match(/src="([^" ]+\.js)"/)?.[1];
-  assert.ok(asset, "缺少生产 Web 入口");
-  assert.equal((await get(asset)).status, 200);
-  assert.equal((await get("/api/v1/unknown")).status, 404);
+  const resources = await checkWeb(service.base);
   const { code } = await service.stop();
   assert.equal(code, 0, "服务未正常退出");
   await mkdir("artifacts", { recursive: true });
@@ -58,6 +48,7 @@ try {
         sourceCommit,
         dirty: Boolean(dirty),
         artifactDigest: hashes,
+        resources,
         platform: `${process.platform}/${process.arch}`,
         provider: "none",
         environmentClass: "native-process",

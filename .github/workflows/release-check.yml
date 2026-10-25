@@ -1,0 +1,69 @@
+name: Release checks
+
+on:
+  pull_request:
+    paths: &release-paths
+      - .github/workflows/release-check.yml
+      - .dockerignore
+      - .gitignore
+      - Makefile
+      - toolchain.lock.json
+      - deploy/**
+      - cmd/**
+      - internal/**
+      - db/**
+      - apps/web/**
+      - packages/api-client/**
+      - go.mod
+      - go.sum
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - LICENSE*
+      - LICENSES/**
+      - NOTICE
+      - docs/licensing/**
+      - scripts/v1/release-check*
+      - scripts/v1/web-smoke.mjs
+  push:
+    branches: [main]
+    paths: *release-paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Read locked Node
+        id: runtime
+        run: |
+          python3 - <<'PY'
+          import json, os
+          with open('toolchain.lock.json') as source:
+              version = json.load(source)['runtimes']['node']
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print(f'node={version}', file=output)
+          PY
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.runtime.outputs.node }}
+          package-manager-cache: false
+      - run: make release-check
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: docker-release-check
+          path: artifacts/release-check/
+          include-hidden-files: true
+          retention-days: 7
