@@ -16,6 +16,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/Chulan-824/acceptances/internal/prd"
 )
 
 type fileImportEntry struct {
@@ -116,6 +118,34 @@ func (s *Server) archiveReferences(ctx context.Context) ([]fileImportEntry, erro
 	if err != nil {
 		return nil, err
 	}
+	rows, err = s.db.QueryContext(ctx, "SELECT payload FROM prd_imports WHERE status IN ('ready','confirmed') ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var raw string
+		if err = rows.Scan(&raw); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		var task prd.Import
+		if err = json.Unmarshal([]byte(raw), &task); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		if task.Manifest == nil {
+			rows.Close()
+			return nil, fmt.Errorf("sealed PRD has no manifest")
+		}
+		for _, file := range task.Manifest.Files {
+			result = append(result, fileImportEntry{Kind: "prd-imports", OwnerID: task.ID, Name: file.Name, Size: file.Size, SHA256: file.SHA256})
+		}
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, err
+	}
 	seen := map[string]bool{}
 	for i := range result {
 		file := &result[i]
@@ -185,7 +215,7 @@ func (s *Server) sourceFileManifest(ctx context.Context) (fileImportManifest, er
 		entry.Modified = info.ModTime().UTC()
 	}
 	actualCount := 0
-	for _, kind := range []string{"evidence", "deliveries", "documents"} {
+	for _, kind := range []string{"evidence", "deliveries", "documents", "prd-imports"} {
 		base := filepath.Join(s.dir, kind)
 		if _, err := os.Lstat(base); errors.Is(err, os.ErrNotExist) {
 			continue
@@ -424,7 +454,7 @@ func (s *Server) verifyFileEntries(ctx context.Context, entries []fileImportEntr
 		}
 		counts[file.Kind]++
 	}
-	for _, kind := range []string{"evidence", "deliveries", "documents"} {
+	for _, kind := range []string{"evidence", "deliveries", "documents", "prd-imports"} {
 		table, _, _ := (fileOwner{kind, ""}).relation()
 		var count int
 		if err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+table).Scan(&count); err != nil {
@@ -435,7 +465,7 @@ func (s *Server) verifyFileEntries(ctx context.Context, entries []fileImportEntr
 		}
 	}
 	var chunks int
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM archive_blob_chunks c WHERE EXISTS(SELECT 1 FROM run_files f WHERE f.blob_id=c.blob_id) OR EXISTS(SELECT 1 FROM delivery_files f WHERE f.blob_id=c.blob_id) OR EXISTS(SELECT 1 FROM document_files f WHERE f.blob_id=c.blob_id)`).Scan(&chunks); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM archive_blob_chunks c WHERE EXISTS(SELECT 1 FROM run_files f WHERE f.blob_id=c.blob_id) OR EXISTS(SELECT 1 FROM delivery_files f WHERE f.blob_id=c.blob_id) OR EXISTS(SELECT 1 FROM document_files f WHERE f.blob_id=c.blob_id) OR EXISTS(SELECT 1 FROM prd_import_files f WHERE f.blob_id=c.blob_id)`).Scan(&chunks); err != nil {
 		return 0, 0, err
 	}
 	return len(verified), chunks, nil

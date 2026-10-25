@@ -25,6 +25,8 @@ func (o fileOwner) relation() (table, column string, err error) {
 		return "delivery_files", "delivery_id", nil
 	case "documents":
 		return "document_files", "document_id", nil
+	case "prd-imports":
+		return "prd_import_files", "import_id", nil
 	default:
 		return "", "", fmt.Errorf("unknown file owner %q", o.kind)
 	}
