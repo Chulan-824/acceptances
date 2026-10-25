@@ -30,6 +30,7 @@ if (suite === "all" || suite === "services") {
       "--test",
       "scripts/v1/services.test.mjs",
       "scripts/v1/services-exit.test.mjs",
+      "scripts/v1/services-identity.test.mjs",
     ],
     {
       stdio: "inherit",
@@ -43,6 +44,7 @@ if (suite === "all") {
       "--test",
       "scripts/v1/checks.test.mjs",
       "scripts/v1/release-check.test.mjs",
+      "scripts/v1/source-identity.test.mjs",
     ],
     {
       stdio: "inherit",

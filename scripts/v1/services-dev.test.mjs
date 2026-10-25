@@ -60,6 +60,13 @@ test(
       await dev("up");
       const [state] = await controlServices("status", "dev");
       assert.equal(state.state, "ready");
+      const api = state.processes.find((process) => process.name === "api");
+      assert.equal(api.sourceComparison, "matches");
+      assert.match(api.identity.sourceDigest, /^[a-f0-9]{64}$/);
+      assert.equal(
+        state.processes.find((process) => process.name === "web").reload,
+        "vite-hmr",
+      );
       assert.equal(
         (await fetch(`http://127.0.0.1:${webPort}/health/ready`)).status,
         200,

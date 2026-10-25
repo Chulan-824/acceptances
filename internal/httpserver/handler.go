@@ -23,7 +23,7 @@ func New(web fs.FS, app *api.Server) http.Handler {
 	})
 	mux.HandleFunc("GET /api/v1/capabilities", func(w http.ResponseWriter, r *http.Request) {
 		info := buildinfo.Current()
-		respond(w, 200, map[string]any{"apiVersions": []string{"v1"}, "phase": "local-archive", "version": info.Version, "commit": info.Commit})
+		respond(w, 200, map[string]any{"apiVersions": []string{"v1"}, "phase": "local-archive", "version": info.Version, "commit": info.Commit, "build": info})
 	})
 	if app != nil {
 		app.Register(mux)

@@ -82,6 +82,14 @@ GitHub Actions 的 `Release checks / docker` 独立于普通 Checks，在 PR 或
 
 ## 本机服务生命周期
 
+`make build`、`make docker-build` 和开发 API 的 `go run` 通过现有 `buildinfo` 注入构建时的 commit、dirty 标记及源码 SHA-256。源码摘要覆盖 `cmd/`、`internal/`、`db/` 和 Go 嵌入的 Web 包、主题及字体，排除 Go 测试和 `.env*`，不把 Web TS/TSX 的改动当成 API 已加载的内容。dirty 使用整个 Git 工作区状态，因此它可能因文档等非 API 改动变化；它是构建来源信息，不单独证明运行内容。普通 `go build` 可从 Go 的 VCS 元数据补充 commit/dirty，但未注入的源码摘要仍为 `unknown`。
+
+`GET /api/v1/capabilities` 保留原有 version/commit 字段，并通过 `build` 返回上述身份。`make dev-status` / `make services-status` 在原有状态中增加 `sourceAtStart`、`currentSource`，各 API/server 进程的 `identity` 来自运行服务自身的 capabilities，`sourceComparison` 为 `matches`、`differs` 或 `unknown`。比较 commit、dirty 及源码摘要，不能仅凭相同 commit 或 ready=200 判断运行版本一致。同一 commit 下再次修改未提交源码，也会因摘要变化而显示 `differs`。
+
+旧所有者、旧二进制、缺少 Git 信息或无法读取身份时显示 `unknown`；已有服务不会因代码更新被自动重启。原生隔离服务读取所启动二进制的实际身份，不给旧二进制套用当前工作区的版本。Vite 进程显示 `reload: vite-hmr`，其启动来源不能证明当前浏览器已加载的模块版本，配置和依赖变化也可能需要重启；是否重启继续由当前任务授权决定。源码在编译过程中被修改时，应在稳定源码后重新构建和验证，启动指纹不提供原子快照保证。
+
+`make test SUITE=services` 额外在临时源码克隆、临时 MySQL 库和随机端口运行真实 API，验证同 commit 的未提交修改、临时 main 前进后旧 API 仍 ready、状态保持旧身份并显示差异，以及重建重启后恢复匹配。该测试只在临时克隆创建 fixture 提交，不改当前仓库历史，也不重启日常 API。已有日常开发会话时，原有完整 Go/Vite 开发烟测继续明确跳过；隔离版本测试仍可执行。
+
 开发、平台烟测和浏览器回归共用 `scripts/v1/services.mjs`。Agent 启动本机服务时使用上述入口，避免独立的 `nohup` 或 `&` 启动器绕过状态记录与退出清理。`make dev` 保持前台，Ctrl-C 或 SIGTERM 会回收 API、Vite 及其进程组；`make dev-up` 后台启动，等待 API 和 Web 代理就绪才返回。任一开发子进程退出或部分启动失败会停止整组，先 TERM，6 秒后仍未退出则 KILL。平台和浏览器验证继续使用独立临时数据、随机端口，完成后停止服务并核对端口已释放。
 
 开发默认 API 8765、Web 5173。启动前检查两个端口，Vite 使用 strictPort，不会悄悄换端口。需要同时保留其他本机服务时，可显式指定 `ACCEPTANCES_DEV_API_PORT`、`ACCEPTANCES_DEV_WEB_PORT`；两个值须是不同的 1–65535 整数，Web 代理同步指向指定 API。旧归档目录由 `ACCEPTANCES_DATA_DIR` 指定，默认 `.cache/dev-data`。开发入口使用 Docker MySQL 的 `acceptances_dev` 数据库；停止 Go/Vite 不停止 MySQL。迁移、凭据和备份规则见 [MySQL 存储](mysql-storage.md)。

@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
+import { sourceIdentity, compareIdentity } from "./source-identity.mjs";
 
 export const root = fileURLToPath(new URL("../../", import.meta.url));
 const registry = join(root, ".cache/services");
@@ -92,6 +93,7 @@ export async function createSession(
     pid: process.pid,
     cwd: root,
     startedAt: new Date().toISOString(),
+    sourceAtStart: await sourceIdentity(root),
   };
   let file;
   try {
@@ -118,6 +120,8 @@ export async function createSession(
       signal: p.child.signalCode,
       url: p.url,
       log: p.logPath,
+      identity: p.identity ?? null,
+      reload: p.reload,
     })),
   });
   const server = net.createServer({ allowHalfOpen: true }, (socket) => {
@@ -202,7 +206,12 @@ export function managedProcess(
   name,
   command,
   args,
-  { env = process.env, logPath, echo = false } = {},
+  {
+    env = process.env,
+    logPath,
+    echo = false,
+    reload = "restart-required",
+  } = {},
 ) {
   const log = logPath ? createWriteStream(logPath) : undefined;
   const child = spawn(command, args, {
@@ -261,6 +270,7 @@ export function managedProcess(
     exited,
     closed,
     logPath,
+    reload,
     get output() {
       return output;
     },
@@ -323,6 +333,18 @@ export async function assertPortFree(port) {
   }
 }
 
+export async function captureBuild(service) {
+  try {
+    const response = await fetch(`${service.url}/api/v1/capabilities`, {
+      signal: AbortSignal.timeout(2000),
+    });
+    if (!response.ok) throw new Error("构建身份不可用");
+    service.identity = (await response.json()).build ?? null;
+  } catch {
+    service.identity = null;
+  }
+}
+
 export async function startIsolatedServer({
   kind,
   binary,
@@ -379,10 +401,12 @@ export async function startIsolatedServer({
     if (["5173", "8765"].includes(new URL(base).port))
       throw new Error("验证服务不得占用开发端口");
     await waitReady(service, base);
+    await captureBuild(service);
     session.ready();
     return {
       base,
       data,
+      identity: service.identity,
       async stop() {
         await session.close();
         await assertPortFree(Number(new URL(base).port));
@@ -422,6 +446,19 @@ export async function controlServices(action, kind) {
         const current = await readRecord(entry.path).catch(() => null);
         if (current?.token === entry.record.token)
           await rm(entry.path, { force: true });
+      }
+    }
+  }
+  if (action === "status" && results.length) {
+    const current = await sourceIdentity(root);
+    for (const result of results) {
+      result.currentSource = current;
+      for (const process of result.processes ?? []) {
+        if (["api", "server"].includes(process.name))
+          process.sourceComparison = compareIdentity(process.identity, current);
+        if (process.name === "web")
+          process.note =
+            "Vite 对模块执行热更新；启动身份不能证明当前浏览器已加载的内容，配置及依赖变化可能需要重启";
       }
     }
   }

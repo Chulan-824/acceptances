@@ -90,7 +90,7 @@ for (const scenario of [
         await mkdir(bin);
         await mkdir(data);
         await writeFile(join(data, "existing-record"), sentinel);
-        for (const file of ["dev.mjs", "services.mjs"])
+        for (const file of ["dev.mjs", "services.mjs", "source-identity.mjs"])
           await copyFile(
             join(root, "scripts/v1", file),
             join(directory, "scripts/v1", file),

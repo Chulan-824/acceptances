@@ -69,19 +69,22 @@ typecheck: toolchain
 build: toolchain
 	pnpm --filter @acceptances/web build
 	mkdir -p build
-	go build -trimpath -o build/server ./cmd/server
-	go build -trimpath -o build/acceptances ./cmd/acceptances
+	@identity="$$(node scripts/v1/source-identity.mjs)" && \
+	go build -trimpath -ldflags "$$identity" -o build/server ./cmd/server && \
+	go build -trimpath -ldflags "$$identity" -o build/acceptances ./cmd/acceptances
 
 docker-build:
-	$(DOCKER_COMPOSE) build app
+	@identity="$$(node scripts/v1/source-identity.mjs)" && \
+	$(DOCKER_COMPOSE) build --build-arg "BUILD_LDFLAGS=$$identity" app
 
 release-check:
-	node --test scripts/v1/release-check.test.mjs
+	node --test scripts/v1/release-check.test.mjs scripts/v1/source-identity.test.mjs
 	node scripts/v1/release-check.mjs
 
 docker-up:
 	node scripts/v1/mysql.mjs prepare
-	$(DOCKER_COMPOSE) up --build -d
+	$(MAKE) docker-build
+	$(DOCKER_COMPOSE) up --no-build -d
 
 docker-rebuild: docker-up
 

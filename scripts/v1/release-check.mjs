@@ -16,6 +16,7 @@ import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { checkWeb } from "./web-smoke.mjs";
+import { sourceIdentity } from "./source-identity.mjs";
 
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
@@ -180,6 +181,8 @@ export async function releaseCheck(root = process.cwd()) {
       }),
     );
     report.snapshot = await snapshot(root, source);
+    env.ACCEPTANCES_BUILD_COMMIT = report.sourceCommit;
+    env.ACCEPTANCES_BUILD_DIRTY = String(report.dirty);
     for (const excluded of [
       ".git",
       "node_modules",
@@ -282,6 +285,31 @@ export async function releaseCheck(root = process.cwd()) {
       await delay(200);
     }
     report.resources = await checkWeb(report.base);
+    const capabilities = await fetch(report.base + "/api/v1/capabilities", {
+      signal: AbortSignal.timeout(5000),
+    });
+    assert.equal(capabilities.status, 200);
+    report.build = (await capabilities.json()).build;
+    assert.match(
+      report.build.sourceDigest,
+      /^[a-f0-9]{64}$/,
+      "镜像源码摘要不可为 unknown",
+    );
+    assert.equal(
+      report.build.commit,
+      report.sourceCommit,
+      "镜像 commit 与构建来源不一致",
+    );
+    assert.equal(
+      report.build.dirty,
+      report.dirty,
+      "镜像 dirty 标记与构建来源不一致",
+    );
+    assert.equal(
+      report.build.sourceDigest,
+      (await sourceIdentity(source)).sourceDigest,
+      "镜像源码摘要与冻结副本不一致",
+    );
     report.cli = JSON.parse(
       docker(["exec", "-T", "app", "acceptances", "version", "--json"]),
     );

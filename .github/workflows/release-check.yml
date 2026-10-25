@@ -25,6 +25,7 @@ on:
       - docs/licensing/**
       - scripts/v1/release-check*
       - scripts/v1/web-smoke.mjs
+      - scripts/v1/source-identity.mjs
   push:
     branches: [main]
     paths: *release-paths

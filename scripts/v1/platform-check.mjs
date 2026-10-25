@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { createMySQLTestDatabase } from "./mysql-test-database.mjs";
 import { startIsolatedServer } from "./services.mjs";
 import { checkWeb } from "./web-smoke.mjs";
+import { compareIdentity, sourceIdentity } from "./source-identity.mjs";
 
 const startedAt = new Date().toISOString();
 const hashes = {};
@@ -37,6 +38,13 @@ try {
     web: resolve("apps/web/dist"),
   });
   const resources = await checkWeb(service.base);
+  const currentSource = await sourceIdentity();
+  const sourceComparison = compareIdentity(service.identity, currentSource);
+  assert.equal(
+    sourceComparison,
+    "matches",
+    "二进制身份与当前源码不一致或未知；先执行 make build",
+  );
   const { code } = await service.stop();
   assert.equal(code, 0, "服务未正常退出");
   await mkdir("artifacts", { recursive: true });
@@ -49,6 +57,9 @@ try {
         dirty: Boolean(dirty),
         artifactDigest: hashes,
         resources,
+        build: service.identity,
+        currentSource,
+        sourceComparison,
         platform: `${process.platform}/${process.arch}`,
         provider: "none",
         environmentClass: "native-process",

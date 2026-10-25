@@ -8,7 +8,9 @@ import {
   assertPortFree,
   waitReady,
   controlServices,
+  captureBuild,
 } from "./services.mjs";
+import { buildFlags } from "./source-identity.mjs";
 
 process.chdir(root);
 const command = process.argv[2] || "start";
@@ -46,7 +48,15 @@ async function foreground() {
     const api = session.start(
       "api",
       "go",
-      ["run", "./cmd/server", "--listen", `127.0.0.1:${apiPort}`, "--web-dir="],
+      [
+        "run",
+        "-ldflags",
+        buildFlags(session.info().sourceAtStart),
+        "./cmd/server",
+        "--listen",
+        `127.0.0.1:${apiPort}`,
+        "--web-dir=",
+      ],
       {
         echo: true,
         logPath: join(root, ".cache/services/api.log"),
@@ -59,6 +69,7 @@ async function foreground() {
       },
     );
     await waitReady(api, apiBase, 120000);
+    await captureBuild(api);
     const web = session.start(
       "web",
       "pnpm",
@@ -73,6 +84,7 @@ async function foreground() {
       {
         echo: true,
         logPath: join(root, ".cache/services/web.log"),
+        reload: "vite-hmr",
       },
     );
     await Promise.race([
