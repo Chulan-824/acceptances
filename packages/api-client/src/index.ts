@@ -131,6 +131,8 @@ export interface DeletePreview {
   reviews: number;
   retainedDeliveries?: number;
   retainedDocuments?: number;
+  prdSnapshots?: number;
+  prdFiles?: number;
 }
 
 export type * from "./delivery";
