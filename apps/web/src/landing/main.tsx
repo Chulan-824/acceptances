@@ -1,3 +1,4 @@
+import { ArrowRight, Check, Expand, Folder, Image, Shield } from "lucide-react";
 import { Scrollspy } from "../components/reui/scrollspy";
 import { Badge } from "../components/reui/badge";
 import { StrictMode, useRef, useState } from "react";
@@ -123,7 +124,7 @@ function Landing() {
                   className="px-3 py-1.5 rounded-default bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-none flex items-center gap-1.5"
                 >
                   <span>进入工作台</span>
-                  <span className="text-xs">→</span>
+                  <ArrowRight size={12} aria-hidden="true" />
                 </a>
               </Button>
             </nav>
@@ -158,7 +159,7 @@ function Landing() {
                 className="px-5 py-3 rounded-default bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-none flex items-center gap-2"
               >
                 <span>打开交付验收工作台</span>
-                <span>→</span>
+                <ArrowRight size={16} aria-hidden="true" />
               </a>
             </Button>
             <Button
@@ -238,16 +239,7 @@ function Landing() {
                     className="text-xs text-muted hover:text-fg font-mono flex items-center gap-1"
                     onClick={openActiveLightbox}
                   >
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
-                    </svg>
+                    <Expand size={13} aria-hidden="true" />
                     <span>放大查看</span>
                   </Button>
                 </div>
@@ -351,16 +343,7 @@ function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none hover:border-border-dark transition-all">
               <div className="w-10 h-10 rounded-default bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
+                <Folder size={20} aria-hidden="true" />
               </div>
               <h3 className="text-base font-medium text-fg mb-2">
                 本地优先与持久归档 (Local-First)
@@ -370,25 +353,25 @@ function Landing() {
                 SQLite，附件保存在服务端数据目录，正式部署使用持久数据卷。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded-default border border-border">
-                ✓ 默认仅通过本机地址访问
-                <br />✓ 记录代码来源、提交版本与未提交改动标记
+                <Check
+                  size={12}
+                  className="inline-block align-middle mr-1"
+                  aria-hidden="true"
+                />{" "}
+                默认仅通过本机地址访问
+                <br />
+                <Check
+                  size={12}
+                  className="inline-block align-middle mr-1"
+                  aria-hidden="true"
+                />{" "}
+                记录代码来源、提交版本与未提交改动标记
               </div>
             </FramePanel>
 
             <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none hover:border-border-dark transition-all">
               <div className="w-10 h-10 rounded-default bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                  <circle cx="9" cy="9" r="2"></circle>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                </svg>
+                <Image size={20} aria-hidden="true" />
               </div>
               <h3 className="text-base font-medium text-fg mb-2">
                 多模态确定性证据链 (Evidence-First)
@@ -397,23 +380,25 @@ function Landing() {
                 测试不再只是抽象的通过统计，更完整内嵌高分辨率实测截图、网络抓包与控制台日志，杜绝无据可查的环境偏差与主观臆测。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded-default border border-border">
-                ✓ 像素级高清截图与录像留存
-                <br />✓ 运行时网络请求与异常追踪
+                <Check
+                  size={12}
+                  className="inline-block align-middle mr-1"
+                  aria-hidden="true"
+                />{" "}
+                像素级高清截图与录像留存
+                <br />
+                <Check
+                  size={12}
+                  className="inline-block align-middle mr-1"
+                  aria-hidden="true"
+                />{" "}
+                运行时网络请求与异常追踪
               </div>
             </FramePanel>
 
             <FramePanel className="bg-surface border border-border rounded-default p-4 shadow-none hover:border-border-dark transition-all">
               <div className="w-10 h-10 rounded-default bg-surface-subtle border border-border flex items-center justify-center text-fg mb-4">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
+                <Shield size={20} aria-hidden="true" />
               </div>
               <h3 className="text-base font-medium text-fg mb-2">
                 执行事实与人工裁决解耦 (Dual-Tier)
@@ -422,8 +407,19 @@ function Landing() {
                 客观执行事实忠实归档，不替用户预设接受决定；支持逐项人工审阅与整轮全部人工通过，权属清晰，形成严密复验闭环。
               </p>
               <div className="text-xs font-mono text-muted bg-surface-subtle p-2 rounded-default border border-border">
-                ✓ 客观检验与主观判断权属分明
-                <br />✓ 逐项精准反馈驱动下轮修复
+                <Check
+                  size={12}
+                  className="inline-block align-middle mr-1"
+                  aria-hidden="true"
+                />{" "}
+                客观检验与主观判断权属分明
+                <br />
+                <Check
+                  size={12}
+                  className="inline-block align-middle mr-1"
+                  aria-hidden="true"
+                />{" "}
+                逐项精准反馈驱动下轮修复
               </div>
             </FramePanel>
           </div>
@@ -651,7 +647,8 @@ function Landing() {
                 href="index.html"
                 className="px-6 py-3 rounded-default bg-brand hover:bg-brand-hover text-brand-fg font-medium text-sm transition-all shadow-none"
               >
-                进入交付验收工作台 →
+                进入交付验收工作台
+                <ArrowRight size={16} aria-hidden="true" />
               </a>
             </Button>
           </div>

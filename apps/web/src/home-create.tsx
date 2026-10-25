@@ -1,3 +1,4 @@
+import { Minus, Plus } from "lucide-react";
 import { FramePanel } from "./components/reui/frame";
 import { Spinner } from "./components/ui/spinner";
 import { Alert } from "./components/reui/alert";
@@ -82,16 +83,11 @@ export function HomeCreate({
                   添加被验收的产品或系统
                 </span>
               </span>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14" />
-                <path className="home-toggle-vertical" d="M12 5v14" />
-              </svg>
+              {open ? (
+                <Minus strokeWidth={1.7} aria-hidden="true" />
+              ) : (
+                <Plus strokeWidth={1.7} aria-hidden="true" />
+              )}
             </>
           }
         >

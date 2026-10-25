@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import { formatDateTime } from "./lib/date";
 import { ConsolidatedRuns, ConsolidatedRunArchive } from "./consolidated-runs";
 import { FramePanel } from "./components/reui/frame";
@@ -268,7 +269,12 @@ export function Run({
                     {move.reason}
                     <div className="muted">
                       来源需求：<code>{move.fromCampaignId}</code>
-                      {" → "}目标需求：<code>{move.toCampaignId}</code>
+                      <ArrowRight
+                        size={12}
+                        className="inline-block align-middle mx-1"
+                        aria-hidden="true"
+                      />
+                      目标需求：<code>{move.toCampaignId}</code>
                     </div>
                   </li>
                 ))}

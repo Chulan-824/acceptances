@@ -1,7 +1,23 @@
 // Adapted from https://reui.io/r/radix-nova/file-type.json
 // Local changes and upstream digest: docs/reui.md.
 // Title: File Type
-// Description: Shadcn file type icon in brand and family colors, outline, solid, light and mono variants, sizes down to 18px for data grid rows, and resolution from a file name or MIME type.
+// File resolution and extension labels from ReUI; glyphs use Lucide.
+import {
+  AppWindow,
+  File,
+  FileArchive,
+  FileAudio,
+  FileChartColumn,
+  FileCode,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileType as FileTypeIcon,
+  FileVideoCamera,
+  Folder,
+  Shapes,
+  type LucideIcon,
+} from "lucide-react";
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
@@ -438,97 +454,28 @@ function getFileTypeCategory(type?: string): FileTypeCategory {
 /*                                   Glyphs                                   */
 /* -------------------------------------------------------------------------- */
 
-/*
- * Every glyph is drawn in the 24-unit page grid inside one box, x 7 to 17 and
- * y 10 to 20, so it sits under the fold at the same optical weight, and is
- * shown at 75% of it (full size up to 20px, where every pixel counts).
- * Parallel strokes are at least 3 units apart: the stroke stays 1px at every
- * size, and closer lines merge at `mini` (18px, where a unit is 0.75px).
- */
-const STROKE = { vectorEffect: "non-scaling-stroke" } as const;
-
-const GLYPHS: Partial<Record<FileTypeCategory, ReactNode>> = {
-  document: <path {...STROKE} d="M8 12h8M8 15h5.5M8 18h7" />,
-  spreadsheet: (
-    <>
-      <rect {...STROKE} x="7.5" y="11" width="9" height="8" rx="1" />
-      <path {...STROKE} d="M7.5 14.5h9M11 11v8" />
-    </>
-  ),
-  presentation: (
-    <>
-      <rect {...STROKE} x="7" y="11" width="10" height="5.5" rx="1" />
-      <path {...STROKE} d="m9.5 19.5 2.5-3 2.5 3" />
-    </>
-  ),
-  image: (
-    <>
-      <path {...STROKE} d="m7 19.5 3.5-5.5 2.75 3.75 1.25-1.75 2.5 3.5Z" />
-      <circle {...STROKE} cx="14.25" cy="12" r="1.25" />
-    </>
-  ),
-  video: <path {...STROKE} d="M9.5 11v8l7-4Z" />,
-  audio: (
-    <>
-      <path {...STROKE} d="M12.5 18v-7l3 1.5" />
-      <circle {...STROKE} cx="10.75" cy="18" r="1.75" />
-    </>
-  ),
-  code: <path {...STROKE} d="m10 12-3 3 3 3m4-6 3 3-3 3" />,
-  archive: (
-    <>
-      <rect {...STROKE} x="7" y="11" width="10" height="3" rx="0.75" />
-      <path
-        {...STROKE}
-        d="M8 14v4.5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V14M11 16.5h2"
-      />
-    </>
-  ),
-  design: (
-    <>
-      <circle {...STROKE} cx="10.5" cy="13" r="2.5" />
-      <rect {...STROKE} x="12" y="14.5" width="5" height="5" rx="1" />
-    </>
-  ),
-  executable: (
-    <>
-      <rect {...STROKE} x="7.5" y="10.75" width="3.5" height="3.5" rx="0.75" />
-      <rect {...STROKE} x="13" y="10.75" width="3.5" height="3.5" rx="0.75" />
-      <rect {...STROKE} x="7.5" y="16.25" width="3.5" height="3.5" rx="0.75" />
-      <rect {...STROKE} x="13" y="16.25" width="3.5" height="3.5" rx="0.75" />
-    </>
-  ),
-  font: <path {...STROKE} d="M8.5 12.5V11h7v1.5M12 11v8m-1.5 0h3" />,
-  folder: (
-    <path
-      {...STROKE}
-      d="M7 12a1 1 0 0 1 1-1h2.25a1 1 0 0 1 .8.4l.9 1.1H16a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1Z"
-    />
-  ),
+const FILE_ICONS: Record<FileTypeCategory, LucideIcon> = {
+  archive: FileArchive,
+  audio: FileAudio,
+  code: FileCode,
+  design: Shapes,
+  document: FileText,
+  empty: File,
+  executable: AppWindow,
+  file: File,
+  folder: Folder,
+  font: FileTypeIcon,
+  image: FileImage,
+  presentation: FileChartColumn,
+  spreadsheet: FileSpreadsheet,
+  video: FileVideoCamera,
 };
 
 /* -------------------------------------------------------------------------- */
 /*                                  Variants                                  */
 /* -------------------------------------------------------------------------- */
 
-/** The page: 16 by 20 units with 2-unit corners and a rounded 6-unit fold. */
-const PAGE_PATH =
-  "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7.586a2 2 0 0 1 1.414.586l4.414 4.414A2 2 0 0 1 20 8.414V20a2 2 0 0 1-2 2Z";
-const FOLD_PATH = "M14 2v5a1 1 0 0 0 1 1h5";
-/** The folded corner, traced along the page edge so it never leaves the page. */
-const FLAP_PATH =
-  "M13.586 2a2 2 0 0 1 1.414.586l4.414 4.414A2 2 0 0 1 20 8.414V8h-5a1 1 0 0 1-1-1V2Z";
-
-/**
- * Lyra and Sera square every radius, so the page, its fold and the flap square
- * too: both shapes render, and a per-style variable shows one. Outside a style
- * the var() fallback keeps the rounded page.
- */
-const PAGE_PATH_SQUARE = "M4 22V2h10l6 6v14Z";
-const FOLD_PATH_SQUARE = "M14 2v6h6";
-const FLAP_PATH_SQUARE = "M14 2l6 6h-6Z";
-const ROUND = "[display:var(--file-type-round,inline)]";
-const SQUARE = "[display:var(--file-type-square,none)]";
+type FileTypeVariant = "outline" | "solid" | "light" | "mono";
 
 /**
  * CSS variable architecture, all read from the root:
@@ -587,8 +534,6 @@ const fileTypeVariants = cva(
   },
 );
 
-type FileTypeVariant = "outline" | "solid" | "light" | "mono";
-
 /**
  * Every type in `mono`: the theme's muted gray in place of its own color, with
  * the label text in the page color so it reads in both themes.
@@ -601,13 +546,6 @@ const PAGE_CLASS: Record<FileTypeVariant, string> = {
   solid:
     "fill-[var(--file-type-fill,currentColor)] stroke-[var(--file-type-fill,currentColor)]",
   mono: "fill-transparent stroke-(color:--file-type-outline)",
-};
-
-const FOLD_CLASS: Record<FileTypeVariant, string> = {
-  outline: "stroke-(color:--file-type-outline)",
-  light: "stroke-(color:--file-type-outline)",
-  solid: "stroke-white/45",
-  mono: "stroke-(color:--file-type-outline)",
 };
 
 /**
@@ -722,7 +660,7 @@ function FileType({
       : typeName;
   const hasIcon = icon !== undefined && icon !== null && icon !== false;
   const showLabel = hasText && !glyph && !hasIcon;
-  const glyphNode = showLabel || hasIcon ? null : GLYPHS[resolved.category];
+  const Glyph = showLabel || hasIcon ? File : FILE_ICONS[resolved.category];
 
   return (
     <span
@@ -740,68 +678,19 @@ function FileType({
       )}
       {...props}
     >
-      <svg
+      <Glyph
         data-slot="file-type-icon"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
         aria-hidden="true"
         focusable="false"
+        strokeWidth={1}
+        absoluteStrokeWidth
         className={cn(
           "absolute inset-0 size-full overflow-visible [stroke-width:var(--file-type-stroke,max(1px,2.5cqw))] [--file-type-outline:var(--file-type-border,color-mix(in_oklab,var(--muted-foreground)_40%,transparent))] @max-[21px]:[--file-type-outline:var(--file-type-border,color-mix(in_oklab,var(--muted-foreground)_65%,transparent))]",
-          "[--file-type-round:inline]",
-          "[--file-type-square:none]",
+          showLabel || hasIcon
+            ? PAGE_CLASS[variant]
+            : "fill-none stroke-current",
         )}
-      >
-        <path
-          {...STROKE}
-          d={PAGE_PATH}
-          className={cn(PAGE_CLASS[variant], ROUND)}
-        />
-        <path
-          {...STROKE}
-          d={PAGE_PATH_SQUARE}
-          strokeLinejoin="miter"
-          className={cn(PAGE_CLASS[variant], SQUARE)}
-        />
-        {variant === "solid" ? (
-          <>
-            <path
-              d={FLAP_PATH}
-              className={cn("fill-white/30 stroke-none", ROUND)}
-            />
-            <path
-              d={FLAP_PATH_SQUARE}
-              className={cn("fill-white/30 stroke-none", SQUARE)}
-            />
-          </>
-        ) : null}
-        <path
-          {...STROKE}
-          d={FOLD_PATH}
-          className={cn(FOLD_CLASS[variant], ROUND)}
-        />
-        <path
-          {...STROKE}
-          d={FOLD_PATH_SQUARE}
-          strokeLinejoin="miter"
-          className={cn(FOLD_CLASS[variant], SQUARE)}
-        />
-        {glyphNode ? (
-          <g
-            data-slot="file-type-glyph"
-            stroke="currentColor"
-            className={cn(
-              "origin-[12px_15px] scale-75 @max-[21px]:scale-100",
-              GLYPH_CLASS[variant],
-            )}
-          >
-            {glyphNode}
-          </g>
-        ) : null}
-      </svg>
+      />
       {hasIcon ? (
         <span
           data-slot="file-type-custom-icon"

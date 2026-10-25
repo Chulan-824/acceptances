@@ -78,9 +78,6 @@
     @apply transform-none;
     @apply w-5 h-5 shrink-0;
   }
-  .home-create-panel[data-state="open"] .home-toggle-vertical {
-    @apply hidden;
-  }
   .home-create-title {
     @apply block text-ui font-medium;
   }

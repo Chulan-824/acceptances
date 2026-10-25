@@ -43,6 +43,8 @@
 
 ## 本地适配
 
+- 在线功能图标统一使用已安装的 `lucide-react`，包括工作台公共 `Icon`、首页创建入口、Landing 与 File Type。File Type 保留文件名/MIME 识别、分类、扩展名标签及无障碍属性，文件轮廓和分类图形改用 Lucide；历史截图、附件和冻结文档保持原样。
+
 - `theme.css` 统一 Vercel 数值；`reui.css` 只处理组合布局。通用中性背景使用 `surface-subtle` / `accent`，业务成功使用 `success`，不用文字灰作为底色。Badge 默认保留原有状态类、无边框、400 字重和密度；Alert 的默认圆角与内边距沿用已有 ui-alert。
 - Frame 保留 ReUI 的 Frame/Header/Panel/Footer 结构、父级间距变量、stacked 相邻面板与 dense 布局。样式迁入 `reui.css` 的 components 层，以现有令牌适配；这是本地适配版本，不是未经修改的上游源码。`asChild` 只切换宿主元素，所有组合样式与变体同样生效。
 - `ghost` Frame 配合 `spacing="none"` 管理工作台的平面内容流；项目设置使用 Header 和 flat Panel 分离标题操作及内容。默认 FramePanel 使用 6px 圆角和 1px 边框，无投影。`flat` 用于无卡片装饰的分区，`subtle` 用于摘要，`outline` 用于交付准备与证据，`divider` 用于说明版本列表。
