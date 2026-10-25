@@ -160,22 +160,26 @@ type larkOutcome struct {
 }
 
 func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
-	ctx, cancel := context.WithTimeout(parent, 10*time.Minute)
-	defer cancel()
+	timeoutCtx, cancelTimeout := context.WithTimeoutCause(parent, 10*time.Minute, larkProblem("IMPORT_TIMEOUT"))
+	defer cancelTimeout()
+	ctx, cancel := context.WithCancelCause(timeoutCtx)
+	defer cancel(nil)
+	expiry, _ := time.Parse(time.RFC3339Nano, claim.LeaseExpiresAt)
+	// Expiry cancels every task operation, including synchronous recovery calls
+	// that can keep the select below waiting on an upstream Retry-After.
+	lease := time.AfterFunc(time.Until(expiry), func() { cancel(larkProblem("IMPORT_LEASE_EXPIRED")) })
+	defer lease.Stop()
 	result := make(chan larkOutcome, 1)
 	running := true
 	go func() { bundle, err := c.reader.fetch(ctx, claim.URL); result <- larkOutcome{bundle, err} }()
 	defer func() {
-		cancel()
+		cancel(nil)
 		if running {
 			<-result
 		}
 	}()
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
-	expiry, _ := time.Parse(time.RFC3339Nano, claim.LeaseExpiresAt)
-	lease := time.NewTimer(time.Until(expiry))
-	defer lease.Stop()
 	phase := "reading"
 	for {
 		select {
@@ -183,16 +187,24 @@ func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
 			if parent.Err() != nil {
 				return nil
 			}
-			return c.reportFailure(parent, claim, phase, larkProblem("IMPORT_TIMEOUT"))
-		case <-lease.C:
-			return larkProblem("IMPORT_LEASE_EXPIRED")
+			problem := asLarkError(context.Cause(ctx))
+			if problem.Code == "IMPORT_LEASE_EXPIRED" {
+				return problem
+			}
+			return c.reportFailure(parent, claim, phase, problem)
 		case <-ticker.C:
 			renewCtx, renewCancel := context.WithDeadline(ctx, expiry)
 			next, err := c.poll(renewCtx, &claim)
 			renewCancel()
+			if ctx.Err() != nil {
+				continue
+			}
 			if err != nil {
 				if phase == "uploading" && asLarkError(err).Code == "IMPORT_LEASE_EXPIRED" {
 					ready, recoverErr := c.candidateReady(ctx, claim)
+					if ctx.Err() != nil {
+						continue
+					}
 					if recoverErr != nil {
 						return recoverErr
 					}
@@ -213,15 +225,15 @@ func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
 			lease.Reset(time.Until(expiry))
 		case outcome := <-result:
 			running = false
+			if ctx.Err() != nil {
+				continue
+			}
 			if outcome.err != nil {
-				if ctx.Err() != nil {
-					if parent.Err() != nil {
-						return nil
-					}
-					return c.reportFailure(parent, claim, phase, larkProblem("IMPORT_TIMEOUT"))
-				}
 				if phase == "uploading" {
 					ready, recoverErr := c.candidateReady(ctx, claim)
+					if ctx.Err() != nil {
+						continue
+					}
 					if ready {
 						c.importReady(claim)
 						return nil
@@ -230,7 +242,7 @@ func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
 						return recoverErr
 					}
 				}
-				return c.reportFailure(parent, claim, phase, asLarkError(outcome.err))
+				return c.reportFailure(ctx, claim, phase, asLarkError(outcome.err))
 			}
 			if phase == "uploading" {
 				c.importReady(claim)
@@ -240,6 +252,9 @@ func (c *larkConnector) execute(parent context.Context, claim prd.Claim) error {
 			renewCtx, renewCancel := context.WithDeadline(ctx, expiry)
 			next, err := c.poll(renewCtx, &claim)
 			renewCancel()
+			if ctx.Err() != nil {
+				continue
+			}
 			if err != nil {
 				return err
 			}

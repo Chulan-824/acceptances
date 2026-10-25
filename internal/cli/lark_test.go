@@ -178,13 +178,17 @@ type connectorHarness struct {
 	uploadCalls       atomic.Int32
 	retryStarted      chan retryObservation
 	retryRepeated     chan time.Time
+	renewalLease      time.Duration
+	retryReady        bool
+	readyCalls        atomic.Int32
+	idlePolled        chan time.Time
 }
 
 type retryObservation struct{ At, NotBefore time.Time }
 
 func newConnectorHarness(t *testing.T, source string) *connectorHarness {
 	t.Helper()
-	h := &connectorHarness{uploads: make(chan prd.Bundle, 1), failures: make(chan map[string]any, 1), readyChecked: make(chan bool, 1), retryStarted: make(chan retryObservation, 1), retryRepeated: make(chan time.Time, 1)}
+	h := &connectorHarness{uploads: make(chan prd.Bundle, 1), failures: make(chan map[string]any, 1), readyChecked: make(chan bool, 1), retryStarted: make(chan retryObservation, 1), retryRepeated: make(chan time.Time, 1), idlePolled: make(chan time.Time, 1)}
 	var claimed atomic.Bool
 	var uploadAttempts atomic.Int32
 	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -208,16 +212,31 @@ func newConnectorHarness(t *testing.T, source string) *connectorHarness {
 					return
 				}
 			} else if !claimed.CompareAndSwap(false, true) {
+				select {
+				case h.idlePolled <- time.Now():
+				default:
+				}
 				w.WriteHeader(204)
 				return
 			}
-			json.NewEncoder(w).Encode(prd.Claim{ImportID: "import-1", CampaignID: "campaign-1", URL: source, Attempt: 1, ClaimToken: "claim-secret", LeaseExpiresAt: time.Now().Add(90 * time.Second).UTC().Format(time.RFC3339)})
+			lease := 90 * time.Second
+			if body["importId"] != nil && h.renewalLease > 0 {
+				lease = h.renewalLease
+			}
+			json.NewEncoder(w).Encode(prd.Claim{ImportID: "import-1", CampaignID: "campaign-1", URL: source, Attempt: 1, ClaimToken: "claim-secret", LeaseExpiresAt: time.Now().Add(lease).UTC().Format(time.RFC3339Nano)})
 		case "/api/v1/prd-imports/import-1/failure":
 			var problem map[string]any
 			json.NewDecoder(r.Body).Decode(&problem)
 			h.failures <- problem
 			w.WriteHeader(204)
 		case "/api/v1/prd-imports/import-1":
+			if h.retryReady {
+				h.readyCalls.Add(1)
+				w.Header().Set("Retry-After", "120")
+				w.WriteHeader(429)
+				h.retryStarted <- retryObservation{At: time.Now()}
+				return
+			}
 			if h.readyStored.Load() {
 				fmt.Fprint(w, `{"id":"import-1","attempt":1,"status":"ready","connectorId":"connector-1"}`)
 				h.readyChecked <- true
@@ -226,6 +245,10 @@ func newConnectorHarness(t *testing.T, source string) *connectorHarness {
 			}
 		case "/api/v1/prd-imports/import-1/result":
 			attempt := h.uploadCalls.Add(1)
+			if h.retryReady {
+				w.WriteHeader(409)
+				return
+			}
 			if h.retryUploadHeader != "" {
 				if attempt == 1 {
 					now := time.Now()
@@ -540,6 +563,40 @@ func TestLarkConnectKeepsUnsupportedCLIVersionPrompt(t *testing.T) {
 	if !strings.Contains(output.String(), "LARK_CLI_VERSION_UNSUPPORTED") || !strings.Contains(output.String(), "当前连接器支持 Lark CLI 1.0.98") {
 		t.Fatalf("CLI version guidance changed: %s", output.String())
 	}
+}
+
+func TestLarkConnectEndsExpiredLeaseWhileCandidateRecoveryWaits(t *testing.T) {
+	h := newConnectorHarness(t, "https://team.feishu.cn/docx/DocToken123")
+	// Keep subprocess startup outside the short lease; the pre-upload renewal
+	// gives this completed read a real five-second lease for recovery.
+	h.renewalLease, h.retryReady = 5*time.Second, true
+	cmd, output, dir := connectorProcess(t, h.server.URL)
+	select {
+	case <-h.retryStarted:
+	case <-time.After(larkProcessTimeout):
+		cmd.Process.Signal(os.Interrupt)
+		cmd.Wait()
+		t.Fatal("candidate recovery never reached the Retry-After response")
+	}
+	select {
+	case <-h.idlePolled:
+	case <-time.After(7 * time.Second):
+		stopConnector(t, cmd, output, dir)
+		t.Fatal("expired task remained blocked by candidate recovery Retry-After")
+	}
+	stopConnector(t, cmd, output, dir)
+	if h.readyCalls.Load() != 1 || h.uploadCalls.Load() != 1 {
+		t.Fatalf("expired task replayed a request: recovery=%d upload=%d", h.readyCalls.Load(), h.uploadCalls.Load())
+	}
+	if strings.Contains(output.String(), "import_ready") || strings.Contains(output.String(), "IMPORT_TIMEOUT") {
+		t.Fatalf("lease expiry was reported as ready or the task timeout: %s", output.String())
+	}
+	select {
+	case problem := <-h.failures:
+		t.Fatalf("expired claim reported a new task failure: %#v", problem)
+	default:
+	}
+	t.Log("five-second lease ended candidate recovery before its 120-second minimum retry; no replay or accepted upload")
 }
 
 func TestLarkConnectRecognizesReadyCandidateWhenUploadHeartbeatConflicts(t *testing.T) {
