@@ -1,0 +1,57 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read locked runtimes
+        id: runtimes
+        run: |
+          python3 - <<'PY'
+          import json, os
+          with open('toolchain.lock.json') as source:
+              runtimes = json.load(source)['runtimes']
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              for name in ('node', 'pnpm', 'go'):
+                  print(f'{name}={runtimes[name]}', file=output)
+          PY
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.runtimes.outputs.node }}
+          package-manager-cache: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ steps.runtimes.outputs.go }}
+          cache: false
+      - name: Install locked pnpm
+        env:
+          PNPM_VERSION: ${{ steps.runtimes.outputs.pnpm }}
+        run: npm install --global "pnpm@$PNPM_VERSION"
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm check
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.12.3"
+          enable-cache: false
+      - name: Check skill and Jev changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'all' }}
+        run: make check-extra BASE="$BASE"

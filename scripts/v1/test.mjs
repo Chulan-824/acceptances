@@ -36,6 +36,11 @@ if (suite === "all" || suite === "services") {
     },
   );
 }
+if (suite === "all") {
+  execFileSync("node", ["--test", "scripts/v1/checks.test.mjs"], {
+    stdio: "inherit",
+  });
+}
 if (suite === "services") {
   execFileSync("node", ["--test", "scripts/v1/services-dev.test.mjs"], {
     stdio: "inherit",

@@ -36,6 +36,24 @@
 
 `pnpm check` 执行 lint、类型检查、Go/Web 测试和构建，不启动 Playwright 浏览器。日常浏览器回归使用用户指定的 Codex `@Chrome`、Claude in Chrome 或 `ego-browser`，按 [Agent 浏览器约定](../AGENTS.md#browser-regression) 执行；验证失败或工具不可用时不自动切换到 Playwright。
 
+## CI 与提交检查
+
+GitHub Actions 的 `Checks / check` 在 PR、推送到 `main` 和手动触发时运行。运行时版本读取 `toolchain.lock.json`，安装锁定依赖后执行现有 `pnpm check`；MySQL 仍由测试入口准备隔离测试库。工作流使用 GitHub 官方的 [checkout](https://github.com/actions/checkout)、[setup-node](https://github.com/actions/setup-node) 和 [setup-go](https://github.com/actions/setup-go)，Jev 依赖通过 [setup-uv](https://github.com/astral-sh/setup-uv) 准备。
+
+之后执行 `make check-extra BASE=<基线提交>`，按基线与 HEAD 的变更路径补检：
+
+| 变更范围                                                                                     | 补跑入口                                     |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `skills/acceptances-v1/`、`internal/cli/`、`cmd/acceptances/`、skill 安装器及 Jev probe 测试 | `make test SUITE=agent`                      |
+| `tools/jev-browser/`、Jev Compose 配置、Jev 接入文档                                         | 上述 agent 检查及 `make jev-setup jev-check` |
+| CI、Git hook、检查脚本、Makefile、工具链或依赖锁文件                                         | 两组均执行                                   |
+
+重命名按旧、新两个路径判断，删除也触发补检。手动 CI、新分支首推或比较基线不可用时补跑两组。`make check-extra` 不传 BASE 时检查当前已跟踪改动和未忽略的新文件，适合提交前本地补跑；无相关改动则直接结束。Jev 补检只做 Ruff 和离线单测，不需要 Key、Chrome 或模型调用。
+
+每个克隆执行一次 `make hooks-install` 启用仓库内的 `.githooks/pre-commit`；已有其他 `core.hooksPath` 时拒绝覆盖，需手动整合。也可随时执行 `make check-staged`。提交检查读取暂存版本，运行 `git diff --cached --check`、Prettier、JS/TS 的 ESLint 和 `cmd/`、`internal/`、`db/` 下 Go 文件的 gofmt；只检查支持的文件类型，尊重 `.prettierignore` 和 ESLint 忽略规则，不改写文件或暂存区。它不运行构建、数据库测试或 Python/Jev 检查，后者由上述 CI 目录补检覆盖。需要先安装 Node/pnpm 依赖；暂存 Go 文件时还需 gofmt。
+
+`make test` 包含检查脚本的隔离 Git 仓库回归，验证部分暂存、含空格路径、格式及 ESLint 失败拦截、Go 格式、删除和目录选择，不操作当前仓库的暂存区或提交历史。CI 成功仅代表这些自动检查通过；合并保护中的必需状态检查需在仓库设置中另行启用。
+
 上表 `make test SUITE=browser` 及其别名 `pnpm test:browser` 是保留的 Playwright 脚本入口，仅在用户明确要求执行此类脚本回归时运行。届时可用 `BROWSER_GROUPS=review,preview pnpm test:browser` 选择分组。不要因一般的浏览器回归请求或 Jev 接入自动启动这些入口。依赖、覆盖范围、隔离与产物说明见 [Web 回归验证](../apps/web/tests/README.md)。
 
 用户选择真实 Chrome + Jev 时，通过 `make jev-config` 创建根目录 `.env`，启动器将 Jev 配置注入执行进程。宿主机使用 `make jev-setup`、`make jev-doctor`、`make jev-inspect URL=...`、`make jev-run TASK=...`；可选 Docker 执行器使用对应的 `jev-docker-build`、`jev-docker-doctor`、`jev-docker-inspect`、`jev-docker-run`。两者通过 CDP 连接宿主机真实 Chrome，使用 `TYPESAFE_API_KEY` 调用官方 Jev API。`make jev-check` 只运行离线检查。配置、任务合同和证据边界见 [Jev 接入](agents/jev-browser.md)。这些可选命令不纳入 `pnpm check`，不启动 Playwright，也不会启动或重建日常应用、数据库。
