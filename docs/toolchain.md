@@ -50,6 +50,8 @@ GitHub Actions 的 `Checks / check` 在 PR、推送到 `main` 和手动触发时
 
 重命名按旧、新两个路径判断，删除也触发补检。手动 CI、新分支首推或比较基线不可用时补跑两组。`make check-extra` 不传 BASE 时检查当前已跟踪改动和未忽略的新文件，适合提交前本地补跑；无相关改动则直接结束。Jev 补检只做 Ruff 和离线单测，不需要 Key、Chrome 或模型调用。
 
+Jev 的安全、严格路径和统计逻辑单测也属于上述离线补检。需要真实 Chrome 的可复跑安全与性能对照时，显式使用 `make jev-regression`，默认仅运行临时合成页和 A/A 自检，不调用模型；自选基线、任务、官方模型及证据口径见 [统一 Jev 回归](agents/jev-browser.md#统一安全路径与性能回归)。该入口不被普通 CI 或提交检查自动执行。
+
 每个克隆执行一次 `make hooks-install` 启用仓库内的 `.githooks/pre-commit`；已有其他 `core.hooksPath` 时拒绝覆盖，需手动整合。也可随时执行 `make check-staged`。提交检查读取暂存版本，运行 `git diff --cached --check`、Prettier、JS/TS 的 ESLint 和 `cmd/`、`internal/`、`db/` 下 Go 文件的 gofmt；只检查支持的文件类型，尊重 `.prettierignore` 和 ESLint 忽略规则，不改写文件或暂存区。它不运行构建、数据库测试或 Python/Jev 检查，后者由上述 CI 目录补检覆盖。需要先安装 Node/pnpm 依赖；暂存 Go 文件时还需 gofmt。
 
 `make test` 包含检查脚本的隔离 Git 仓库回归，验证部分暂存、含空格路径、格式及 ESLint 失败拦截、Go 格式、删除和目录选择，不操作当前仓库的暂存区或提交历史。CI 成功仅代表这些自动检查通过；合并保护中的必需状态检查需在仓库设置中另行启用。

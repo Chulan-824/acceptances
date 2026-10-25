@@ -148,6 +148,47 @@ def check(browser, stale, task, report):
             and browser.evaluate("window.inputs.length===0 && window.other===0")
         )
     report["loop_actions"] = loop["actions"]
+    browser.evaluate("moving.classList.remove('moving');decoration.classList.remove('moving')")
+    path = {"required": [{"kind": "click", "label": "Open synthetic details"}]}
+    forbidden = {"kind": "click", "label": "Unrelated animated control"}
+    path_task = {**task, "path": {**path, "forbidden": [forbidden]}}
+    path_report = {"actions": [], "decisions": []}
+    try:
+        with executor.deadline(5):
+            executor.run_loop(
+                browser,
+                lambda page, *_: {
+                    "choice": next(
+                        a["id"] for a in page["actions"] if a["label"] == forbidden["label"]
+                    )
+                },
+                stale,
+                path_task,
+                path_report,
+            )
+        checks["forbidden_path_sends_no_input"] = False
+    except executor.HandBack as error:
+        checks["forbidden_path_sends_no_input"] = (
+            str(error) == "path_action_forbidden_or_out_of_order"
+            and path_report["actions"][0]["outcome"] == "path_not_executed"
+            and browser.evaluate("window.inputs.length===0")
+        )
+    report["path_actions"] = path_report["actions"]
+    done = {"actions": [], "decisions": []}
+    with executor.deadline(5):
+        executor.run_loop(
+            browser,
+            lambda *_: {"choice": "DONE"},
+            stale,
+            {**task, "path": path, "expect": {"text": ["Disposable synthetic controls"]}},
+            done,
+        )
+    checks["correct_page_cannot_skip_required_path"] = (
+        done["outcome"] == "claimed_done"
+        and not done["verification"]["checks"]["path-required_complete"]
+        and len(done["decisions"]) == 3
+        and browser.evaluate("window.inputs.length===0")
+    )
     report["checks"] = checks
     if not all(checks.values()):
         raise AssertionError({name: value for name, value in checks.items() if not value})
@@ -156,6 +197,8 @@ def check(browser, stale, task, report):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--width", type=int, default=1120)
+    parser.add_argument("--height", type=int, default=780)
     args = parser.parse_args()
     os.environ.update(launch.project_environment(dict(os.environ)))
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
@@ -165,6 +208,7 @@ def main():
     executor.configure_harness(endpoint)
     os.environ["BU_CDP_WS" if endpoint.startswith(("ws:", "wss:")) else "BU_CDP_URL"] = endpoint
     report = {"outcome": "failed", "environment_class": "real-chrome-no-model"}
+    report["viewport"] = {"width": args.width, "height": args.height}
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -184,6 +228,13 @@ def main():
             try:
                 with executor.deadline(45):
                     Browser.__init__(browser, url)
+                    browser.call(
+                        "Emulation.setDeviceMetricsOverride",
+                        width=args.width,
+                        height=args.height,
+                        deviceScaleFactor=1,
+                        mobile=False,
+                    )
                     check(browser, StalePage, task, report)
                     shot = browser.call("Page.captureScreenshot", format="jpeg", quality=72)
                     data = base64.b64decode(shot["data"], validate=True)

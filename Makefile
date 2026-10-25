@@ -95,7 +95,7 @@ JEV_PYTHON := $(CURDIR)/tools/jev-browser/.venv/bin/python
 JEV_RUFF := $(CURDIR)/tools/jev-browser/.venv/bin/ruff
 FORMAT_PATHS += docs/agents/jev-browser.md tools/jev-browser/task.example.json
 JEV_LAUNCH := python3 tools/jev-browser/launch.py
-.PHONY: jev-setup jev-config jev-doctor jev-inspect jev-run jev-check jev-docker-build jev-docker-doctor jev-docker-inspect jev-docker-run
+.PHONY: jev-setup jev-config jev-doctor jev-inspect jev-run jev-check jev-regression jev-docker-build jev-docker-doctor jev-docker-inspect jev-docker-run
 
 jev-setup:
 	UV_CACHE_DIR="$(CURDIR)/.cache/uv" UV_PYTHON_INSTALL_DIR="$(CURDIR)/.cache/uv-python" uv sync --project tools/jev-browser --locked --python 3.12
@@ -132,3 +132,7 @@ jev-check:
 	"$(JEV_RUFF)" format --check tools/jev-browser
 	"$(JEV_RUFF)" check tools/jev-browser
 	"$(JEV_PYTHON)" -m unittest discover -s tools/jev-browser -p 'test_*.py' -v
+
+# Explicit real Chrome only; default is synthetic A/A without model calls.
+jev-regression:
+	PYTHONDONTWRITEBYTECODE=1 "$(JEV_PYTHON)" -B tools/jev-browser/check_regression.py $(JEV_REGRESSION_ARGS)

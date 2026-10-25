@@ -19,6 +19,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from chrome import chrome_endpoint
+from path_contract import validate_path, verify_path
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM = "1231850a0bf1a0c0341fe408ef1668dbbfdfac46"
@@ -94,6 +95,7 @@ def load_task(path):
             or any(not isinstance(x, str) or not x.strip() for x in expect["text"])
         ):
             raise ValueError(f"{name}.text 必须为非空文本数组")
+    validate_path(task, local_origin)
     return task
 
 
@@ -104,6 +106,20 @@ def verification(page, expect):
     for index, text in enumerate(expect.get("text", [])):
         checks[f"text-{index + 1}"] = text in page["text"]
     return {"checks": checks, "passed": bool(checks) and all(checks.values())}
+
+
+def task_verification(page, task, actions):
+    result = verification(page, task.get("expect", {}))
+    if "path" in task:
+        result["checks"].update(
+            {
+                "path-" + key: value
+                for key, value in verify_path(actions, task["path"])["checks"].items()
+            }
+        )
+        # A path alone cannot replace independent page assertions.
+        result["passed"] = result["passed"] and all(result["checks"].values())
+    return result
 
 
 def action_text(action, task):
@@ -363,10 +379,12 @@ def model_context(task, report, page):
     if report.get("completion_retries"):
         feedback["failed_checks"] = [
             key
-            for key, passed in verification(page, task.get("expect", {}))["checks"].items()
+            for key, passed in task_verification(page, task, report["actions"])["checks"].items()
             if not passed
         ]
     goal = task["goal"]
+    if "path" in task:
+        goal += "\nPath contract: " + json.dumps(task["path"], ensure_ascii=False)
     if feedback:
         goal += (
             "\nExecutor feedback: stale_not_executed means NO input was dispatched; "
@@ -416,6 +434,16 @@ def reveal_action(browser, action):
     )
 
 
+def guard_action_path(task, report, entry):
+    if "path" not in task:
+        return
+    proposed = verify_path([*report["actions"], {**entry, "outcome": "executed"}], task["path"])
+    if not proposed["checks"]["no_forbidden_actions"] or not proposed["checks"]["ordered"]:
+        report["actions"].append({**entry, "outcome": "path_not_executed"})
+        report["path_verification"] = proposed
+        raise HandBack("path_action_forbidden_or_out_of_order")
+
+
 def run_loop(browser, choose, stale_error, task, report):
     def observe():
         return observe_ready(browser, task, report)
@@ -451,10 +479,12 @@ def run_loop(browser, choose, stale_error, task, report):
             if not fresh:
                 page = observe()
                 continue
-            report["verification"] = verification(page, task.get("expect", {}))
+            report["verification"] = task_verification(page, task, report["actions"])
+            if "path" in task:
+                report["path_verification"] = verify_path(report["actions"], task["path"])
             if (
                 decision["choice"] == "DONE"
-                and report["verification"]["checks"]
+                and task.get("expect")
                 and not report["verification"]["passed"]
                 and report.get("completion_retries", 0) < 2
             ):
@@ -480,6 +510,7 @@ def run_loop(browser, choose, stale_error, task, report):
             "url": page["url"],
             "outcome": "dispatching",
         }
+        guard_action_path(task, report, entry)
         if retry:
             entry["retry_of"] = retry["index"]
         # A failed post-action observation cannot erase an already dispatched action.
@@ -502,19 +533,18 @@ def run_loop(browser, choose, stale_error, task, report):
                     "attempts": attempts,
                     "index": len(report["actions"]) - 1,
                 }
-                if len(report["actions"]) < task["max_steps"] and reveal_action(
-                    browser, replacement
-                ):
-                    report["actions"].append(
-                        {
-                            "action": "Reveal " + replacement["label"],
-                            "kind": "scroll",
-                            "url": page["url"],
-                            "outcome": "executed",
-                            "page_changed": True,
-                        }
-                    )
-                    page = observe()
+                if len(report["actions"]) < task["max_steps"]:
+                    reveal = {
+                        "action": "Reveal " + replacement["label"],
+                        "kind": "scroll",
+                        "url": page["url"],
+                        "outcome": "executed",
+                        "page_changed": True,
+                    }
+                    guard_action_path(task, report, reveal)
+                    if reveal_action(browser, replacement):
+                        report["actions"].append(reveal)
+                        page = observe()
             continue
         entry["outcome"] = "executed"
         next_page = observe()
