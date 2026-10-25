@@ -20,6 +20,7 @@ export interface PRDResource {
   kind: string;
   name?: string;
   filename?: string;
+  fetchedAt?: string;
   status: string;
   reason?: string;
   blockId?: string;
