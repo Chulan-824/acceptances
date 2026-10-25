@@ -38,6 +38,10 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 	if len(source.Content) > MaxBodyBytes || strings.TrimSpace(source.Content) == "" {
 		return Document{}, errors.New("invalid PRD structure")
 	}
+	references, err := parseReferences(result.Source.ReferenceMap)
+	if err != nil {
+		return Document{}, err
+	}
 	decoder := xml.NewDecoder(strings.NewReader("<acceptances-root>" + source.Content + "</acceptances-root>"))
 	var content bytes.Buffer
 	encoder := xml.NewEncoder(&content)
@@ -81,7 +85,7 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 				attributes[attr.Name.Local] = attr.Value
 			}
 			if reference := attributes["ref"]; reference != "" {
-				values, _, err := referenceValue(name, reference, result.Source.ReferenceMap)
+				values, _, err := referenceValue(name, reference, references)
 				if err != nil {
 					return Document{}, err
 				}
@@ -181,7 +185,21 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 
 // Reference aliases are scoped to their block-type group in the CLI response.
 // If a future format is ambiguous, reject it rather than selecting a map entry.
-func referenceValue(element, alias string, groups map[string]json.RawMessage) (map[string]any, string, error) {
+type referenceGroups map[string]map[string]map[string]any
+
+func parseReferences(rawGroups map[string]json.RawMessage) (referenceGroups, error) {
+	groups := make(referenceGroups, len(rawGroups))
+	for group, raw := range rawGroups {
+		var values map[string]map[string]any
+		if json.Unmarshal(raw, &values) != nil {
+			return nil, errors.New("invalid PRD reference group")
+		}
+		groups[group] = values
+	}
+	return groups, nil
+}
+
+func referenceValue(element, alias string, groups referenceGroups) (map[string]any, string, error) {
 	type match struct {
 		group string
 		value map[string]any
@@ -197,11 +215,7 @@ func referenceValue(element, alias string, groups map[string]json.RawMessage) (m
 		}
 		return name
 	}
-	for group, raw := range groups {
-		var values map[string]map[string]any
-		if json.Unmarshal(raw, &values) != nil {
-			return nil, "", errors.New("invalid PRD reference group")
-		}
+	for group, values := range groups {
 		if value, ok := values[alias]; ok {
 			item := match{group, value}
 			matches = append(matches, item)

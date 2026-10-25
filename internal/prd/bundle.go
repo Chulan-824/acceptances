@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -187,19 +186,15 @@ func sum(data []byte) string {
 
 func stableDocument(source SourceDocument) ([]byte, error) {
 	source.RevisionID = ""
+	references, err := parseReferences(source.ReferenceMap)
+	if err != nil {
+		return nil, err
+	}
 	stableMap := make(map[string]json.RawMessage)
-	for group, raw := range source.ReferenceMap {
-		var references map[string]json.RawMessage
-		if json.Unmarshal(raw, &references) != nil {
-			return nil, fmt.Errorf("invalid PRD reference group")
-		}
+	for group, groupReferences := range references {
 		values := make(map[string]json.RawMessage)
-		for _, attributes := range references {
-			var value any
-			if json.Unmarshal(attributes, &value) != nil {
-				return nil, errors.New("invalid PRD reference")
-			}
-			canonical, _ := json.Marshal(value)
+		for _, attributes := range groupReferences {
+			canonical, _ := json.Marshal(attributes)
 			stableRef := "ref-" + sum(append([]byte(group+"\x00"), canonical...))
 			values[stableRef] = canonical
 		}
@@ -220,7 +215,7 @@ func stableDocument(source SourceDocument) ([]byte, error) {
 				if attr.Name.Local != "ref" {
 					continue
 				}
-				value, group, err := referenceValue(element.Name.Local, attr.Value, source.ReferenceMap)
+				value, group, err := referenceValue(element.Name.Local, attr.Value, references)
 				if err != nil {
 					return nil, err
 				}
