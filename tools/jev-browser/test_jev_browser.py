@@ -10,12 +10,14 @@ from unittest.mock import patch
 from jev_browser import (
     HandBack,
     action_text,
+    browser_session,
     chrome_endpoint,
     configure_harness,
     deadline,
     execute,
     failure_reason,
     load_task,
+    measure,
     model_context,
     observe_ready,
     replacement_action,
@@ -31,12 +33,23 @@ def page(text="before"):
         "title": "fixture",
         "text": text,
         "fingerprint": text,
+        "marker": text,
+        "scroll": {"y": 0, "height": 1000},
+        "readiness": {"login": False, "busy": False},
         "actions": [{"id": "1", "label": "打开检查项", "kind": "click"}],
     }
 
 
 class Stale(Exception):
     pass
+
+
+def upstream_browser():
+    with patch.dict("os.environ", {}, clear=True):
+        configure_harness()
+        from jev_ultrafast import browser
+
+    return browser
 
 
 class FakeBrowser:
@@ -127,10 +140,211 @@ class JevBrowserTests(unittest.TestCase):
         self.assertEqual(report["timings"][-1]["stage"], "data_ready")
         self.assertEqual(browser.acted, 0)
 
+    def test_geometry_changes_do_not_reset_semantic_stability(self):
+        browser = FakeBrowser()
+        clock = [0.0]
+        samples = []
+
+        def observe(**_):
+            current = page()
+            current["fingerprint"] = str(clock[0])
+            samples.append(current)
+            return current
+
+        browser.observe = observe
+        with (
+            patch("jev_browser.time.monotonic", side_effect=lambda: clock[0]),
+            patch(
+                "jev_browser.time.sleep", side_effect=lambda s: clock.__setitem__(0, clock[0] + s)
+            ),
+        ):
+            report = {}
+            current = observe_ready(browser, self.task(), report)
+        self.assertGreaterEqual(clock[0], 0.15)
+        self.assertLess(clock[0], 0.21)
+        self.assertEqual(current, samples[-1])
+        self.assertEqual(report["performance"]["snapshot"]["count"], len(samples))
+
+    def test_semantic_scroll_and_loading_changes_restart_stability(self):
+        for key, value in (
+            ("marker", "new field value or control identity"),
+            ("scroll", {"y": 10, "height": 1100}),
+            ("readiness", {"login": False, "busy": True}),
+        ):
+            with self.subTest(key=key):
+                browser = FakeBrowser()
+                clock = [0.0]
+
+                def observe(**_):
+                    current = page()
+                    if 0.05 <= clock[0] < 0.15:
+                        current[key] = value
+                    return current
+
+                browser.observe = observe
+                with (
+                    patch("jev_browser.time.monotonic", side_effect=lambda: clock[0]),
+                    patch(
+                        "jev_browser.time.sleep",
+                        side_effect=lambda s: clock.__setitem__(0, clock[0] + s),
+                    ),
+                ):
+                    observe_ready(browser, self.task(), {})
+                self.assertGreaterEqual(clock[0], 0.3)
+
+    def test_snapshot_login_and_external_origin_stop_before_model(self):
+        for changes, reason in (
+            ({"readiness": {"login": True, "busy": False}}, "login_required"),
+            ({"url": "http://localhost:9999/"}, "navigation_left_task_origin"),
+        ):
+            with self.subTest(reason=reason):
+                browser = FakeBrowser()
+                browser.observe = lambda **_: {**page(), **changes}
+                with self.assertRaisesRegex(HandBack, reason):
+                    run_loop(
+                        browser,
+                        lambda *_: self.fail("must not call model"),
+                        Stale,
+                        self.task(),
+                        {"actions": [], "decisions": []},
+                    )
+                self.assertEqual(browser.acted, 0)
+
+    def test_observation_adapter_only_augments_snapshot_calls(self):
+        with patch.dict("os.environ", {}, clear=True):
+            configure_harness()
+            from jev_ultrafast.browser import MARKER, READ_STATE
+
+        from jev_ultrafast import browser as upstream
+
+        report = {}
+        response = {"result": {"value": {**page(), "url": "http://127.0.0.1:5173/"}}}
+        with patch.object(upstream, "cdp", return_value=response) as call:
+            original = upstream.cdp
+            with browser_session(report) as (observed, _):
+                state = upstream.browser_operation(
+                    {"operation": "observe", "session": "test", "screenshot": False}
+                )
+                self.assertIn("fingerprint", state)
+                expression = call.call_args.kwargs["expression"]
+                self.assertIn(READ_STATE, expression)
+                self.assertIn("page.readiness=", expression)
+                instance = observed.__new__(observed)
+                instance.session = "test"
+                instance.call("Runtime.evaluate", expression=MARKER, returnByValue=True)
+                self.assertEqual(call.call_args.kwargs["expression"], MARKER)
+                instance.call("Input.dispatchMouseEvent", type="mousePressed", x=1, y=2)
+                self.assertEqual(
+                    call.call_args.kwargs,
+                    {"session_id": "test", "type": "mousePressed", "x": 1, "y": 2},
+                )
+            self.assertIs(upstream.cdp, original)
+            with self.assertRaises(RuntimeError):
+                with browser_session(report):
+                    raise RuntimeError("interrupted")
+            self.assertIs(upstream.cdp, original)
+        self.assertEqual(report["performance"]["cdp.Runtime.evaluate"]["count"], 2)
+
+    def test_measurements_preserve_failures_and_elapsed_time(self):
+        report = {}
+        with patch("jev_browser.time.perf_counter", side_effect=[1, 1.25, 2, 2.5]):
+            with measure(report, "snapshot"):
+                pass
+            with self.assertRaisesRegex(RuntimeError, "interrupted"):
+                with measure(report, "snapshot"):
+                    raise RuntimeError("interrupted")
+        self.assertEqual(
+            report["performance"]["snapshot"], {"count": 2, "elapsed_seconds": 0.75, "failures": 1}
+        )
+
+    def test_target_geometry_precedes_every_targeted_input(self):
+        upstream = upstream_browser()
+
+        for kind in ("click", "fill", "select"):
+            with self.subTest(kind=kind), patch.object(upstream, "cdp") as protocol:
+                protocol.return_value = {"result": {"value": True}}
+                report = {}
+                with browser_session(report) as (Browser, _):
+                    browser = Browser.__new__(Browser)
+                    browser.session = "test"
+                    action = {"kind": kind, "node": 7}
+
+                    def act(instance, selected, current, text=None):
+                        self.assertIs(instance, browser)
+                        self.assertIs(selected, action)
+                        self.assertEqual(current, page())
+                        self.assertEqual(text, "explicit")
+                        self.assertEqual(protocol.call_count, 1)
+                        self.assertTrue(protocol.call_args.kwargs["awaitPromise"])
+                        self.assertTrue(protocol.call_args.kwargs["expression"].endswith("(7)"))
+                        return {"executed": "test"}
+
+                    with patch.object(upstream.Browser, "act", act):
+                        self.assertEqual(
+                            browser.act(action, page(), text="explicit"), {"executed": "test"}
+                        )
+                self.assertEqual(report["performance"]["target_geometry"]["failures"], 0)
+
+    def test_unconfirmed_geometry_never_delegates_input(self):
+        upstream = upstream_browser()
+
+        for response in (
+            {"result": {"value": False}},
+            {"result": {"value": 1}},
+            {},
+            {"exceptionDetails": {"text": "context destroyed"}},
+        ):
+            with (
+                self.subTest(response=response),
+                patch.object(upstream, "cdp", return_value=response),
+                patch.object(upstream.Browser, "act") as act,
+                browser_session({}) as (Browser, StalePage),
+            ):
+                browser = Browser.__new__(Browser)
+                browser.session = "test"
+                with self.assertRaises(StalePage):
+                    browser.act({"kind": "click", "node": 7}, page())
+                act.assert_not_called()
+
+    def test_geometry_preserves_deadline_and_rejects_non_integer_nodes(self):
+        upstream = upstream_browser()
+
+        with (
+            patch.object(upstream, "cdp", side_effect=lambda *_a, **_k: time.sleep(0.1)) as call,
+            patch.object(upstream.Browser, "act") as act,
+            browser_session({}) as (Browser, _),
+        ):
+            browser = Browser.__new__(Browser)
+            browser.session = "test"
+            for node in (True, "7", None):
+                with self.subTest(node=node), self.assertRaises(ValueError):
+                    browser.act({"kind": "click", "node": node}, page())
+            call.assert_not_called()
+            with self.assertRaisesRegex(HandBack, "navigation_timeout"):
+                with deadline(0.01, "navigation_timeout"):
+                    browser.act({"kind": "click", "node": 7}, page())
+            act.assert_not_called()
+
+    def test_wait_and_scroll_keep_original_action_path(self):
+        upstream = upstream_browser()
+
+        with (
+            patch.object(upstream, "cdp") as protocol,
+            patch.object(upstream.Browser, "act", return_value={"executed": "test"}) as act,
+            browser_session({}) as (Browser, _),
+        ):
+            browser = Browser.__new__(Browser)
+            for kind in ("wait", "scroll"):
+                action = {"kind": kind}
+                self.assertEqual(browser.act(action, page()), {"executed": "test"})
+                act.assert_called_with(action, page(), text=None)
+            protocol.assert_not_called()
+
     def test_login_and_data_timeouts_do_not_call_model_or_dispatch(self):
         for kind in ["login", "data_ready"]:
             browser = FakeBrowser()
             browser.evaluate = lambda _, k=kind: {"login": k == "login", "busy": k == "data_ready"}
+            browser.observe = lambda **_: {**page(), "readiness": {"login": False, "busy": True}}
             task = {**self.task(), "timeouts": {kind: 0.02}}
             report = {"actions": [], "decisions": []}
             with self.subTest(stage=kind), self.assertRaisesRegex(HandBack, kind + "_timeout"):

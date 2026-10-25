@@ -141,6 +141,24 @@ def deadline(seconds, reason="time_budget_exhausted"):
 
 
 @contextmanager
+def measure(report, name):
+    entry = report.setdefault("performance", {}).setdefault(
+        name, {"count": 0, "elapsed_seconds": 0, "failures": 0}
+    )
+    entry["count"] += 1
+    started = time.perf_counter()
+    try:
+        yield
+    except BaseException:
+        entry["failures"] += 1
+        raise
+    finally:
+        entry["elapsed_seconds"] = round(
+            entry["elapsed_seconds"] + time.perf_counter() - started, 6
+        )
+
+
+@contextmanager
 def stage(report, name, seconds):
     entry = {"stage": name, "limit_seconds": seconds, "outcome": "ready"}
     report.setdefault("timings", []).append(entry)
@@ -170,20 +188,96 @@ READINESS = r"""(() => {
 })()"""
 
 
+# Sample only the chosen target; unrelated layout animations must not block input.
+TARGET_GEOMETRY = r"""(node => new Promise(resolve => {
+ const element = window.__jevFast?.nodes.get(node);
+ let frame = 0, timer = 0, previous = null, stableSince = performance.now();
+ const finish = value => {
+   clearTimeout(timer); cancelAnimationFrame(frame); resolve(value);
+ };
+ const sample = () => {
+   if (!element?.isConnected || window.__jevFast?.nodes.get(node) !== element)
+     return finish(false);
+   const r = element.getBoundingClientRect(), rect = [r.x,r.y,r.width,r.height];
+   if (!r.width || !r.height) return finish(false);
+   const now = performance.now();
+   if (!previous || rect.some((value,index) => value !== previous[index])) stableSince = now;
+   previous = rect;
+   if (now - stableSince >= 150) return finish(true);
+   frame = requestAnimationFrame(sample);
+ };
+ timer = setTimeout(() => finish(false), 1000);
+ sample();
+}))"""
+
+
+@contextmanager
+def browser_session(report):
+    from jev_ultrafast import browser as upstream
+
+    original = upstream.cdp
+    combined = (
+        "(() => { const page=" + upstream.READ_STATE + ";"
+        "if (page) page.readiness=" + READINESS + "; return page; })()"
+    )
+
+    def call(method, **params):
+        # The pinned observer calls cdp directly; intercept only its exact snapshot expression.
+        if method == "Runtime.evaluate" and params.get("expression") == upstream.READ_STATE:
+            params["expression"] = combined
+        with measure(report, "cdp." + method):
+            return original(method, **params)
+
+    class Browser(upstream.Browser):
+        def act(self, action, page, text=None):
+            if action["kind"] in {"click", "fill", "select"}:
+                node = action.get("node")
+                if type(node) is not int:
+                    raise ValueError("Invalid observed node")
+                with measure(report, "target_geometry"):
+                    response = self.call(
+                        "Runtime.evaluate",
+                        expression=TARGET_GEOMETRY + "(" + str(node) + ")",
+                        awaitPromise=True,
+                        returnByValue=True,
+                    )
+                    if (
+                        response.get("exceptionDetails")
+                        or response.get("result", {}).get("value") is not True
+                    ):
+                        raise upstream.StalePage("Target geometry did not settle; no input sent.")
+            return super().act(action, page, text=text)
+
+    # shortcut: one synchronous task per process; replace this hook before adding concurrency.
+    upstream.cdp = call
+    try:
+        yield Browser, upstream.StalePage
+    finally:
+        upstream.cdp = original
+
+
 def observe_ready(browser, task, report, *, initial=False):
     limits = task.get("timeouts", {})
+
+    def observe():
+        with measure(report, "snapshot"):
+            return browser.observe(screenshot=False)
 
     with stage(report, "login", limits.get("login", 15)):
         status = browser.evaluate(READINESS)
         while status["login"]:
-            time.sleep(0.1)
+            with measure(report, "login_wait"):
+                time.sleep(0.1)
             status = browser.evaluate(READINESS)
     with stage(report, "data_ready", limits.get("data_ready", 30)):
-        current = browser.observe(screenshot=False)
+        current = observe()
         stable_since = time.monotonic()
         while True:
             if local_origin(current["url"]) != local_origin(task["url"]):
                 raise HandBack("navigation_left_task_origin")
+            status = current["readiness"]
+            if status["login"]:
+                raise HandBack("login_required")
             ready = (
                 not initial
                 or not task.get("ready")
@@ -191,14 +285,12 @@ def observe_ready(browser, task, report, *, initial=False):
             )
             if not status["busy"] and ready and time.monotonic() - stable_since >= 0.15:
                 return current
-            time.sleep(0.05)
-            following = browser.observe(screenshot=False)
-            if following["fingerprint"] != current["fingerprint"]:
+            with measure(report, "poll_wait"):
+                time.sleep(0.05)
+            following = observe()
+            if any(following[key] != current[key] for key in ("marker", "scroll", "readiness")):
                 stable_since = time.monotonic()
             current = following
-            status = browser.evaluate(READINESS)
-            if status["login"]:
-                raise HandBack("login_required")
 
 
 def configure_harness(endpoint="default"):
@@ -341,7 +433,8 @@ def run_loop(browser, choose, stale_error, task, report):
         if action is None:
             retry = None
             goal, history = model_context(task, report, page)
-            decision = choose(page, goal, history)
+            with measure(report, "model"):
+                decision = choose(page, goal, history)
         else:
             decision = {"choice": action["id"]}
         # Do not persist upstream request bodies or environment variables.
@@ -353,7 +446,9 @@ def run_loop(browser, choose, stale_error, task, report):
                 }
             )
         if decision["choice"] in {"DONE", "BLOCKED"}:
-            if not browser.fresh(page):
+            with measure(report, "completion_freshness"):
+                fresh = browser.fresh(page)
+            if not fresh:
                 page = observe()
                 continue
             report["verification"] = verification(page, task.get("expect", {}))
@@ -391,7 +486,8 @@ def run_loop(browser, choose, stale_error, task, report):
         report["actions"].append(entry)
         try:
             with stage(report, "navigation", task.get("timeouts", {}).get("navigation", 30)):
-                browser.act(action, page, text=text)
+                with measure(report, "action"):
+                    browser.act(action, page, text=text)
         except stale_error:
             entry["outcome"] = "stale_not_executed"
             page = observe()
@@ -435,78 +531,85 @@ def run_loop(browser, choose, stale_error, task, report):
 def execute(task, output, *, observe_only=False, keep_open=False):
     if not observe_only and not os.environ.get("TYPESAFE_API_KEY", "").strip():
         raise ValueError("请在执行进程环境中设置 TYPESAFE_API_KEY；不要在聊天中发送 Key")
-    endpoint = chrome_endpoint(resolve_docker_host=True)
-    configure_harness(endpoint)
-    os.environ["BU_CDP_WS" if urlsplit(endpoint).scheme in {"ws", "wss"} else "BU_CDP_URL"] = (
-        endpoint
-    )
-    os.environ.setdefault("TYPESAFE_MODEL", MODEL)
-    from jev_ultrafast.browser import Browser, StalePage
-    from jev_ultrafast.model import choose
+    report = {}
+    with measure(report, "setup"):
+        endpoint = chrome_endpoint(resolve_docker_host=True)
+        configure_harness(endpoint)
+        os.environ["BU_CDP_WS" if urlsplit(endpoint).scheme in {"ws", "wss"} else "BU_CDP_URL"] = (
+            endpoint
+        )
+        os.environ.setdefault("TYPESAFE_MODEL", MODEL)
+        from jev_ultrafast.model import choose
 
-    output.mkdir(parents=True, exist_ok=False)
-    report = {
-        "started_at": datetime.now(UTC).isoformat(),
-        "upstream_commit": UPSTREAM,
-        "dependencies": dependencies(),
-        "model": os.environ["TYPESAFE_MODEL"],
-        "environment_class": "real-chrome-no-model" if observe_only else "real-chrome-official-jev",
-        "outcome": "failed",
-        "actions": [],
-        "decisions": [],
-        "limitations": [
-            "URL/文本断言仅覆盖任务明示范围，不代表完整业务验收或人工接受。",
-            "写操作标签检查是启发式辅助；只能在获授权的数据上执行任务。",
-            "本地证据可能含可见页面内容和任务输入；不要用于含凭据的页面。",
-        ],
-    }
-    browser = Browser.__new__(Browser)
-    browser.target = None
-    started = time.monotonic()
-    try:
-        with deadline(task["max_seconds"]):
-            # Retain the object so constructor failure can still clean up our own target.
-            with stage(report, "navigation", task.get("timeouts", {}).get("navigation", 30)):
-                Browser.__init__(browser, task["url"])
-            report["target_id"] = browser.target
-            if observe_only:
-                page = observe_ready(browser, task, report, initial=True)
-                report["page"] = {key: page[key] for key in ("url", "title", "text", "actions")}
-                report["outcome"] = "observed"
-                report["environment_class"] = "real-chrome-no-model"
-            else:
-                run_loop(browser, choose, StalePage, task, report)
-    except HandBack as error:
-        report.update(outcome="blocked", reason=str(error))
-    except KeyboardInterrupt:
-        report.update(outcome="interrupted", reason="user_interrupted")
-    except Exception as error:
-        # Exception messages from libraries can contain request headers or task contents.
-        report.update(outcome="failed", reason=failure_reason(error))
-    finally:
-        if browser.target:
-            try:
-                with deadline(8):
-                    shot = browser.call("Page.captureScreenshot", format="jpeg", quality=72)
-                    data = base64.b64decode(shot["data"], validate=True)
-                    if not data.startswith(b"\xff\xd8\xff") or not data.endswith(b"\xff\xd9"):
-                        raise ValueError("Chrome screenshot is not JPEG")
-                    (output / "final.jpg").write_bytes(data)
-            except Exception:
-                report["screenshot_unavailable"] = True
-            if not keep_open:
+    with browser_session(report) as (Browser, StalePage):
+        output.mkdir(parents=True, exist_ok=False)
+        report.update(
+            {
+                "started_at": datetime.now(UTC).isoformat(),
+                "upstream_commit": UPSTREAM,
+                "dependencies": dependencies(),
+                "model": os.environ["TYPESAFE_MODEL"],
+                "environment_class": "real-chrome-no-model"
+                if observe_only
+                else "real-chrome-official-jev",
+                "outcome": "failed",
+                "actions": [],
+                "decisions": [],
+                "limitations": [
+                    "URL/文本断言仅覆盖任务明示范围，不代表完整业务验收或人工接受。",
+                    "写操作标签检查是启发式辅助；只能在获授权的数据上执行任务。",
+                    "本地证据可能含可见页面内容和任务输入；不要用于含凭据的页面。",
+                ],
+            }
+        )
+        browser = Browser.__new__(Browser)
+        browser.target = None
+        started = time.monotonic()
+        try:
+            with deadline(task["max_seconds"]):
+                # Retain the object so constructor failure can still clean up our own target.
+                with stage(report, "navigation", task.get("timeouts", {}).get("navigation", 30)):
+                    with measure(report, "browser_init"):
+                        Browser.__init__(browser, task["url"])
+                report["target_id"] = browser.target
+                if observe_only:
+                    page = observe_ready(browser, task, report, initial=True)
+                    report["page"] = {key: page[key] for key in ("url", "title", "text", "actions")}
+                    report["outcome"] = "observed"
+                    report["environment_class"] = "real-chrome-no-model"
+                else:
+                    run_loop(browser, choose, StalePage, task, report)
+        except HandBack as error:
+            report.update(outcome="blocked", reason=str(error))
+        except KeyboardInterrupt:
+            report.update(outcome="interrupted", reason="user_interrupted")
+        except Exception as error:
+            # Exception messages from libraries can contain request headers or task contents.
+            report.update(outcome="failed", reason=failure_reason(error))
+        finally:
+            if browser.target:
                 try:
-                    with deadline(8):
-                        browser.close()
+                    with deadline(8), measure(report, "screenshot"):
+                        shot = browser.call("Page.captureScreenshot", format="jpeg", quality=72)
+                        data = base64.b64decode(shot["data"], validate=True)
+                        if not data.startswith(b"\xff\xd8\xff") or not data.endswith(b"\xff\xd9"):
+                            raise ValueError("Chrome screenshot is not JPEG")
+                        (output / "final.jpg").write_bytes(data)
                 except Exception:
-                    report["cleanup_failed"] = True
-                    report["outcome"] = "failed"
-        report["kept_open"] = bool(keep_open and browser.target)
-        report["elapsed_seconds"] = round(time.monotonic() - started, 3)
-        report["ended_at"] = datetime.now(UTC).isoformat()
-        (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
-    emit({"outcome": report["outcome"], "reason": report.get("reason"), "output": str(output)})
-    return 0 if report["outcome"] in {"verified", "observed"} else 2
+                    report["screenshot_unavailable"] = True
+                if not keep_open:
+                    try:
+                        with deadline(8), measure(report, "cleanup"):
+                            browser.close()
+                    except Exception:
+                        report["cleanup_failed"] = True
+                        report["outcome"] = "failed"
+            report["kept_open"] = bool(keep_open and browser.target)
+            report["elapsed_seconds"] = round(time.monotonic() - started, 3)
+            report["ended_at"] = datetime.now(UTC).isoformat()
+            (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
+        emit({"outcome": report["outcome"], "reason": report.get("reason"), "output": str(output)})
+        return 0 if report["outcome"] in {"verified", "observed"} else 2
 
 
 def main():

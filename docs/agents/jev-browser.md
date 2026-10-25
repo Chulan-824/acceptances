@@ -97,7 +97,9 @@ make jev-docker-run TASK=tools/jev-browser/task.example.json
 
 `ready` 使用与 `expect` 相同的 URL/文本结构，表示入口业务数据就绪，和最终结果断言分开。业务列表回归应填写能证明实际数据已返回的文本，例如已知行名或分页总数，不能只用页面标题。入口持续空壳或加载时，在数据时限内结束为 `data_ready_timeout`，不因文字暂时稳定而开始模型决策。未配置 `ready` 的旧任务继续兼容，只判断加载状态及指纹稳定，不能据此证明业务数据已经就绪。
 
-发现可见密码框或 login/signin 路由时等待已有人工登录，超过时限记录 `login_timeout`；不读取密码值或猜测凭据。后续观察如重新跳回登录页则交回 `login_required`。数据阶段每 50 毫秒检查 DOM 加载、可见的 aria-busy/Ant Design 加载指示及指纹连续稳定 150 毫秒；持续变动也受数据时限约束。这不保证未显式声明的所有异步请求结束。连续三次非等待动作没有页面变化时停止。
+发现可见密码框或 login/signin 路由时等待已有人工登录，超过时限记录 `login_timeout`；不读取密码值或猜测凭据。后续观察如重新跳回登录页则交回 `login_required`。保留登录前的单独只读探测；数据阶段每 50 毫秒在同一次快照中读取页面、登录状态和可见的 aria-busy/Ant Design 加载指示，要求语义状态连续稳定 150 毫秒。稳定判断使用上游 `marker`，同时比较滚动位置、页面高度和登录/加载状态；文字、控件身份、值、选中状态及 URL 等变化会重新计时，单纯坐标动画不会。原始 `fingerprint` 仍用于动作历史和无进展判断。持续变动仍受数据及总时限约束。这不保证未显式声明的所有异步请求结束。连续三次非等待动作没有页面变化时停止。
+
+`click`、`fill`、`select` 在发送输入前，另用一次只读 CDP 请求按浏览器动画帧采样选中节点的位置和尺寸，要求连续 150 毫秒完全不变。单次最多等待 1 秒；节点断开、被替换、无尺寸或等待结束仍不稳定时，按 `StalePage` 处理，记录 `stale_not_executed`，沿用最多三次的动作重试及导航、总时间预算。无关控件或装饰动画不阻塞该目标。几何检查通过后，仍完整调用上游 `act`，重新检查新鲜度、节点状态、实时坐标与遮挡，再发送原有输入命令；等待期间改变的标签、禁用或只读状态仍会被拦截。`wait` 和 `scroll` 保持原路径。该检查恢复目标的稳定门槛，不保证页面在最后检查后永远不再移动。
 
 过期动作只有明确确认输入尚未发出时才重试：重新观察同一 URL，并按动作类型、完整标签、角色与原值唯一匹配新控件，不复用旧节点编号或坐标。同一动作最多尝试三次，仍过期则以 `stale_retry_exhausted` 交回。目标被遮挡时可先滚动露出，再重新观察；滚动也单独计入动作预算。控件缺失、匹配不唯一、原值或 URL 已变化时交由模型基于新页面重新决策；执行结果不明的异常停止，不自动重放。
 
@@ -106,6 +108,10 @@ make jev-docker-run TASK=tools/jev-browser/task.example.json
 ## 结果与排查
 
 证据默认保存在忽略目录 `artifacts/jev-browser/<时间>-<进程号>/`，可通过 `JEV_EVIDENCE_DIR` 更改。Docker 中的 `/evidence` 映射回同一宿主机目录。`result.json` 记录依赖版本、上游提交、模型、每次决策耗时、动作、页面观察、断言和结果；`observations` 保留各循环的 URL、标题和可见文本，`retry_of` 指向前一次未执行尝试，成功捕获时另有质量 72 的 JPEG `final.jpg`，并核对 JPEG 文件标记。`timings` 逐次记录导航、登录和数据就绪的时限、实际秒数与完成/中断状态；`navigation_timeout`、`login_timeout`、`data_ready_timeout` 区分等待位置，`time_budget_exhausted` 表示总时限。报告可能包含页面内容和任务输入，不要提交含敏感内容的证据。
+
+`performance` 按类别累计 `count`、`elapsed_seconds` 和 `failures`，覆盖 `setup`、`browser_init`、`snapshot`、`login_wait`、`poll_wait`、`model`、`action`、`target_geometry`、`completion_freshness`、`screenshot`、`cleanup` 及各 `cdp.<方法名>`。`target_geometry` 记录输入前的目标稳定检查，包含等待及失败。`snapshot.count` 是完整快照采样次数，`cdp.*.count` 是实际浏览器协议调用次数，包括初始化、快照、上游动作检查和清理；失败和中断也计入。统计不保存协议参数、模型请求体或凭据。阶段和 CDP 计时存在包含关系，不能直接相加；快照耗时还包含上游动作后的等待。`elapsed_seconds` 保持原有执行区间，包含浏览器初始化至最终截图和标签清理，配置与依赖准备单列为 `setup`；完整命令启动至退出的耗时需在外层另行测量。
+
+适配器仅在单任务同步执行期间拦截固定上游模块的 CDP 调用，精确匹配原快照表达式后补充状态，结束或异常时恢复。项目 Browser 子类只在目标输入前增加几何稳定检查，模型决策、`fresh`、上游目标检查及输入命令保持原实现。当前入口不支持在同一进程并发执行多个任务。
 
 | 结果                     | 含义                                                    | 退出码 |
 | ------------------------ | ------------------------------------------------------- | ------ |
@@ -123,5 +129,11 @@ make jev-docker-run TASK=tools/jev-browser/task.example.json
 ## 维护与来源
 
 `make jev-check` 只运行 Ruff 格式/静态检查和离线行为测试，不连接浏览器、模型或业务服务。修改 Python 工具后先运行 `tools/jev-browser/.venv/bin/ruff format tools/jev-browser`。
+
+需要复核移动控件的实际输入时，显式运行下列独立回归。脚本复用项目启动器加载配置，仅打开临时 localhost 合成页，不调用模型或访问日常报告；最终关闭自建标签及 HTTP 服务，输出 JSON 检查结果和 JPEG。覆盖持续移动的点击/填入/选择不发送输入、停止后正确点击、无关动画不阻塞，以及等待期间标签、禁用、只读、遮挡或节点替换仍拦截，并验证重试次数上限。该脚本不纳入 `make jev-check`。
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 tools/jev-browser/.venv/bin/python -B tools/jev-browser/check_target_geometry.py
+```
 
 上游固定为 [`browser-use/jev-ultrafast` 提交 1231850](https://github.com/browser-use/jev-ultrafast/tree/1231850a0bf1a0c0341fe408ef1668dbbfdfac46)，复用其 `Browser`、`StalePage` 和 `choose`，项目入口补充预算、明确字段值、证据与独立断言。官方协议与模型见 [System One API](https://docs.typesafe.ai/api/system-one)、[模型文档](https://docs.typesafe.ai/models)。升级时重新核对 API、依赖的环境文件加载行为以及本机 Chrome 连接方式。
