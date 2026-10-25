@@ -31,7 +31,7 @@ VPS 使用 HTTPS 反向代理，设置 `ACCEPTANCES_PUBLIC_ORIGIN=https://你的
 
 在已有 Campaign 中填写 Docx 或 Wiki 链接，由成员电脑上的连接器自动读取并回传，预览后确认导入。每个人使用自己的 Lark 授权，平台不保存 Lark token，也不主动连接成员电脑。
 
-成员电脑先安装并以个人账号授权 Lark CLI。按下方说明安装新版 Acceptances CLI，登录与网页相同的平台账号，然后在任意目录运行：
+成员电脑先安装并以个人账号授权 Lark CLI；当前适配版本为 `1.0.98`，其他版本会明确拒绝启动，升级需先验证命令输出合同。按下方说明安装新版 Acceptances CLI，登录与网页相同的平台账号，然后在任意目录运行：
 
 ```sh
 acceptances lark connect --url https://你的平台域名

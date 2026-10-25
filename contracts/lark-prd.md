@@ -48,6 +48,8 @@ result 为 multipart/form-data，总请求不超过 128 MiB：
 
 manifest 至少包含 schemaVersion、documentId、realm、revisionId、title、fetchedAt、normalizerVersion、completeness、warnings、files 和 resources。revisionId 使用字符串，避免整数精度变化。正文结构、Markdown、来源和 manifest 必须属于同一文档及修订。SourceDocument 是剔除评论和临时 URL 后的结构副本，不是未经筛选的 API 响应。
 
+已保存资源还包含各自的 fetchedAt（RFC3339 时间）。正文和资源无法原子读取；资源下载后再次检查文档修订号，变化则重读，仍不稳定时失败。读取时间用于展示来源，不参与正文或资源的语义摘要。
+
 首期支持 HTTPS Docx，以及实际类型为 Docx 的 Wiki。去掉 query 和 fragment 并显式读取全文，使用固定 profile、user 身份和 zh-CN 语言。Markdown 用于阅读，XML 结构用于保留原始内容关系。旧 Doc、独立 Sheet/Base、Office/PDF 和应用页面不接受。
 
 正文内静态表格和可下载图片/画板保留；附件正文、内嵌 Sheet/Base、同步引用及外链不递归读取。遗漏、下载失败和排版降级必须列为缺口，partial 候选需要发起人明确确认，不能把正文失败伪装成 partial。
