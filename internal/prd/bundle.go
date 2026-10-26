@@ -1,0 +1,258 @@
+package prd
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"encoding/xml"
+	"errors"
+	"io"
+	"net/http"
+	"slices"
+	"strings"
+	"time"
+	"unicode/utf8"
+)
+
+func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) {
+	if manifest.SchemaVersion != ProtocolVersion || manifest.NormalizerVersion != NormalizerVersion ||
+		!documentToken.MatchString(manifest.DocumentID) || manifest.Realm != "feishu" && manifest.Realm != "lark" ||
+		!validRevision(manifest.RevisionID) || strings.TrimSpace(manifest.Title) == "" || len(manifest.Title) > 4096 ||
+		manifest.Completeness != "complete" && manifest.Completeness != "partial" {
+		return Bundle{}, errors.New("invalid PRD manifest")
+	}
+	if _, err := time.Parse(time.RFC3339Nano, manifest.FetchedAt); err != nil {
+		return Bundle{}, errors.New("invalid PRD read time")
+	}
+	rawManifest, err := json.Marshal(manifest)
+	if err != nil || len(rawManifest) > MaxManifestBytes || len(manifest.Files) < 2 || len(manifest.Files) > MaxResources+2 || len(manifest.Resources) > MaxResources || len(manifest.Files) != len(files) {
+		return Bundle{}, errors.New("PRD bundle exceeds its limits")
+	}
+	total, names := len(rawManifest), make(map[string]bool)
+	for _, file := range manifest.Files {
+		data, exists := files[file.Name]
+		if !exists || !validFilename(file.Name) || names[file.Name] || int64(len(data)) != file.Size || file.SHA256 != sum(data) {
+			return Bundle{}, errors.New("PRD files do not match the manifest")
+		}
+		names[file.Name] = true
+		total += len(data)
+		if total > MaxUploadBytes {
+			return Bundle{}, errors.New("PRD upload exceeds its limit")
+		}
+		switch file.Role {
+		case "source":
+			if file.Name != "source.json" || file.ContentType != "application/json" || len(data) > MaxBodyBytes {
+				return Bundle{}, errors.New("invalid PRD source file")
+			}
+		case "markdown":
+			if file.Name != "document.md" || file.ContentType != "text/markdown" || len(data) > MaxBodyBytes || !utf8.Valid(data) {
+				return Bundle{}, errors.New("invalid PRD reading view")
+			}
+		case "image", "whiteboard":
+			if len(data) == 0 || len(data) > MaxResourceBytes || !slices.Contains([]string{"image/png", "image/jpeg", "image/gif", "image/webp"}, file.ContentType) || http.DetectContentType(data) != file.ContentType {
+				return Bundle{}, errors.New("invalid PRD image")
+			}
+			extension := strings.ToLower(file.Name[strings.LastIndex(file.Name, ".")+1:])
+			if !slices.Contains(map[string][]string{"image/png": {"png"}, "image/jpeg": {"jpg", "jpeg"}, "image/gif": {"gif"}, "image/webp": {"webp"}}[file.ContentType], extension) {
+				return Bundle{}, errors.New("PRD image extension does not match its bytes")
+			}
+		case "html":
+			if len(data) == 0 || len(data) > MaxResourceBytes || !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 || file.ContentType != "text/html" || !strings.HasSuffix(file.Name, ".html") {
+				return Bundle{}, errors.New("invalid PRD HTML attachment")
+			}
+		case "sheet":
+			if _, err := ParseSheet(data); err != nil || file.ContentType != "application/json" || !strings.HasSuffix(file.Name, ".json") {
+				return Bundle{}, errors.New("invalid PRD sheet file")
+			}
+		default:
+			return Bundle{}, errors.New("unsupported PRD file role")
+		}
+	}
+	if !names["source.json"] || !names["document.md"] {
+		return Bundle{}, errors.New("PRD structure and reading view are required")
+	}
+	var source SourceDocument
+	decoder := json.NewDecoder(bytes.NewReader(files["source.json"]))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&source); err != nil || source.DocumentID != manifest.DocumentID || source.RevisionID != manifest.RevisionID {
+		return Bundle{}, errors.New("PRD source version does not match")
+	}
+	if decoder.Decode(new(any)) != io.EOF {
+		return Bundle{}, errors.New("invalid PRD source JSON")
+	}
+	doc, err := SanitizeDocument(source)
+	if err != nil || doc.Excluded {
+		return Bundle{}, errors.New("PRD source contains excluded or invalid data")
+	}
+	if doc.Title == "" || doc.Title != manifest.Title {
+		return Bundle{}, errors.New("PRD title does not match its source")
+	}
+	if len(doc.Resources) != len(manifest.Resources) {
+		return Bundle{}, errors.New("PRD resource declarations are incomplete")
+	}
+	for _, expected := range doc.Warnings {
+		if !slices.ContainsFunc(manifest.Warnings, func(w Warning) bool { return w.Code == expected.Code && w.BlockID == expected.BlockID }) {
+			return Bundle{}, errors.New("PRD structure warning is missing")
+		}
+	}
+	partial, references, usedFiles := len(manifest.Warnings) > 0, make(map[string]bool), make(map[string]bool)
+	sheetRevisions := make(map[string]string)
+	for _, resource := range manifest.Resources {
+		expectedIndex := slices.IndexFunc(doc.Resources, func(r Resource) bool { return r.Reference == resource.Reference })
+		if expectedIndex < 0 || references[resource.Reference] {
+			return Bundle{}, errors.New("unknown or duplicate PRD resource")
+		}
+		references[resource.Reference] = true
+		expected := doc.Resources[expectedIndex]
+		if expected.ResourceID != resource.ResourceID || expected.SheetID != resource.SheetID || expected.Kind != resource.Kind || expected.BlockID != resource.BlockID {
+			return Bundle{}, errors.New("PRD resource does not match its source")
+		}
+		switch resource.Status {
+		case "saved":
+			if _, err := time.Parse(time.RFC3339Nano, resource.FetchedAt); err != nil {
+				return Bundle{}, errors.New("invalid PRD resource read time")
+			}
+			index := slices.IndexFunc(manifest.Files, func(f File) bool { return f.Name == resource.Filename })
+			if expected.Status == "unsupported" || expected.ResourceID == "" || index < 0 || manifest.Files[index].Role != resource.Kind {
+				return Bundle{}, errors.New("invalid saved PRD resource")
+			}
+			usedFiles[resource.Filename] = true
+			if resource.Kind == "sheet" {
+				sheet, err := ParseSheet(files[resource.Filename])
+				if err != nil || sheet.WorkbookID != resource.ResourceID || sheet.SheetID != resource.SheetID || sheet.RevisionID != resource.RevisionID || sheet.Title != resource.Name {
+					return Bundle{}, errors.New("PRD sheet identity does not match")
+				}
+				if previous := sheetRevisions[sheet.WorkbookID]; previous != "" && previous != sheet.RevisionID {
+					return Bundle{}, errors.New("PRD workbook revisions do not match")
+				}
+				sheetRevisions[sheet.WorkbookID] = sheet.RevisionID
+			}
+		case "missing", "unsupported":
+			partial = true
+			if resource.Filename != "" || resource.Reason == "" || expected.Status == "unsupported" && resource.Status != "unsupported" {
+				return Bundle{}, errors.New("invalid missing PRD resource")
+			}
+		default:
+			return Bundle{}, errors.New("invalid PRD resource status")
+		}
+	}
+	for _, file := range manifest.Files {
+		if file.Role != "source" && file.Role != "markdown" && !usedFiles[file.Name] {
+			return Bundle{}, errors.New("unreferenced PRD resource file")
+		}
+	}
+	if partial != (manifest.Completeness == "partial") {
+		return Bundle{}, errors.New("PRD completeness does not match its content")
+	}
+	if manifest.Warnings == nil {
+		manifest.Warnings = []Warning{}
+	}
+	if manifest.Resources == nil {
+		manifest.Resources = []Resource{}
+	}
+	stableSource, err := stableDocument(doc.Source)
+	if err != nil {
+		return Bundle{}, err
+	}
+	// Names and reference aliases are transport details. Only resource identity,
+	// availability and the bytes actually retained participate in deduplication.
+	resources := make([]string, 0, len(manifest.Resources))
+	for _, resource := range manifest.Resources {
+		value := resource
+		value.Reference, value.Filename, value.FetchedAt = "", "", ""
+		var fileHash string
+		for _, file := range manifest.Files {
+			if file.Name == resource.Filename {
+				fileHash = file.SHA256
+			}
+		}
+		raw, _ := json.Marshal(struct {
+			Resource Resource
+			SHA256   string
+		}{value, fileHash})
+		resources = append(resources, string(raw))
+	}
+	slices.Sort(resources)
+	resourceJSON, _ := json.Marshal(resources)
+	return Bundle{Manifest: manifest, Files: files, SourceHash: sum(stableSource), ResourceHash: sum(resourceJSON)}, nil
+}
+
+func DescribeFile(name, role, contentType string, data []byte) File {
+	return File{Name: name, Role: role, ContentType: contentType, Size: int64(len(data)), SHA256: sum(data)}
+}
+
+func validFilename(name string) bool {
+	return name != "" && name != "." && name != ".." && len(name) <= 200 && !strings.ContainsAny(name, "/\\\x00\r\n") && !strings.ContainsAny(name, ":")
+}
+
+func validRevision(revision string) bool {
+	if revision == "" || len(revision) > 40 {
+		return false
+	}
+	for _, r := range revision {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return strings.TrimLeft(revision, "0") != ""
+}
+
+func sum(data []byte) string {
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])
+}
+
+func stableDocument(source SourceDocument) ([]byte, error) {
+	source.RevisionID = ""
+	references, err := parseReferences(source.ReferenceMap)
+	if err != nil {
+		return nil, err
+	}
+	stableMap := make(map[string]json.RawMessage)
+	for group, groupReferences := range references {
+		values := make(map[string]json.RawMessage)
+		for _, attributes := range groupReferences {
+			canonical, _ := json.Marshal(attributes)
+			stableRef := "ref-" + sum(append([]byte(group+"\x00"), canonical...))
+			values[stableRef] = canonical
+		}
+		stableMap[group], _ = json.Marshal(values)
+	}
+	var content bytes.Buffer
+	decoder, encoder := xml.NewDecoder(strings.NewReader(source.Content)), xml.NewEncoder(&content)
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.New("invalid PRD XML")
+		}
+		if element, ok := token.(xml.StartElement); ok {
+			for index, attr := range element.Attr {
+				if attr.Name.Local != "ref" {
+					continue
+				}
+				value, group, err := referenceValue(element.Name.Local, attr.Value, references)
+				if err != nil {
+					return nil, err
+				}
+				if group != "" {
+					canonical, _ := json.Marshal(value)
+					element.Attr[index].Value = "ref-" + sum(append([]byte(group+"\x00"), canonical...))
+				}
+			}
+			token = element
+		}
+		if err := encoder.EncodeToken(token); err != nil {
+			return nil, err
+		}
+	}
+	if err := encoder.Flush(); err != nil {
+		return nil, err
+	}
+	source.Content = content.String()
+	source.ReferenceMap = stableMap
+	return json.Marshal(source)
+}
