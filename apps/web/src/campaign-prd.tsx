@@ -2,7 +2,10 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { PRDImport, PRDManifest } from "@acceptances/api-client";
 import { request } from "./client";
 import { useCurrentUser } from "./auth";
-import { createPRDController } from "./campaign-prd-controller";
+import {
+  createPRDController,
+  prdErrorMessage,
+} from "./campaign-prd-controller";
 import { formatDateTime } from "./lib/date";
 import { FilePreview } from "./file-preview";
 import { FrameHeader, FramePanel } from "./components/reui/frame";
@@ -45,7 +48,7 @@ function taskLabel(task: PRDImport) {
   if (task.status === "fetching" && task.phase === "uploading")
     return "正在回传内容";
   if (task.status === "fetching" && task.phase === "resources")
-    return "正在读取图片";
+    return "正在读取图片与嵌入资源";
   return labels[task.status] || "正在查询导入状态";
 }
 function browserStorage() {
@@ -420,6 +423,26 @@ function PRDContent({
             : "支持范围内完整"}
         </Badge>
       </div>
+      {manifest.resources.some((item) => item.kind === "sheet") && (
+        <p className="muted text-sm">
+          Sheet
+          读取单元格显示值，包含隐藏行列；样式、合并、公式定义及图形对象不在本次文本读取范围。
+        </p>
+      )}
+      {manifest.resources
+        .filter(
+          (item) =>
+            item.kind === "sheet" && item.status === "saved" && item.filename,
+        )
+        .map((item) => (
+          <FilePreview
+            key={item.reference}
+            name={item.filename!}
+            url={fileURL(item.filename!)}
+            label={`查看 Sheet 原值：${item.name || item.sheetId}`}
+            description={`独立修订 ${item.revisionId}，按物理行列归档的单元格显示值。`}
+          />
+        ))}
       <p className="muted">
         修订 {manifest.revisionId} · 读取于 {formatDateTime(manifest.fetchedAt)}{" "}
         · 已保存 {manifest.resources.length - missing.length}/
@@ -448,6 +471,34 @@ function PRDContent({
           打开 Lark 原文
         </a>
       </div>
+      {manifest.resources.some(
+        (item) => item.status === "saved" && item.kind === "html",
+      ) && (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          aria-label="HTML 附件"
+        >
+          {manifest.resources
+            .filter((item) => item.status === "saved" && item.kind === "html")
+            .map((item) => (
+              <div key={item.reference} className="flex items-center gap-2">
+                <FilePreview
+                  name={item.name || item.filename!}
+                  url={fileURL(item.filename!)}
+                  htmlPreviewURL={`${fileURL(item.filename!)}?preview=1`}
+                  label={`预览 ${item.name || "HTML 附件"}`}
+                  description="静态预览，已禁用脚本、表单、链接跳转和外部资源。原文件保留，可单独下载。"
+                />
+                <a
+                  className="px-2 text-sm underline"
+                  href={`${fileURL(item.filename!)}?download=1`}
+                >
+                  下载原 HTML
+                </a>
+              </div>
+            ))}
+        </div>
+      )}
       {manifest.warnings.length > 0 && (
         <Alert role="status">
           <p>导入范围与缺失提示</p>
@@ -465,7 +516,12 @@ function PRDContent({
         <ul className="list-disc pl-5 text-sm" aria-label="未导入资源">
           {missing.map((item, index) => (
             <li key={`${item.reference}-${index}`}>
-              {item.name || item.kind}：{item.reason || "未保存，需回原文查看"}
+              {item.name || item.kind}：
+              {item.reason === "LARK_SCOPE_REQUIRED" && item.kind === "sheet"
+                ? "缺少 Sheet 只读权限 sheets:spreadsheet:read；需应用审批通过并完成本机个人授权后重新导入。"
+                : item.reason?.startsWith("LARK_")
+                  ? prdErrorMessage(item.reason)
+                  : item.reason || "未保存，需回原文查看"}
               {item.blockId ? `，位置 ${item.blockId}` : ""}
             </li>
           ))}

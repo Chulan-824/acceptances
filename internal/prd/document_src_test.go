@@ -50,7 +50,7 @@ func TestDocumentKeepsMentionsLinksAndFormattingWithoutMissingResources(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(doc.Resources) != 3 || doc.Resources[0].Kind != "image" || doc.Resources[1].Kind != "sheet" || doc.Resources[2].Kind != "source" {
+	if len(doc.Resources) != 3 || doc.Resources[0].Kind != "image" || doc.Resources[1].Kind != "sheet" || doc.Resources[2].Kind != "html" {
 		t.Fatalf("mentions or formatting were listed as missing resources: %#v", doc.Resources)
 	}
 	if len(doc.Warnings) != 0 {
@@ -61,10 +61,8 @@ func TestDocumentKeepsMentionsLinksAndFormattingWithoutMissingResources(t *testi
 			t.Fatalf("document meaning or formatting was discarded: %s", text)
 		}
 	}
-	for _, resource := range doc.Resources[1:] {
-		if resource.Status != "unsupported" || resource.Reason != "UNSUPPORTED_EMBED" {
-			t.Fatalf("embedded content was silently marked complete: %#v", resource)
-		}
+	if doc.Resources[1].Status != "unsupported" || doc.Resources[2].Status != "missing" {
+		t.Fatalf("embedded content was silently marked complete: %#v", doc.Resources)
 	}
 }
 

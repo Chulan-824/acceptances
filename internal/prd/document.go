@@ -295,6 +295,9 @@ func documentResource(name string, attrs map[string]string, index int) (Resource
 			}
 		}
 	case "source", "file", "sheet", "bitable", "synced_reference", "vc-transcribe-tab":
+		if (name == "source" || name == "file") && (strings.HasSuffix(strings.ToLower(attrs["name"]), ".html") || strings.HasSuffix(strings.ToLower(attrs["name"]), ".htm")) && (attrs["mime"] == "" || attrs["mime"] == "text/html") {
+			kind = "html"
+		}
 	default:
 		return Resource{}, false
 	}
@@ -314,10 +317,16 @@ func documentResource(name string, attrs map[string]string, index int) (Resource
 		resourceID = attrs["src"]
 	}
 	resource := Resource{Reference: reference, ResourceID: resourceID, Kind: kind, Name: attrs["name"], BlockID: attrs["block-id"], Status: "unsupported", Reason: "UNSUPPORTED_EMBED"}
+	if kind == "sheet" {
+		resource.SheetID = attrs["sheet-id"]
+		if documentToken.MatchString(resourceID) && documentToken.MatchString(resource.SheetID) {
+			resource.Status, resource.Reason = "missing", "RESOURCE_NOT_DOWNLOADED"
+		}
+	}
 	if resource.BlockID == "" {
 		resource.BlockID = attrs["id"]
 	}
-	if kind == "image" || kind == "whiteboard" {
+	if kind == "image" || kind == "whiteboard" || kind == "html" {
 		resource.Status, resource.Reason = "missing", "RESOURCE_NOT_DOWNLOADED"
 		if resourceID == "" {
 			resource.Reason = "NO_RESOURCE_TOKEN"

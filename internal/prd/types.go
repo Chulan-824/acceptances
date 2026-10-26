@@ -8,7 +8,7 @@ import (
 
 const (
 	ProtocolVersion   = 1
-	NormalizerVersion = "lark-prd-v2-zh-CN"
+	NormalizerVersion = "lark-prd-v3-zh-CN"
 	MaxBodyBytes      = 8 << 20
 	MaxManifestBytes  = 1 << 20
 	MaxResourceBytes  = 10 << 20
@@ -49,6 +49,8 @@ type Warning struct {
 type Resource struct {
 	Reference  string `json:"reference"`
 	ResourceID string `json:"resourceId,omitempty"`
+	SheetID    string `json:"sheetId,omitempty"`
+	RevisionID string `json:"revisionId,omitempty"`
 	Kind       string `json:"kind"`
 	Name       string `json:"name,omitempty"`
 	Filename   string `json:"filename,omitempty"`

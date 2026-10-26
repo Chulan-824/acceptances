@@ -203,6 +203,9 @@ func (s *PRD) Confirm(ctx context.Context, id, expected string, acceptPartial bo
 			if candidate.Cmp(newer) < 0 {
 				return prdError("PRD_REVISION_STALE")
 			}
+			if staleSheetRevision(head.Manifest, *m) {
+				return prdError("PRD_REVISION_STALE")
+			}
 		}
 		for _, old := range previous {
 			if old.Manifest.Realm != m.Realm || old.Manifest.DocumentID != m.DocumentID {
@@ -251,6 +254,9 @@ func resourceFiles(m prd.Manifest) map[string]map[string]bool {
 			for _, f := range m.Files {
 				if f.Name == r.Filename {
 					id := r.Kind + "\x00" + r.ResourceID
+					if r.Kind == "sheet" {
+						id += "\x00" + r.SheetID + "\x00" + r.RevisionID
+					}
 					if files[id] == nil {
 						files[id] = make(map[string]bool)
 					}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -12,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -199,16 +197,26 @@ func (r *larkReader) fetchRevision(ctx context.Context, source prd.SourceURL) (p
 		if resource.Status == "unsupported" || resource.ResourceID == "" {
 			continue
 		}
-		data, media, err := r.download(ctx, directory, *resource, index)
+		var data []byte
+		var media string
+		if resource.Kind == "sheet" {
+			data, err = r.readSheet(ctx, resource)
+			media = "application/json"
+		} else {
+			data, media, err = r.download(ctx, directory, *resource, index)
+		}
 		if err != nil {
 			problem := asLarkError(err)
 			if problem.Stop || problem.Code == "CONNECTOR_CANCELLED" {
 				return prd.Bundle{}, problem
 			}
+			if problem.Code == "LARK_VERSION_CHANGED" {
+				return prd.Bundle{}, problem
+			}
 			resource.Status, resource.Reason = "missing", problem.Code
 			continue
 		}
-		extension := map[string]string{"image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp"}[media]
+		extension := map[string]string{"image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp", "text/html": "html", "application/json": "json"}[media]
 		resource.Filename = fmt.Sprintf("resource-%03d.%s", index+1, extension)
 		resource.Status, resource.Reason = "saved", ""
 		resource.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
@@ -218,6 +226,26 @@ func (r *larkReader) fetchRevision(ctx context.Context, source prd.SourceURL) (p
 		}
 		files[resource.Filename] = data
 		m.Files = append(m.Files, prd.DescribeFile(resource.Filename, resource.Kind, media, data))
+	}
+	// Tabs in one workbook must share a revision, including changes after an earlier tab was read.
+	workbooks := make(map[string]string)
+	for _, resource := range m.Resources {
+		if resource.Kind != "sheet" || resource.Status != "saved" {
+			continue
+		}
+		if previous := workbooks[resource.ResourceID]; previous != "" && previous != resource.RevisionID {
+			return prd.Bundle{}, larkProblem("LARK_VERSION_CHANGED")
+		}
+		workbooks[resource.ResourceID] = resource.RevisionID
+	}
+	for token, revision := range workbooks {
+		latest, err := r.sheetRevision(ctx, token)
+		if err != nil {
+			return prd.Bundle{}, err
+		}
+		if latest != revision {
+			return prd.Bundle{}, larkProblem("LARK_VERSION_CHANGED")
+		}
 	}
 	// Resources cannot be atomically versioned by Lark. Reject a changed source
 	// and repeat the complete read rather than combining two document revisions.
@@ -231,7 +259,7 @@ func (r *larkReader) fetchRevision(ctx context.Context, source prd.SourceURL) (p
 	if _, err := r.checkIdentity(ctx); err != nil {
 		return prd.Bundle{}, err
 	}
-	reading, unmapped := larkReadingView(markdown.Content, m.Resources, xmlDoc.ReferenceMap)
+	reading, unmapped := larkReadingView(markdown.Content, m.Resources, xmlDoc.ReferenceMap, files)
 	if unmapped {
 		m.Warnings = append(m.Warnings, prd.Warning{Code: "MARKDOWN_RESOURCE_UNMAPPED", Message: "阅读视图存在未匹配资源，请结合结构原文与资源清单检查。"})
 	}
@@ -320,6 +348,12 @@ func (r *larkReader) download(ctx context.Context, directory string, resource pr
 	}
 	if len(data) > prd.MaxResourceBytes {
 		return nil, "", larkProblem("LARK_LIMIT_EXCEEDED")
+	}
+	if resource.Kind == "html" {
+		if len(data) == 0 || !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 {
+			return nil, "", larkProblem("LARK_INVALID_RESULT")
+		}
+		return data, "text/html", nil
 	}
 	media := http.DetectContentType(data)
 	if !slices.Contains([]string{"image/png", "image/jpeg", "image/gif", "image/webp"}, media) {
@@ -415,193 +449,4 @@ func larkCommandError(raw []byte) *larkError {
 	default:
 		return larkProblem("LARK_FETCH_FAILED")
 	}
-}
-
-var markdownImage = regexp.MustCompile(`!\[([^\]\n]*)\]\(([^)\n]*)\)`)
-var markdownReferenceImage = regexp.MustCompile(`!\[[^\]\n]*\]\[[^\]\n]*\]`)
-var markdownHTMLImage = regexp.MustCompile(`(?is)<(?:img|whiteboard)\b[^>]*>`)
-var markdownEmptyCitation = regexp.MustCompile(`(?is)<cite\b[^>]*(?:/>|>\s*</cite>)`)
-var markdownHTMLTable = regexp.MustCompile(`(?is)<table\b[^>]*>.*?</table>`)
-var markdownComments = regexp.MustCompile(`(?is)<!--.*?-->|<comment\b[^>]*>.*?</comment>`)
-
-func larkReadingView(markdown string, resources []prd.Resource, references map[string]json.RawMessage) (string, bool) {
-	unmapped := false
-	renderImage := func(label string, targets ...string) string {
-		for _, resource := range resources {
-			for _, target := range targets {
-				if resource.ResourceID != "" && strings.Contains(target, resource.ResourceID) || resource.Reference != "" && strings.Trim(target, " <>") == resource.Reference {
-					if resource.Status == "saved" {
-						return "![" + label + "](" + resource.Filename + ")"
-					}
-					return "[图片未保存：" + resource.Reason + "]"
-				}
-			}
-		}
-		unmapped = true
-		return "[图片未匹配，见资源清单]"
-	}
-	renderInline := func(element xml.StartElement) (string, bool) {
-		attrs := make(map[string]string)
-		for _, attr := range element.Attr {
-			attrs[attr.Name.Local] = attr.Value
-		}
-		switch element.Name.Local {
-		case "img", "whiteboard":
-			return renderImage("图片", attrs["src"], attrs["ref"], attrs["token"], attrs["file-token"], attrs["file_token"], attrs["whiteboard_id"]), true
-		case "cite":
-			if attrs["type"] == "user" && attrs["user-id"] != "" && attrs["user-name"] != "" {
-				return literalMarkdown("@" + attrs["user-name"]), true
-			}
-			if attrs["type"] == "doc" && slices.Contains([]string{"doc", "docx", "wiki"}, attrs["file-type"]) && (attrs["doc-id"] != "" || attrs["token"] != "") && attrs["title"] != "" {
-				return literalMarkdown(attrs["title"]), true
-			}
-		}
-		return "", false
-	}
-	renderElement := func(raw string) string {
-		if token, err := xml.NewDecoder(strings.NewReader(raw)).Token(); err == nil {
-			if element, ok := token.(xml.StartElement); ok {
-				if value, ok := renderInline(element); ok {
-					return value
-				}
-			}
-		}
-		return raw
-	}
-	var transientURLs []string
-	var collectURLs func(any)
-	collectURLs = func(value any) {
-		switch value := value.(type) {
-		case map[string]any:
-			for key, item := range value {
-				if text, ok := item.(string); ok && slices.Contains([]string{"url", "src", "download_url", "downloadurl"}, strings.ToLower(key)) && text != "" {
-					transientURLs = append(transientURLs, text)
-				}
-				collectURLs(item)
-			}
-		case []any:
-			for _, item := range value {
-				collectURLs(item)
-			}
-		}
-	}
-	for group, raw := range references {
-		if !slices.Contains([]string{"img", "image", "images", "whiteboard", "whiteboards", "source", "sources", "file", "files"}, strings.ToLower(group)) {
-			continue
-		}
-		var value any
-		if json.Unmarshal(raw, &value) == nil {
-			collectURLs(value)
-		}
-	}
-	markdown = outsideMarkdownCode(markdown, func(text string) string {
-		text = markdownComments.ReplaceAllString(text, "")
-		text = markdownImage.ReplaceAllStringFunc(text, func(image string) string {
-			parts := markdownImage.FindStringSubmatch(image)
-			return renderImage(parts[1], parts[2])
-		})
-		text = markdownHTMLTable.ReplaceAllStringFunc(text, func(table string) string {
-			if value, err := larkHTMLTable(table, renderInline); err == nil {
-				return value
-			}
-			unmapped = true
-			return literalMarkdown(table)
-		})
-		text = markdownEmptyCitation.ReplaceAllStringFunc(text, renderElement)
-		text = markdownHTMLImage.ReplaceAllStringFunc(text, renderElement)
-		if markdownReferenceImage.MatchString(text) {
-			unmapped = true
-			text = markdownReferenceImage.ReplaceAllString(text, "[图片未匹配，见资源清单]")
-		}
-		for _, temporary := range transientURLs {
-			text = strings.ReplaceAll(text, temporary, "[临时资源地址已排除]")
-		}
-		return text
-	})
-	if len(resources) > 0 {
-		markdown += "\n\n## 资源清单\n"
-		for index, resource := range resources {
-			if resource.Status == "saved" {
-				markdown += fmt.Sprintf("\n资源 %d（%s）\n\n![资源 %d](%s)\n", index+1, resource.Kind, index+1, resource.Filename)
-			} else {
-				markdown += fmt.Sprintf("\n- 资源 %d（%s）：未保存，%s。\n", index+1, resource.Kind, resource.Reason)
-			}
-		}
-	}
-	return markdown, unmapped
-}
-
-func literalMarkdown(text string) string {
-	var result strings.Builder
-	for _, char := range text {
-		if char == '\n' || char == '\r' {
-			char = ' '
-		}
-		if strings.ContainsRune("\\`*_{}[]<>()#+-.!|~&", char) {
-			result.WriteByte('\\')
-		}
-		result.WriteRune(char)
-	}
-	return result.String()
-}
-
-// Lark renders code as fenced blocks or backtick spans. Those bytes describe
-// the requirement itself and must never be interpreted as resource markup.
-func outsideMarkdownCode(markdown string, transform func(string) string) string {
-	var output, plain strings.Builder
-	flush := func() { output.WriteString(transform(plain.String())); plain.Reset() }
-	var fence byte
-	fenceLength, span := 0, 0
-	for line := range strings.SplitAfterSeq(markdown, "\n") {
-		trimmed := strings.TrimLeft(line, " ")
-		indent := len(line) - len(trimmed)
-		count := 0
-		if len(trimmed) > 0 && (trimmed[0] == '`' || trimmed[0] == '~') {
-			for count < len(trimmed) && trimmed[count] == trimmed[0] {
-				count++
-			}
-		}
-		if fence != 0 {
-			output.WriteString(line)
-			if indent <= 3 && len(trimmed) > 0 && trimmed[0] == fence && count >= fenceLength && strings.TrimSpace(trimmed[count:]) == "" {
-				fence = 0
-			}
-			continue
-		}
-		if span == 0 && indent <= 3 && count >= 3 {
-			flush()
-			fence, fenceLength = trimmed[0], count
-			output.WriteString(line)
-			continue
-		}
-		for index := 0; index < len(line); {
-			if line[index] == '`' {
-				end := index
-				for end < len(line) && line[end] == '`' {
-					end++
-				}
-				run := end - index
-				if span == 0 {
-					flush()
-					span = run
-					output.WriteString(line[index:end])
-				} else {
-					output.WriteString(line[index:end])
-					if run == span {
-						span = 0
-					}
-				}
-				index = end
-				continue
-			}
-			if span > 0 {
-				output.WriteByte(line[index])
-			} else {
-				plain.WriteByte(line[index])
-			}
-			index++
-		}
-	}
-	flush()
-	return output.String()
 }

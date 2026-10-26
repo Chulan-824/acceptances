@@ -17,6 +17,8 @@ export interface PRDWarning {
 export interface PRDResource {
   reference: string;
   resourceId?: string;
+  sheetId?: string;
+  revisionId?: string;
   kind: string;
   name?: string;
   filename?: string;

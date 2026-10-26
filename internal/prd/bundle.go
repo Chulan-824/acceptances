@@ -57,6 +57,14 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 			if !slices.Contains(map[string][]string{"image/png": {"png"}, "image/jpeg": {"jpg", "jpeg"}, "image/gif": {"gif"}, "image/webp": {"webp"}}[file.ContentType], extension) {
 				return Bundle{}, errors.New("PRD image extension does not match its bytes")
 			}
+		case "html":
+			if len(data) == 0 || len(data) > MaxResourceBytes || !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 || file.ContentType != "text/html" || !strings.HasSuffix(file.Name, ".html") {
+				return Bundle{}, errors.New("invalid PRD HTML attachment")
+			}
+		case "sheet":
+			if _, err := ParseSheet(data); err != nil || file.ContentType != "application/json" || !strings.HasSuffix(file.Name, ".json") {
+				return Bundle{}, errors.New("invalid PRD sheet file")
+			}
 		default:
 			return Bundle{}, errors.New("unsupported PRD file role")
 		}
@@ -89,6 +97,7 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 		}
 	}
 	partial, references, usedFiles := len(manifest.Warnings) > 0, make(map[string]bool), make(map[string]bool)
+	sheetRevisions := make(map[string]string)
 	for _, resource := range manifest.Resources {
 		expectedIndex := slices.IndexFunc(doc.Resources, func(r Resource) bool { return r.Reference == resource.Reference })
 		if expectedIndex < 0 || references[resource.Reference] {
@@ -96,7 +105,7 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 		}
 		references[resource.Reference] = true
 		expected := doc.Resources[expectedIndex]
-		if expected.ResourceID != resource.ResourceID || expected.Kind != resource.Kind || expected.BlockID != resource.BlockID {
+		if expected.ResourceID != resource.ResourceID || expected.SheetID != resource.SheetID || expected.Kind != resource.Kind || expected.BlockID != resource.BlockID {
 			return Bundle{}, errors.New("PRD resource does not match its source")
 		}
 		switch resource.Status {
@@ -109,6 +118,16 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 				return Bundle{}, errors.New("invalid saved PRD resource")
 			}
 			usedFiles[resource.Filename] = true
+			if resource.Kind == "sheet" {
+				sheet, err := ParseSheet(files[resource.Filename])
+				if err != nil || sheet.WorkbookID != resource.ResourceID || sheet.SheetID != resource.SheetID || sheet.RevisionID != resource.RevisionID || sheet.Title != resource.Name {
+					return Bundle{}, errors.New("PRD sheet identity does not match")
+				}
+				if previous := sheetRevisions[sheet.WorkbookID]; previous != "" && previous != sheet.RevisionID {
+					return Bundle{}, errors.New("PRD workbook revisions do not match")
+				}
+				sheetRevisions[sheet.WorkbookID] = sheet.RevisionID
+			}
 		case "missing", "unsupported":
 			partial = true
 			if resource.Filename != "" || resource.Reason == "" || expected.Status == "unsupported" && resource.Status != "unsupported" {
@@ -119,7 +138,7 @@ func ValidateBundle(manifest Manifest, files map[string][]byte) (Bundle, error) 
 		}
 	}
 	for _, file := range manifest.Files {
-		if (file.Role == "image" || file.Role == "whiteboard") && !usedFiles[file.Name] {
+		if file.Role != "source" && file.Role != "markdown" && !usedFiles[file.Name] {
 			return Bundle{}, errors.New("unreferenced PRD resource file")
 		}
 	}

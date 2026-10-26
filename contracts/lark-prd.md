@@ -43,12 +43,12 @@ result 为 multipart/form-data，总请求不超过 128 MiB：
 - manifest 是不超过 1 MiB 的 JSON 字段。
 - 每个文件使用 file 字段，filename 必须与 manifest.files[].name 一致。
 - source.json 和 document.md 必须存在，各不超过 8 MiB。
-- 图片或画板资源最多 100 个，单资源最多 10 MiB。
+- 图片、画板、Sheet 和 HTML 合计最多 100 个，单资源最多 10 MiB。
 - 文件只接受合法单层名称，拒绝缺失、重复、多余、路径穿越和摘要不符的附件。
 
 manifest 至少包含 schemaVersion、documentId、realm、revisionId、title、fetchedAt、normalizerVersion、completeness、warnings、files 和 resources。revisionId 使用字符串，避免整数精度变化。正文结构、Markdown、来源和 manifest 必须属于同一文档及修订。SourceDocument 是剔除评论和临时 URL 后的结构副本，不是未经筛选的 API 响应。
 
-当前规范化版本为 `lark-prd-v2-zh-CN`。图片 `src` 中的不透明资源 token 保留并交由个人 Lark CLI 下载，真正的 URL 不作为 token，也不直接请求。人员提及、普通 Doc/Wiki 链接及表格列、删除线、figure 容器不作为缺失资源；Sheet/Base 等真正嵌入仍明确列为不支持。同类未知块按类型汇总数量。
+当前规范化版本为 `lark-prd-v3-zh-CN`。图片 `src` 中的不透明资源 token 保留并交由个人 Lark CLI 下载，真正的 URL 不作为 token，也不直接请求。人员提及、普通 Doc/Wiki 链接及表格列、删除线、figure 容器不作为缺失资源；明确带有 workbook token 和 sheet-id 的嵌入 Sheet 由个人 CLI 读取；没有子表定位信息的 Sheet 引用及 Base 等嵌入仍明确列为不支持。同类未知块按类型汇总数量。
 
 阅读视图将 Lark Markdown 中残留的 HTML 图片替换为已归档图片，将人员提及和普通文档引用转换为转义后的可见名称，将 XML 表格转换为 Markdown 表格，保留文字、删除线、列表编号和图片。单元格内段落及列表按行内文本排列，不还原原版式；合并单元格仍提示降级。代码示例中的标记保持原文，预览继续禁用原始 HTML。
 
@@ -56,7 +56,15 @@ manifest 至少包含 schemaVersion、documentId、realm、revisionId、title、
 
 首期支持 HTTPS Docx，以及实际类型为 Docx 的 Wiki。去掉 query 和 fragment 并显式读取全文，使用固定 profile、user 身份和 zh-CN 语言。Markdown 用于阅读，XML 结构用于保留原始内容关系。旧 Doc、独立 Sheet/Base、Office/PDF 和应用页面不接受。
 
-正文内静态表格和可下载图片/画板保留；附件正文、内嵌 Sheet/Base、同步引用及外链不递归读取。遗漏、下载失败和排版降级必须列为缺口，partial 候选需要发起人明确确认，不能把正文失败伪装成 partial。
+正文内静态表格、可下载图片/画板、指定子表的单元格显示值及 HTML 附件保留；其他附件正文、Base、同步引用及外链不递归读取。遗漏、下载失败和排版降级必须列为缺口，partial 候选需要发起人明确确认，不能把正文失败伪装成 partial。
+
+### 嵌入 Sheet 与 HTML
+
+Sheet 只读取原文明确指定的子表，不展开同工作簿的其他子表。个人 `--as user` 和固定 profile 贯穿 `+revision-get`、`+workbook-info`、`+csv-get`。需要应用审批通过且个人有效 token 包含 `sheets:spreadsheet:read`；缺权限标记 missing / LARK_SCOPE_REQUIRED，保留正文、图片和其他已读取资源，不切换账户。
+
+按物理网格上界分页读取并核对 actual_range、row_indices、col_indices、行列数和截断标记，包含隐藏行列及中间空行。上限 5000 行、200 列、100000 个单元格，每页 100 行，CLI 每页字符预算 2000000；任何截断、定位不符或超限均不保存半张表。单元格显示值、完整坐标、子表 ID、工作簿 token、标题和独立修订保存在 role=sheet 的 JSON 文件中，reading view 显示文字表格。只裁掉阅读视图尾部全空行列，JSON 保留原网格。范围为显示值，不还原样式、合并、公式定义或图形对象；大数字等值按 Lark 显示格式保留，不宣称精确底层值。读取前后及全部资源读取后复查工作簿修订；变化则整份重读，仍不稳定返回 LARK_VERSION_CHANGED。
+
+HTML 以原始 UTF-8 字节归档（role=html，单文件不超过 10 MiB）。文件原路由按 application/octet-stream 和 attachment 下载；候选与快照文件路由增加 `?preview=1`，对已归档内容生成单独静态预览，不改写原件。预览校验摘要，移除脚本、事件、嵌入页面、表单及导航地址，仅允许静态结构、内联样式和 data: 光栅图片。HTTP CSP 与无任何 allow 标记的 sandbox iframe 双重隔离，禁止脚本、网络资源、表单、顶层导航及同源访问；保留原件下载按钮。预览可能与交互式原型不同，原型交互不执行。
 
 ## 保存与版本
 
@@ -64,7 +72,7 @@ result 先封存 blob，再用一笔事务保存候选元数据及文件引用�
 
 同一次请求按 clientRequestId 幂等，相同键参数不同返回冲突。同一任务的相同结果可重传，内容不同不能覆盖。来源按实际 documentId 和 API realm 识别，Wiki 别名与 Docx 直链不会制造第二个来源。
 
-同修订、规范化版本、正文及资源摘要相同则复用快照；新修订即使内容相同仍记录新版本信息。原 partial 在同修订补齐资源可生成新快照，原版本保留。已成功内容在相同修订下发生变化时拒绝不一致结果。确认使用 expectedCurrentSnapshotId 处理并发，不自动把当前 PRD 降级到旧修订。
+同修订、规范化版本、正文及资源摘要相同则复用快照；新修订即使内容相同仍记录新版本信息。原 partial 在同修订补齐资源可生成新快照，原版本保留。已成功内容在相同修订下发生变化时拒绝不一致结果。Sheet 资源额外按 workbook token、sheet-id 和独立 revisionId 识别；Docx 未变而 Sheet 修订更新时新增快照，同一 Sheet 修订字节变化仍拒绝不一致结果，不能将当前快照回退到较旧的 Sheet 修订。确认使用 expectedCurrentSnapshotId 处理并发，不自动把当前 PRD 降级到旧修订。
 
 规范化版本升级后重新导入生成独立快照，旧版 manifest、正文和文件原样读取，不重新解析或覆盖。服务端与连接器需同步升级，已经运行的旧连接器进程需要重启；旧的已封存候选仍按原 manifest 确认。
 

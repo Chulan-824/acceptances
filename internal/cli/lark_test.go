@@ -65,6 +65,9 @@ func TestLarkFixture(t *testing.T) {
 		}
 		return count
 	}
+	if larkSheetFixture(args, scenario, callCount) {
+		os.Exit(0)
+	}
 	switch {
 	case joined == "--version":
 		if scenario == "unsupported_version" {
@@ -127,6 +130,12 @@ func TestLarkFixture(t *testing.T) {
 		if scenario == "src_resources" {
 			content += richTable + `<sheet id="SheetBlock123" token="SheetToken123"/><source id="FileBlock123" token="FileToken123" name="prototype.html"/>`
 		}
+		if strings.HasPrefix(scenario, "sheet_") {
+			content += `<sheet token="SheetToken123" sheet-id="tab001"/><sheet token="SheetToken123" sheet-id="tab002"/>`
+		}
+		if scenario == "embedded_html" {
+			content += `<source token="FileToken123" name="prototype.html" mime="text/html"/>`
+		}
 		if strings.Contains(joined, "--doc-format markdown") {
 			content = "# PRD fixture\n\nRequirement\n"
 			if scenario == "code" {
@@ -137,6 +146,12 @@ func TestLarkFixture(t *testing.T) {
 			}
 			if scenario == "src_resources" {
 				content += "\n" + richTable + "\n"
+			}
+			if strings.HasPrefix(scenario, "sheet_") {
+				content += "\n<sheet token=\"SheetToken123\" sheet-id=\"tab001\"/>\n<sheet token=\"SheetToken123\" sheet-id=\"tab002\"/>\n"
+			}
+			if scenario == "embedded_html" {
+				content += "\n<source token=\"FileToken123\" name=\"prototype.html\" mime=\"text/html\"/>\n"
 			}
 		}
 		json.NewEncoder(os.Stdout).Encode(map[string]any{"ok": true, "identity": "user", "data": map[string]any{"document": map[string]any{"document_id": "DocToken123", "revision_id": revision, "content": content, "reference_map": references}}})
@@ -149,6 +164,11 @@ func TestLarkFixture(t *testing.T) {
 		}
 		if output == "" {
 			os.Exit(2)
+		}
+		if strings.Contains(joined, "FileToken123") {
+			os.WriteFile(output+".html", []byte(embeddedHTMLFixture), 0600)
+			fmt.Print(`{"ok":true,"identity":"user","data":{"content_type":"text/html","saved_path":"fixture.html"}}`)
+			os.Exit(0)
 		}
 		file, err := os.Create(output + ".png")
 		if err != nil {
@@ -372,16 +392,14 @@ func TestLarkConnectImportsSrcImagesWithoutMisclassifyingMentionsAndFormatting(t
 	select {
 	case bundle := <-h.uploads:
 		m := bundle.Manifest
-		if m.NormalizerVersion != "lark-prd-v2-zh-CN" || m.Completeness != "partial" || len(m.Resources) != 3 || len(bundle.Files) != 3 || len(m.Warnings) != 0 {
+		if m.NormalizerVersion != "lark-prd-v3-zh-CN" || m.Completeness != "partial" || len(m.Resources) != 3 || len(bundle.Files) != 4 || len(m.Warnings) != 0 {
 			t.Fatalf("incorrect normalized document: %#v", m)
 		}
 		if m.Resources[0].Kind != "image" || m.Resources[0].Status != "saved" || m.Resources[0].ResourceID != "ImageToken123" || len(bundle.Files[m.Resources[0].Filename]) == 0 {
 			t.Fatalf("src image was not saved: %#v", m.Resources[0])
 		}
-		for _, r := range m.Resources[1:] {
-			if r.Status != "unsupported" || r.Kind != "sheet" && r.Kind != "source" {
-				t.Fatalf("missing-content classification changed: %#v", r)
-			}
+		if m.Resources[1].Kind != "sheet" || m.Resources[1].Status != "unsupported" || m.Resources[2].Kind != "html" || m.Resources[2].Status != "saved" {
+			t.Fatalf("embedded-content classification changed: %#v", m.Resources)
 		}
 		reading := string(bundle.Files["document.md"])
 		if !strings.Contains(reading, "](resource-001.png)") || strings.Contains(reading, "图片未匹配") || !strings.Contains(reading, `@Reviewer \[QA\]`) || !strings.Contains(reading, "Related PRD") || strings.Contains(reading, "<cite") || !strings.Contains(reading, "~~Previous requirement~~") {
