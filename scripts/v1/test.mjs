@@ -45,6 +45,7 @@ if (suite === "all") {
       "scripts/v1/checks.test.mjs",
       "scripts/v1/release-check.test.mjs",
       "scripts/v1/source-identity.test.mjs",
+      "scripts/v1/docker-package.test.mjs",
     ],
     {
       stdio: "inherit",

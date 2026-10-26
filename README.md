@@ -10,6 +10,8 @@
 
 ## Docker 部署（推荐）
 
+公司 Ubuntu x86_64 内网服务器推荐按根目录的 [Docker 离线部署流程](DEPLOYMENT.md)操作：本地执行 `make docker-package VERSION=2026.10.26-1`，将应用和 MySQL 镜像包传到服务器加载运行。服务器无需源码或 Node，文档包含版本核对、HTTPS、备份、升级与回滚。下面的 `make docker-up` 用于在有源码和构建依赖的主机直接构建启动。
+
 首次部署和成员接入请按 [服务器部署与成员安装手册](docs/deployment.md) 操作，包含依赖清单、HTTPS 配置、CLI / Skill 安装、飞书连接器、备份恢复和上线核对。
 
 宿主机需要已启动的 Docker、支持 `include` 的 Docker Compose、`make` 和 Node.js `26.7.0`。当前部署入口使用宿主机 Node.js 生成数据库凭据和构建来源信息；Go、pnpm 和 Web 构建依赖在镜像中准备，无需在部署主机安装。

@@ -2,35 +2,36 @@
 
 运行时及镜像 digest 保留在 `toolchain.lock.json`，Go 依赖以 `go.mod/go.sum` 为准，JavaScript 依赖以 `pnpm-lock.yaml` 为准。当前锁定 Go 1.26.8、Node 26.7.0、pnpm 12.4.2、TypeScript 5.9.3。日常开发与应用容器使用锁定镜像的 Docker MySQL，连接凭据由本机脚本生成。运行时及数据库集成测试统一使用 MySQL。无需 PostgreSQL、sqlc 或云 SDK。
 
-| 命令                       | 行为                                                  |
-| -------------------------- | ----------------------------------------------------- |
-| `make dev`                 | 健康启动 Docker MySQL 后启动 Go/Vite，Ctrl-C 停止应用 |
-| `make dev-up`              | 后台启动开发服务，就绪后返回；失败自动回收            |
-| `make dev-status`          | 查询开发服务状态、PID、地址与日志                     |
-| `make dev-stop`            | 停止本仓库受管开发服务，保留开发数据                  |
-| `make services-status`     | 查询本仓库开发、平台烟测和浏览器验证服务              |
-| `make services-stop`       | 停止上述受管服务；会中断正在执行的验证                |
-| `make test SUITE=services` | 进程生命周期回归与真实开发服务启动/退出烟测           |
-| `make fmt`                 | 格式化当前应用、配置、脚本和接入文档                  |
-| `make lint`                | Prettier、ESLint、go vet 和 gofmt 检查                |
-| `make typecheck`           | Web 与客户端类型检查                                  |
-| `make build`               | 构建 Web、服务和当前平台 CLI                          |
-| `make test`                | Go、Web 单元及服务生命周期测试；数据库使用隔离 MySQL  |
-| `make test SUITE=web`      | 已有 Web 单元测试                                     |
-| `make test SUITE=browser`  | 构建当前源码，再执行隔离 Go 服务上的真实浏览器回归    |
-| `make test SUITE=mysql`    | 在临时 MySQL 数据库验证 HTTP、约束、并发和文件保留    |
-| `make mysql-files-migrate` | 停写后完整备份 MySQL，迁移所有附件并回读校验后切换    |
-| `make mysql-status`        | 查看本地开发 MySQL 容器状态                           |
-| `make mysql-stop`          | 停止开发 MySQL，保留持久卷                            |
-| `make test SUITE=http`     | HTTP 集成测试                                         |
-| `make test SUITE=cli`      | CLI 外部行为测试                                      |
-| `make test SUITE=agent`    | 接入辅助工具与 CLI 测试                               |
-| `make test SUITE=platform` | 已构建二进制、临时数据初始化、Web 静态资源及正常停机  |
-| `make test SUITE=e2e`      | 调用外部真实浏览器驱动并校验回执                      |
-| `make docker-up`           | 构建并启动应用与 MySQL                                |
-| `make docker-build`        | 只构建发布镜像，不启动日常服务                        |
-| `make release-check`       | 源码副本构建及隔离 Docker 发布烟测                    |
-| `make install-skill`       | 安装宿主机 CLI 和 skill                               |
+| 命令                                 | 行为                                                  |
+| ------------------------------------ | ----------------------------------------------------- |
+| `make dev`                           | 健康启动 Docker MySQL 后启动 Go/Vite，Ctrl-C 停止应用 |
+| `make dev-up`                        | 后台启动开发服务，就绪后返回；失败自动回收            |
+| `make dev-status`                    | 查询开发服务状态、PID、地址与日志                     |
+| `make dev-stop`                      | 停止本仓库受管开发服务，保留开发数据                  |
+| `make services-status`               | 查询本仓库开发、平台烟测和浏览器验证服务              |
+| `make services-stop`                 | 停止上述受管服务；会中断正在执行的验证                |
+| `make test SUITE=services`           | 进程生命周期回归与真实开发服务启动/退出烟测           |
+| `make fmt`                           | 格式化当前应用、配置、脚本和接入文档                  |
+| `make lint`                          | Prettier、ESLint、go vet 和 gofmt 检查                |
+| `make typecheck`                     | Web 与客户端类型检查                                  |
+| `make build`                         | 构建 Web、服务和当前平台 CLI                          |
+| `make test`                          | Go、Web 单元及服务生命周期测试；数据库使用隔离 MySQL  |
+| `make test SUITE=web`                | 已有 Web 单元测试                                     |
+| `make test SUITE=browser`            | 构建当前源码，再执行隔离 Go 服务上的真实浏览器回归    |
+| `make test SUITE=mysql`              | 在临时 MySQL 数据库验证 HTTP、约束、并发和文件保留    |
+| `make mysql-files-migrate`           | 停写后完整备份 MySQL，迁移所有附件并回读校验后切换    |
+| `make mysql-status`                  | 查看本地开发 MySQL 容器状态                           |
+| `make mysql-stop`                    | 停止开发 MySQL，保留持久卷                            |
+| `make test SUITE=http`               | HTTP 集成测试                                         |
+| `make test SUITE=cli`                | CLI 外部行为测试                                      |
+| `make test SUITE=agent`              | 接入辅助工具与 CLI 测试                               |
+| `make test SUITE=platform`           | 已构建二进制、临时数据初始化、Web 静态资源及正常停机  |
+| `make test SUITE=e2e`                | 调用外部真实浏览器驱动并校验回执                      |
+| `make docker-up`                     | 构建并启动应用与 MySQL                                |
+| `make docker-build`                  | 只构建发布镜像，不启动日常服务                        |
+| `make docker-package VERSION=<版本>` | 构建 linux/amd64 应用并导出应用、MySQL 离线部署包     |
+| `make release-check`                 | 源码副本构建及隔离 Docker 发布烟测                    |
+| `make install-skill`                 | 安装宿主机 CLI 和 skill                               |
 
 旧 DTO、OpenAPI 和 sqlc 生成流程已移除。未知测试分组返回非零，不将未运行标记为通过。
 
@@ -73,6 +74,8 @@ Go 测试每个包的超时为 600 秒，包含隔离库结构初始化及真实
 Lark PRD 导入的 `internal/prd` 用例校验公开的 URL、文档规范化和上传包合同；`internal/cli` 使用受控外部 `lark-cli` 验证个人 profile、固定修订、资源与错误处理；HTTP/MySQL 分组包含真实平台登录、连接器 CLI 子进程、任务领取回传和共享确认的完整链路。Web 分组验证用户可观察的导入交互。它们不访问成员的真实 PRD，也不能替代真实 Lark 授权、不同电脑及 VPS 网络验收。接口与成员操作见 [Lark 导入合同](../contracts/lark-prd.md) 和 [README](../README.md#从-lark-导入需求)。
 
 ## Docker 发布检查
+
+公司 Ubuntu x86_64 内网的镜像传输部署见根目录 [Docker 离线部署流程](../DEPLOYMENT.md)。`make docker-package VERSION=<版本>` 在源码副本中通过现有 Dockerfile 固定构建 linux/amd64，复用发布检查的快照和构建身份机制；从现有 Compose 生成移除 build 的服务器配置，不维护第二套应用参数或数据库定义。服务器配置增加禁止拉取、重启策略和日志轮转，保留 MySQL 健康检查，应用仍需通过外部 ready 检查。包内有两张镜像、版本与镜像 ID、源码清单和 SHA-256 校验文件，不包含凭据和日常数据。该命令先运行打包单测，但不自动启动服务、验收业务或执行目标服务器部署。同版本输出和应用标签拒绝覆盖，失败产物保留供排查，重试使用新版本号。
 
 `make release-check` 是独立发布检查入口，不加入 `pnpm check` 或轻量提交检查。它先运行发布检查单测，再从当前 Git 工作区复制已跟踪文件和未忽略的新文件，排除 `.env*`、Git 元数据、本机依赖、缓存和构建产物。未提交改动会进入副本，删除的文件不进入；符号链接直接拒绝。源码文件列表、整体摘要、HEAD 和 dirty 状态写入回执，因此本地 dirty 验证不能声称验证了某个干净提交。
 
