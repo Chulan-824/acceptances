@@ -76,6 +76,7 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
   const [open, setOpen] = useState(false);
   const task = view.task;
   const taskActive = !!task && activeStatuses.has(task.status);
+  const reading = task?.status === "queued" || task?.status === "fetching";
   const selected = view.snapshots.items.find(
     (item) => item.id === view.selectedSnapshotId,
   );
@@ -253,7 +254,7 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
                   </code>
                 </Alert>
               )}
-              <div className="flex items-start gap-2">
+              <div className="flex items-center gap-2">
                 <Checkbox
                   id={`${prefix}-sharing`}
                   checked={view.shared}
@@ -269,6 +270,7 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="submit"
+                  aria-busy={view.busy || reading}
                   disabled={
                     view.busy ||
                     taskActive ||
@@ -277,8 +279,12 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
                     !view.shared
                   }
                 >
-                  {view.busy && <Spinner aria-hidden="true" />}
-                  {view.creationUnknown ? "恢复本次导入请求" : "读取文档"}
+                  {(view.busy || reading) && <Spinner aria-hidden="true" />}
+                  {reading
+                    ? "读取中…"
+                    : view.creationUnknown
+                      ? "恢复本次导入请求"
+                      : "读取文档"}
                 </Button>
                 <Button
                   type="button"
@@ -326,8 +332,14 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
                     </Button>
                   )}
                 </div>
-                {(task.status === "queued" || task.status === "fetching") && (
-                  <p role="status">{taskLabel(task)}。请保持本机连接器在线。</p>
+                {reading && (
+                  <p
+                    role="status"
+                    className="flex items-center gap-2 text-sm text-muted"
+                  >
+                    <Spinner aria-hidden="true" />
+                    {taskLabel(task)}。请保持本机连接器在线。
+                  </p>
                 )}
                 {task.status === "ready" && task.manifest && (
                   <>
