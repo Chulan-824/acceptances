@@ -8,7 +8,7 @@ import (
 
 const (
 	ProtocolVersion   = 1
-	NormalizerVersion = "lark-prd-v1-zh-CN"
+	NormalizerVersion = "lark-prd-v2-zh-CN"
 	MaxBodyBytes      = 8 << 20
 	MaxManifestBytes  = 1 << 20
 	MaxResourceBytes  = 10 << 20

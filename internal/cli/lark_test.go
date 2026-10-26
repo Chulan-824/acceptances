@@ -123,13 +123,20 @@ func TestLarkFixture(t *testing.T) {
 			content += `<img ref="image-1"/><whiteboard token="WhiteboardToken123"/><img ref="external"/><sheet token="SheetToken123" id="sheet-block"/>`
 			references["images"] = map[string]any{"image-1": map[string]string{"token": "ImageToken123", "url": "https://example.com/image?signature=secret"}, "external": map[string]string{"url": "http://127.0.0.1:9/private"}}
 		}
+		richTable := `<table><colgroup><col/><col/></colgroup><tbody><tr><th>Requirement</th><th>Illustration</th></tr><tr><td><b> Bold </b><b>review</b><cite type="user" user-id="UserToken123" user-name="Reviewer [QA]"></cite> <cite type="doc" file-type="wiki" doc-id="WikiToken123" title="Related PRD"></cite><br/><del> Previous requirement </del><ol start="2"><li>Second step</li><li><code>a|b</code></li></ol></td><td><figure><img id="ImageBlock123" name="image.png" mime="image/png" scale="100" src="ImageToken123"/></figure></td></tr></tbody></table>`
+		if scenario == "src_resources" {
+			content += richTable + `<sheet id="SheetBlock123" token="SheetToken123"/><source id="FileBlock123" token="FileToken123" name="prototype.html"/>`
+		}
 		if strings.Contains(joined, "--doc-format markdown") {
 			content = "# PRD fixture\n\nRequirement\n"
 			if scenario == "code" {
-				content += "\n```text\n![literal](https://example.com/sample)\n<!-- literal comment example -->\n```\n\n`![inline](https://example.com/example)`\n"
+				content += "\n```text\n![literal](https://example.com/sample)\n<!-- literal comment example -->\n" + richTable + "\n```\n\n`![inline](https://example.com/example)`\n"
 			}
 			if scenario == "resources" || scenario == "slow_media" {
 				content += "\n![image](ImageToken123)\n![board](WhiteboardToken123)\n![external](http://127.0.0.1:9/private)\n"
+			}
+			if scenario == "src_resources" {
+				content += "\n" + richTable + "\n"
 			}
 		}
 		json.NewEncoder(os.Stdout).Encode(map[string]any{"ok": true, "identity": "user", "data": map[string]any{"document": map[string]any{"document_id": "DocToken123", "revision_id": revision, "content": content, "reference_map": references}}})
@@ -358,6 +365,44 @@ func TestLarkConnectResolvesWikiAndRetainsAvailableResources(t *testing.T) {
 	}
 }
 
+func TestLarkConnectImportsSrcImagesWithoutMisclassifyingMentionsAndFormatting(t *testing.T) {
+	t.Setenv("LARK_FIXTURE_SCENARIO", "src_resources")
+	h := newConnectorHarness(t, "https://team.feishu.cn/docx/DocToken123")
+	cmd, output, dir := connectorProcess(t, h.server.URL)
+	select {
+	case bundle := <-h.uploads:
+		m := bundle.Manifest
+		if m.NormalizerVersion != "lark-prd-v2-zh-CN" || m.Completeness != "partial" || len(m.Resources) != 3 || len(bundle.Files) != 3 || len(m.Warnings) != 0 {
+			t.Fatalf("incorrect normalized document: %#v", m)
+		}
+		if m.Resources[0].Kind != "image" || m.Resources[0].Status != "saved" || m.Resources[0].ResourceID != "ImageToken123" || len(bundle.Files[m.Resources[0].Filename]) == 0 {
+			t.Fatalf("src image was not saved: %#v", m.Resources[0])
+		}
+		for _, r := range m.Resources[1:] {
+			if r.Status != "unsupported" || r.Kind != "sheet" && r.Kind != "source" {
+				t.Fatalf("missing-content classification changed: %#v", r)
+			}
+		}
+		reading := string(bundle.Files["document.md"])
+		if !strings.Contains(reading, "](resource-001.png)") || strings.Contains(reading, "图片未匹配") || !strings.Contains(reading, `@Reviewer \[QA\]`) || !strings.Contains(reading, "Related PRD") || strings.Contains(reading, "<cite") || !strings.Contains(reading, "~~Previous requirement~~") {
+			t.Fatal("reading view lost the image, mention, link or formatting")
+		}
+		if strings.Contains(reading, "<table") || !strings.Contains(reading, "| Requirement | Illustration |") || !strings.Contains(reading, "2. Second step") || !strings.Contains(reading, `a\|b`) {
+			t.Fatal("HTML table content was left for the browser to discard")
+		}
+		if !strings.Contains(reading, "**Bold** **review**") {
+			t.Fatal("adjacent or whitespace-padded formatting markers cannot render correctly")
+		}
+	case problem := <-h.failures:
+		t.Fatalf("unexpected failure: %#v", problem)
+	case <-time.After(larkProcessTimeout):
+		cmd.Process.Signal(os.Interrupt)
+		cmd.Wait()
+		t.Fatalf("src image upload timed out: %s", output.String())
+	}
+	stopConnector(t, cmd, output, dir)
+}
+
 func TestLarkConnectRejectsChangedIdentityAndBadReads(t *testing.T) {
 	for _, scenario := range []struct {
 		name, code string
@@ -428,6 +473,9 @@ func TestLarkConnectPreservesCodeDuringReadingViewCleanup(t *testing.T) {
 		reading := string(bundle.Files["document.md"])
 		if !strings.Contains(reading, "![literal](https://example.com/sample)") || !strings.Contains(reading, "<!-- literal comment example -->") || !strings.Contains(reading, "`![inline](https://example.com/example)`") {
 			t.Fatalf("code changed during resource cleanup: %s", reading)
+		}
+		if !strings.Contains(reading, `<table><colgroup>`) || !strings.Contains(reading, `<cite type="user" user-id="UserToken123" user-name="Reviewer [QA]"></cite>`) || !strings.Contains(reading, `src="ImageToken123"`) || len(bundle.Manifest.Warnings) != 0 {
+			t.Fatal("literal XML examples were interpreted as document resources")
 		}
 	case <-time.After(larkProcessTimeout):
 		cmd.Process.Signal(os.Interrupt)

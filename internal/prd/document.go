@@ -48,6 +48,7 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 	depth, dropped, titleDepth := 0, 0, 0
 	seen := make(map[string]bool)
 	resourceAliases := make(map[string][]int)
+	unsupportedBlocks := make(map[string]struct{ index, count int })
 	for {
 		token, err := decoder.Token()
 		if err == io.EOF {
@@ -115,7 +116,14 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 				}
 			}
 			if !supportedElement(name) {
-				result.Warnings = append(result.Warnings, Warning{Code: "UNSUPPORTED_BLOCK", Message: "此类文档块仅保留结构原文，未展开读取。", BlockID: blockID})
+				warning := unsupportedBlocks[name]
+				if warning.count == 0 {
+					warning.index = len(result.Warnings)
+					result.Warnings = append(result.Warnings, Warning{Code: "UNSUPPORTED_BLOCK", BlockID: blockID})
+				}
+				warning.count++
+				result.Warnings[warning.index].Message = fmt.Sprintf("文档包含 %d 处未支持的 %s 块，仅保留结构原文。", warning.count, name)
+				unsupportedBlocks[name] = warning
 			}
 			if name == "td" || name == "th" {
 				if attributes["rowspan"] != "" && attributes["rowspan"] != "1" || attributes["colspan"] != "" && attributes["colspan"] != "1" {
@@ -128,7 +136,7 @@ func SanitizeDocument(source SourceDocument) (Document, error) {
 				if strings.HasPrefix(key, "on") || strings.HasPrefix(strings.ToLower(strings.TrimSpace(attr.Value)), "javascript:") {
 					return Document{}, errors.New("active PRD attributes are not supported")
 				}
-				if strings.Contains(key, "comment") || isMediaElement(name) && (key == "url" || key == "src") {
+				if strings.Contains(key, "comment") || isMediaElement(name) && transientMediaAttribute(key, attr.Value) {
 					result.Excluded = true
 					continue
 				}
@@ -242,7 +250,8 @@ func removePrivateMetadata(value any, media bool) (any, bool) {
 	case map[string]any:
 		for key, nested := range value {
 			lower := strings.ToLower(key)
-			if strings.Contains(lower, "comment") || slices.Contains([]string{"access_token", "refresh_token", "authorization", "app_secret"}, lower) || media && slices.Contains([]string{"url", "src", "download_url", "downloadurl"}, lower) {
+			text, _ := nested.(string)
+			if strings.Contains(lower, "comment") || slices.Contains([]string{"access_token", "refresh_token", "authorization", "app_secret"}, lower) || media && transientMediaAttribute(lower, text) {
 				delete(value, key)
 				removed = true
 				continue
@@ -270,7 +279,22 @@ func documentResource(name string, attrs map[string]string, index int) (Resource
 	case "img", "image":
 		kind = "image"
 	case "whiteboard":
-	case "source", "file", "sheet", "bitable", "synced_reference", "cite", "vc-transcribe-tab":
+	case "cite":
+		switch attrs["file-type"] {
+		case "sheets", "sheet":
+			kind = "sheet"
+		case "bitable":
+			kind = "bitable"
+		case "doc", "docx", "wiki":
+			if attrs["type"] == "doc" && (attrs["doc-id"] != "" || attrs["token"] != "") {
+				return Resource{}, false
+			}
+		default:
+			if attrs["type"] == "user" && attrs["user-id"] != "" {
+				return Resource{}, false
+			}
+		}
+	case "source", "file", "sheet", "bitable", "synced_reference", "vc-transcribe-tab":
 	default:
 		return Resource{}, false
 	}
@@ -284,6 +308,10 @@ func documentResource(name string, attrs map[string]string, index int) (Resource
 			resourceID = attrs[key]
 			break
 		}
+	}
+	// Lark full XML uses src for an opaque image token as well as for URLs.
+	if resourceID == "" && kind == "image" && documentToken.MatchString(attrs["src"]) {
+		resourceID = attrs["src"]
 	}
 	resource := Resource{Reference: reference, ResourceID: resourceID, Kind: kind, Name: attrs["name"], BlockID: attrs["block-id"], Status: "unsupported", Reason: "UNSUPPORTED_EMBED"}
 	if resource.BlockID == "" {
@@ -302,6 +330,10 @@ func isMediaElement(name string) bool {
 	return name == "img" || name == "image" || name == "whiteboard" || name == "source" || name == "file"
 }
 
+func transientMediaAttribute(name, value string) bool {
+	return name == "src" && !documentToken.MatchString(value) || slices.Contains([]string{"url", "download_url", "downloadurl"}, name)
+}
+
 func supportedElement(name string) bool {
-	return strings.Contains("|doc|document|body|content|section|div|column|columns|col|table|tr|thead|tbody|td|th|p|para|title|h1|h2|h3|h4|h5|h6|h7|h8|h9|li|ul|ol|todo|list|code|pre|hr|br|a|link|u|b|s|i|span|strong|em|text|quote|blockquote|callout|mention|user|equation|latex|date|inline-code|inline_code|highlight|font|sup|sub|math|line-break|divider|cell|row|task|caption|img|image|whiteboard|source|file|", "|"+name+"|")
+	return strings.Contains("|doc|document|body|content|section|div|column|columns|col|colgroup|table|tr|thead|tbody|td|th|p|para|title|h1|h2|h3|h4|h5|h6|h7|h8|h9|li|ul|ol|todo|list|code|pre|hr|br|a|link|u|b|s|del|i|span|strong|em|text|quote|blockquote|callout|mention|user|cite|equation|latex|date|inline-code|inline_code|highlight|font|sup|sub|math|line-break|divider|cell|row|task|caption|figure|img|image|whiteboard|source|file|sheet|bitable|synced_reference|vc-transcribe-tab|", "|"+name+"|")
 }

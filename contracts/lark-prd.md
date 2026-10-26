@@ -48,6 +48,10 @@ result 为 multipart/form-data，总请求不超过 128 MiB：
 
 manifest 至少包含 schemaVersion、documentId、realm、revisionId、title、fetchedAt、normalizerVersion、completeness、warnings、files 和 resources。revisionId 使用字符串，避免整数精度变化。正文结构、Markdown、来源和 manifest 必须属于同一文档及修订。SourceDocument 是剔除评论和临时 URL 后的结构副本，不是未经筛选的 API 响应。
 
+当前规范化版本为 `lark-prd-v2-zh-CN`。图片 `src` 中的不透明资源 token 保留并交由个人 Lark CLI 下载，真正的 URL 不作为 token，也不直接请求。人员提及、普通 Doc/Wiki 链接及表格列、删除线、figure 容器不作为缺失资源；Sheet/Base 等真正嵌入仍明确列为不支持。同类未知块按类型汇总数量。
+
+阅读视图将 Lark Markdown 中残留的 HTML 图片替换为已归档图片，将人员提及和普通文档引用转换为转义后的可见名称，将 XML 表格转换为 Markdown 表格，保留文字、删除线、列表编号和图片。单元格内段落及列表按行内文本排列，不还原原版式；合并单元格仍提示降级。代码示例中的标记保持原文，预览继续禁用原始 HTML。
+
 已保存资源还包含各自的 fetchedAt（RFC3339 时间）。正文和资源无法原子读取；资源下载后再次检查文档修订号，变化则重读，仍不稳定时失败。读取时间用于展示来源，不参与正文或资源的语义摘要。
 
 首期支持 HTTPS Docx，以及实际类型为 Docx 的 Wiki。去掉 query 和 fragment 并显式读取全文，使用固定 profile、user 身份和 zh-CN 语言。Markdown 用于阅读，XML 结构用于保留原始内容关系。旧 Doc、独立 Sheet/Base、Office/PDF 和应用页面不接受。
@@ -61,6 +65,8 @@ result 先封存 blob，再用一笔事务保存候选元数据及文件引用�
 同一次请求按 clientRequestId 幂等，相同键参数不同返回冲突。同一任务的相同结果可重传，内容不同不能覆盖。来源按实际 documentId 和 API realm 识别，Wiki 别名与 Docx 直链不会制造第二个来源。
 
 同修订、规范化版本、正文及资源摘要相同则复用快照；新修订即使内容相同仍记录新版本信息。原 partial 在同修订补齐资源可生成新快照，原版本保留。已成功内容在相同修订下发生变化时拒绝不一致结果。确认使用 expectedCurrentSnapshotId 处理并发，不自动把当前 PRD 降级到旧修订。
+
+规范化版本升级后重新导入生成独立快照，旧版 manifest、正文和文件原样读取，不重新解析或覆盖。服务端与连接器需同步升级，已经运行的旧连接器进程需要重启；旧的已封存候选仍按原 manifest 确认。
 
 未确认候选到期后可以移除引用，已确认快照按 Campaign 生命周期保留。当前文件后端没有已确认的 ready blob 自动 GC，不承诺候选过期后字节立即物理删除。完整备份恢复和删除引用安全单独验证。
 

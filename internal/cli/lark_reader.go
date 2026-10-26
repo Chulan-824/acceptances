@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -419,10 +420,54 @@ func larkCommandError(raw []byte) *larkError {
 var markdownImage = regexp.MustCompile(`!\[([^\]\n]*)\]\(([^)\n]*)\)`)
 var markdownReferenceImage = regexp.MustCompile(`!\[[^\]\n]*\]\[[^\]\n]*\]`)
 var markdownHTMLImage = regexp.MustCompile(`(?is)<(?:img|whiteboard)\b[^>]*>`)
+var markdownEmptyCitation = regexp.MustCompile(`(?is)<cite\b[^>]*(?:/>|>\s*</cite>)`)
+var markdownHTMLTable = regexp.MustCompile(`(?is)<table\b[^>]*>.*?</table>`)
 var markdownComments = regexp.MustCompile(`(?is)<!--.*?-->|<comment\b[^>]*>.*?</comment>`)
 
 func larkReadingView(markdown string, resources []prd.Resource, references map[string]json.RawMessage) (string, bool) {
 	unmapped := false
+	renderImage := func(label string, targets ...string) string {
+		for _, resource := range resources {
+			for _, target := range targets {
+				if resource.ResourceID != "" && strings.Contains(target, resource.ResourceID) || resource.Reference != "" && strings.Trim(target, " <>") == resource.Reference {
+					if resource.Status == "saved" {
+						return "![" + label + "](" + resource.Filename + ")"
+					}
+					return "[图片未保存：" + resource.Reason + "]"
+				}
+			}
+		}
+		unmapped = true
+		return "[图片未匹配，见资源清单]"
+	}
+	renderInline := func(element xml.StartElement) (string, bool) {
+		attrs := make(map[string]string)
+		for _, attr := range element.Attr {
+			attrs[attr.Name.Local] = attr.Value
+		}
+		switch element.Name.Local {
+		case "img", "whiteboard":
+			return renderImage("图片", attrs["src"], attrs["ref"], attrs["token"], attrs["file-token"], attrs["file_token"], attrs["whiteboard_id"]), true
+		case "cite":
+			if attrs["type"] == "user" && attrs["user-id"] != "" && attrs["user-name"] != "" {
+				return literalMarkdown("@" + attrs["user-name"]), true
+			}
+			if attrs["type"] == "doc" && slices.Contains([]string{"doc", "docx", "wiki"}, attrs["file-type"]) && (attrs["doc-id"] != "" || attrs["token"] != "") && attrs["title"] != "" {
+				return literalMarkdown(attrs["title"]), true
+			}
+		}
+		return "", false
+	}
+	renderElement := func(raw string) string {
+		if token, err := xml.NewDecoder(strings.NewReader(raw)).Token(); err == nil {
+			if element, ok := token.(xml.StartElement); ok {
+				if value, ok := renderInline(element); ok {
+					return value
+				}
+			}
+		}
+		return raw
+	}
 	var transientURLs []string
 	var collectURLs func(any)
 	collectURLs = func(value any) {
@@ -453,22 +498,20 @@ func larkReadingView(markdown string, resources []prd.Resource, references map[s
 		text = markdownComments.ReplaceAllString(text, "")
 		text = markdownImage.ReplaceAllStringFunc(text, func(image string) string {
 			parts := markdownImage.FindStringSubmatch(image)
-			for _, resource := range resources {
-				if resource.ResourceID != "" && strings.Contains(parts[2], resource.ResourceID) || resource.Reference != "" && strings.Trim(parts[2], " <>") == resource.Reference {
-					if resource.Status == "saved" {
-						return "![" + parts[1] + "](" + resource.Filename + ")"
-					}
-					return "[图片未保存：" + resource.Reason + "]"
-				}
+			return renderImage(parts[1], parts[2])
+		})
+		text = markdownHTMLTable.ReplaceAllStringFunc(text, func(table string) string {
+			if value, err := larkHTMLTable(table, renderInline); err == nil {
+				return value
 			}
 			unmapped = true
-			return "[图片未匹配，见资源清单]"
+			return literalMarkdown(table)
 		})
-		for _, pattern := range []*regexp.Regexp{markdownReferenceImage, markdownHTMLImage} {
-			if pattern.MatchString(text) {
-				unmapped = true
-				text = pattern.ReplaceAllString(text, "[图片未匹配，见资源清单]")
-			}
+		text = markdownEmptyCitation.ReplaceAllStringFunc(text, renderElement)
+		text = markdownHTMLImage.ReplaceAllStringFunc(text, renderElement)
+		if markdownReferenceImage.MatchString(text) {
+			unmapped = true
+			text = markdownReferenceImage.ReplaceAllString(text, "[图片未匹配，见资源清单]")
 		}
 		for _, temporary := range transientURLs {
 			text = strings.ReplaceAll(text, temporary, "[临时资源地址已排除]")
@@ -486,6 +529,20 @@ func larkReadingView(markdown string, resources []prd.Resource, references map[s
 		}
 	}
 	return markdown, unmapped
+}
+
+func literalMarkdown(text string) string {
+	var result strings.Builder
+	for _, char := range text {
+		if char == '\n' || char == '\r' {
+			char = ' '
+		}
+		if strings.ContainsRune("\\`*_{}[]<>()#+-.!|~&", char) {
+			result.WriteByte('\\')
+		}
+		result.WriteRune(char)
+	}
+	return result.String()
 }
 
 // Lark renders code as fenced blocks or backtick spans. Those bytes describe
