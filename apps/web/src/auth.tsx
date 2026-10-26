@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { RequestError, request, type User } from "@acceptances/api-client";
 import { Alert } from "./components/reui/alert";
 import { FormField } from "./components/reui/form-field";
@@ -8,6 +15,13 @@ import { Input } from "./components/ui/input";
 import { Spinner } from "./components/ui/spinner";
 import { message } from "./client";
 import "./auth.css";
+
+const UserContext = createContext<User | null>(null);
+export function useCurrentUser() {
+  const user = useContext(UserContext);
+  if (!user) throw new Error("AuthBoundary is required");
+  return user;
+}
 
 const authErrors: Record<string, string> = {
   LOGIN_FAILED: "用户名或密码不正确。",
@@ -100,7 +114,7 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
         </div>
       </header>
       {error && <Alert role="alert">{error}</Alert>}
-      {children}
+      <UserContext.Provider value={user}>{children}</UserContext.Provider>
     </div>
   );
 }

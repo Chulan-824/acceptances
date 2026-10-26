@@ -81,6 +81,16 @@ function DiffViewerLoader(
 
 export function FilePreviewViewer(props: FilePreviewProps) {
   const [attempt, setAttempt] = useState(0);
+  if (props.htmlPreviewURL)
+    return (
+      <iframe
+        className="file-preview-html"
+        title={`${props.name} 静态预览`}
+        sandbox=""
+        referrerPolicy="no-referrer"
+        src={props.htmlPreviewURL}
+      />
+    );
   return (
     <LoadedFile
       key={`${props.url}:${attempt}`}

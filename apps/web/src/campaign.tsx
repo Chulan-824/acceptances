@@ -20,6 +20,7 @@ import {
 import { useCampaignRun } from "./campaign-run";
 import { Run } from "./run";
 import { CampaignDelivery } from "./campaign-delivery";
+import { CampaignPRD } from "./campaign-prd";
 import { ActionMenu, Icon, PanelButton } from "./workspace-controls";
 
 export function Campaign({
@@ -101,6 +102,7 @@ export function Campaign({
                 </p>
               </section>
             </FramePanel>
+            <CampaignPRD key={id} campaignId={id} />
             <CampaignDelivery navigate={navigate} />
             {campaign.error && (
               <Alert role="alert">

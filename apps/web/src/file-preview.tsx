@@ -17,6 +17,7 @@ export type FilePreviewProps = {
   name: string;
   description?: string;
   resources?: PreviewResource[];
+  htmlPreviewURL?: string;
 };
 
 export function isDocumentEvidence(name: string) {
