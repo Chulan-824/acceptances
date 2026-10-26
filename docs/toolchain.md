@@ -70,6 +70,8 @@ Go 测试每个包的超时为 600 秒，包含隔离库结构初始化及真实
 
 `make test SUITE=agent` 在临时安装目标验证 CLI 与 skill，并运行隔离 CLI 测试及可选 Jev 的离线选择测试，不升级日常安装。Jev 选择测试使用受控 doctor，验证已配置、缺配置、执行器失效、超时及诊断脱敏，不连接 Chrome 或官方模型；不能据此声称真实回归通过。`make test SUITE=e2e` 只核对外部驱动回执与证据文件，逐项评审、范围及反馈关联必须由真实浏览器操作和 API 断言覆盖。源码更新后的日常安装使用 `make replace-skill`，替换结果以安装器回执为准。
 
+Lark PRD 导入的 `internal/prd` 用例校验公开的 URL、文档规范化和上传包合同；`internal/cli` 使用受控外部 `lark-cli` 验证个人 profile、固定修订、资源与错误处理；HTTP/MySQL 分组包含真实平台登录、连接器 CLI 子进程、任务领取回传和共享确认的完整链路。Web 分组验证用户可观察的导入交互。它们不访问成员的真实 PRD，也不能替代真实 Lark 授权、不同电脑及 VPS 网络验收。接口与成员操作见 [Lark 导入合同](../contracts/lark-prd.md) 和 [README](../README.md#从-lark-导入需求)。
+
 ## Docker 发布检查
 
 `make release-check` 是独立发布检查入口，不加入 `pnpm check` 或轻量提交检查。它先运行发布检查单测，再从当前 Git 工作区复制已跟踪文件和未忽略的新文件，排除 `.env*`、Git 元数据、本机依赖、缓存和构建产物。未提交改动会进入副本，删除的文件不进入；符号链接直接拒绝。源码文件列表、整体摘要、HEAD 和 dirty 状态写入回执，因此本地 dirty 验证不能声称验证了某个干净提交。
