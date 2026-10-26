@@ -31,6 +31,9 @@ type binding struct {
 type client struct{ base, web, token string }
 
 func Run(args []string, out, log io.Writer) int {
+	if len(args) > 0 && args[0] == "lark" {
+		return larkCommand(args[1:], out, log)
+	}
 	result, err := run(args, log)
 	if err != nil {
 		json.NewEncoder(log).Encode(map[string]string{"error": err.Error()})
@@ -51,6 +54,7 @@ func run(args []string, log io.Writer) (any, error) {
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
 		return map[string]any{"commands": []string{
 			"login --username <name> --password-stdin [--url <server>]", "whoami [--url <server>]", "logout [--url <server>]",
+			"lark connect --url <server> [--name <computer>]",
 			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...] [--web-url ...]",
 			"context [--repo .]", "campaigns [--title <new-title>] [--description ...] [--repo .]",
 			"validate --bundle <directory> [--formal] [--project <id>] [--campaign <id>]", "publish --bundle <directory> --campaign <title-or-id> [--formal] [--repo .]", "status --run <id> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
