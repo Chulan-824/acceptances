@@ -113,6 +113,7 @@ export function DeliveryDetail({
             size="sm"
             disabled={busy}
             onClick={() => navigate("/deliveries")}
+            className="gap-1.5"
           >
             <ArrowLeft size={14} />
             交付版本
@@ -122,6 +123,7 @@ export function DeliveryDetail({
             size="sm"
             disabled={busy}
             onClick={() => setRevision((r) => r + 1)}
+            className="gap-1.5"
           >
             <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
             刷新
@@ -454,7 +456,7 @@ export function DeliveryDetail({
                 disabled={busy}
                 placeholder="请输入主动撤销此交付的具体业务原因…"
                 onChange={(event) => setReason(event.target.value)}
-                className="text-sm"
+                className="text-sm min-h-20"
               />
             </Label>
             <Button

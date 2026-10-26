@@ -5,6 +5,7 @@
 @import "../theme.css";
 @import "../ui.css";
 @import "../reui.css";
+@import "../components/site-header.css";
 
 @layer components {
   html {

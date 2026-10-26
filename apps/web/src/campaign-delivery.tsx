@@ -125,6 +125,7 @@ export function CampaignDelivery({
             <div className="actions">
               {prep && (
                 <Button
+                  size="sm"
                   variant={
                     fresh && prep.eligible && !presentation.sameRun
                       ? "default"
@@ -135,6 +136,7 @@ export function CampaignDelivery({
                       "/deliveries/new/" + encodeURIComponent(prep.runId),
                     )
                   }
+                  className="gap-1.5"
                 >
                   {fresh && prep.eligible && !presentation.sameRun
                     ? "确认需求交付"
@@ -143,13 +145,20 @@ export function CampaignDelivery({
               )}
               {snapshot && (
                 <Button
+                  size="sm"
                   variant="outline"
                   onClick={() => navigate("/deliveries/" + snapshot.id)}
+                  className="gap-1.5"
                 >
                   查看交付与文档
                 </Button>
               )}
-              <Button variant="ghost" onClick={() => navigate("/deliveries")}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => navigate("/deliveries")}
+                className="gap-1.5"
+              >
                 交付版本
               </Button>
             </div>

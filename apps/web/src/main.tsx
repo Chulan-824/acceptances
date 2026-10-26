@@ -26,15 +26,17 @@ function App() {
   const parts = path.split("/").filter(Boolean);
   const project = parts[0] === "projects" ? parts[1] : undefined;
   return (
-    <CampaignRunProvider
-      scope={{
-        projectId: project,
-        campaignId: parts[2] === "campaigns" ? parts[3] : undefined,
-        runId: parts[4] === "runs" ? parts[5] : undefined,
-      }}
-    >
-      <Workspace parts={parts} project={project} navigate={navigate} />
-    </CampaignRunProvider>
+    <AuthBoundary navigate={navigate}>
+      <CampaignRunProvider
+        scope={{
+          projectId: project,
+          campaignId: parts[2] === "campaigns" ? parts[3] : undefined,
+          runId: parts[4] === "runs" ? parts[5] : undefined,
+        }}
+      >
+        <Workspace parts={parts} project={project} navigate={navigate} />
+      </CampaignRunProvider>
+    </AuthBoundary>
   );
 }
 function Workspace({
@@ -65,8 +67,6 @@ function Workspace({
           <Project
             key={project}
             id={project}
-            projects={projects}
-            projectsError={loadError}
             campaignId={parts[2] === "campaigns" ? parts[3] : undefined}
             navigate={navigate}
           />
@@ -118,9 +118,7 @@ function CampaignRunNavigation({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <TooltipProvider>
-      <AuthBoundary>
-        <App />
-      </AuthBoundary>
+      <App />
     </TooltipProvider>
   </StrictMode>,
 );

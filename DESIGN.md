@@ -255,6 +255,7 @@ Landing 容器最大 1280px，横向边距 24px，章节上下内边距各 48px�
 
 ## Components
 
+- SiteHeader：Landing、登录与连接状态、已登录业务页面共用顶部导航，统一品牌区、64px 最小内容高度、1280px 容器、细分隔线与焦点样式。窄屏允许账号区换行，长用户名截断并保留完整提示；页面内的创建等业务操作放在内容区，避免重复顶栏。
 - Button：默认 14px 常规字重；首页创建、工具栏与工作台密集操作可使用 caption 13px，默认水平 12px、垂直 8px，6px 圆角；主按钮深底白字，悬停 #4d4d4d，次按钮悬停 #ebebeb。危险操作使用明确的 danger 例外。选中、hover、focus-visible、disabled 分别表达。
 - Input / Textarea / Select：白底、#c9c9c9 边框、#666666 placeholder。错误用 danger 边框与文字，错误焦点保持可见；中文表单保留至少 44px 的主要输入高度。禁用与保存中保留字段内容和真实门禁。
 - Badge / Timeline / Stepper：文字表达状态，12–14px；业务成功与交互 accent 分开。状态点或时间线位置不能推断业务接受。步骤切换不代替最终确认。

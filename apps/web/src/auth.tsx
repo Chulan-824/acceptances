@@ -13,6 +13,7 @@ import { Button } from "./components/ui/button";
 import { FieldGroup, FieldSet } from "./components/ui/field";
 import { Input } from "./components/ui/input";
 import { Spinner } from "./components/ui/spinner";
+import { SiteHeader } from "./components/site-header";
 import { message } from "./client";
 import "./auth.css";
 
@@ -31,7 +32,13 @@ const authErrors: Record<string, string> = {
   AUTH_RATE_LIMITED: "操作过于频繁，请稍后重试。",
 };
 
-export function AuthBoundary({ children }: { children: ReactNode }) {
+export function AuthBoundary({
+  children,
+  navigate,
+}: {
+  children: ReactNode;
+  navigate: (path: string) => void;
+}) {
   const [user, setUser] = useState<User | null>();
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
@@ -76,8 +83,9 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
       setBusy(false);
     }
   }
+  let content;
   if (user === undefined)
-    return (
+    content = (
       <main className="auth-page">
         {error ? (
           <Alert role="alert">
@@ -96,25 +104,62 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
         )}
       </main>
     );
-  if (user === null) return <Login onSuccess={setUser} />;
+  else if (user === null) content = <Login onSuccess={setUser} />;
+  else
+    content = (
+      <>
+        {error && <Alert role="alert">{error}</Alert>}
+        <UserContext.Provider value={user}>{children}</UserContext.Provider>
+      </>
+    );
   return (
-    <div className="authenticated-workspace" key={user.id}>
-      <header className="account-bar">
-        <span>Acceptances · 团队工作台</span>
-        <div className="flex items-center gap-3">
-          <span>当前用户：{user.username}</span>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            onClick={() => void logout()}
-          >
-            {busy ? "正在退出…" : "退出登录"}
-          </Button>
-        </div>
-      </header>
-      {error && <Alert role="alert">{error}</Alert>}
-      <UserContext.Provider value={user}>{children}</UserContext.Provider>
+    <div
+      className={user ? "authenticated-workspace" : "auth-layout"}
+      key={user?.id || "anonymous"}
+    >
+      <SiteHeader
+        context={user ? "团队工作台" : "交付验证系统"}
+        brandHref={user ? "/" : "/landing.html"}
+        onBrandClick={
+          user
+            ? (event) => {
+                if (
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                )
+                  return;
+                event.preventDefault();
+                navigate("/");
+              }
+            : undefined
+        }
+      >
+        <nav aria-label="主导航">
+          <a href="/landing.html">产品介绍</a>
+        </nav>
+        {user && (
+          <div className="site-header-account">
+            <span
+              className="site-header-username"
+              title={`当前用户：${user.username}`}
+            >
+              当前用户：{user.username}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => void logout()}
+            >
+              {busy ? "正在退出…" : "退出登录"}
+            </Button>
+          </div>
+        )}
+      </SiteHeader>
+      {content}
     </div>
   );
 }

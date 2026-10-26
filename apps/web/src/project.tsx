@@ -17,8 +17,6 @@ import {
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
-import { ChoiceSelect } from "./components/choice-select";
-import { SelectItem } from "./components/ui/select";
 import { useState } from "react";
 import type {
   Project as ProjectData,
@@ -43,14 +41,10 @@ const statuses = [
 ];
 export function Project({
   id,
-  projects,
-  projectsError,
   campaignId,
   navigate,
 }: {
   id: string;
-  projects?: ProjectData[];
-  projectsError?: string;
   campaignId?: string;
   navigate: (path: string) => void;
 }) {
@@ -86,67 +80,31 @@ export function Project({
   }
   const sidebar = (
     <aside className="workspace-deliveries" aria-label="需求交付导航">
-      <nav className="workspace-home" aria-label="项目导航">
-        <a
-          href="/"
-          onClick={(event) => {
-            event.preventDefault();
-            navigate("/");
-          }}
-        >
-          <span className="workspace-brand" aria-hidden="true">
-            A
-          </span>
-          <span>Acceptances</span>
-        </a>
-        <PanelButton
-          side="left"
-          collapsed={false}
-          onClick={() => setLeftCollapsed(true)}
-        />
-      </nav>
-      <Label className="workspace-project-select">
-        当前项目
-        <ChoiceSelect
-          value={id}
-          disabled={!projects}
-          onValueChange={(value) => navigate(`/projects/${value}`)}
-        >
-          {!projects?.some((item) => item.id === id) && (
-            <SelectItem value={id}>
-              {project.data?.name || "正在加载项目…"}
-            </SelectItem>
-          )}
-          {projects?.map((item) => (
-            <SelectItem key={item.id} value={item.id}>
-              {item.name}
-            </SelectItem>
-          ))}
-        </ChoiceSelect>
-      </Label>
-      {projectsError && (
-        <Alert variant="destructive" role="alert">
-          {projectsError}
-        </Alert>
-      )}
       <div className="section-heading workspace-sidebar-heading">
         <h2>需求交付</h2>
-        <ActionMenu label="需求更多操作" icon="more">
-          <div className="menu-content">
-            <DropdownMenuItem asChild>
-              <Button onClick={() => void actions.refreshCampaigns()}>
-                <Icon name="refresh" />
-                刷新列表
-              </Button>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Button onClick={() => navigate("/")}>所有项目</Button>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Button onClick={() => navigate(base)}>项目设置</Button>
-            </DropdownMenuItem>
-          </div>
-        </ActionMenu>
+        <div className="flex items-center gap-1">
+          <ActionMenu label="需求更多操作" icon="more">
+            <div className="menu-content">
+              <DropdownMenuItem asChild>
+                <Button onClick={() => void actions.refreshCampaigns()}>
+                  <Icon name="refresh" />
+                  刷新列表
+                </Button>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Button onClick={() => navigate("/")}>所有项目</Button>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Button onClick={() => navigate(base)}>项目设置</Button>
+              </DropdownMenuItem>
+            </div>
+          </ActionMenu>
+          <PanelButton
+            side="left"
+            collapsed={false}
+            onClick={() => setLeftCollapsed(true)}
+          />
+        </div>
       </div>
       <CampaignCreate
         projectId={id}

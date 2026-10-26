@@ -307,6 +307,7 @@ export function StepFinalConfirmation({
                       required
                       placeholder="请输入人工接受此项未通过或阻塞的具体业务理由…"
                       value={reason}
+                      className="text-sm min-h-20"
                       onChange={(event) => {
                         const values = {
                           ...reasons,

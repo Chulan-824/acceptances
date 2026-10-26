@@ -72,6 +72,7 @@ export function FreezeDelivery({
             size="sm"
             disabled={busy}
             onClick={() => navigate("/deliveries")}
+            className="gap-1.5"
           >
             <ArrowLeft size={14} />
             交付版本
@@ -81,6 +82,7 @@ export function FreezeDelivery({
             size="sm"
             disabled={busy}
             onClick={() => setRevision((r) => r + 1)}
+            className="gap-1.5"
           >
             <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
             刷新审核依据
@@ -336,24 +338,29 @@ function FreezeConfirmation({
                 size="sm"
                 disabled={busy || unknown || step === 1}
                 onClick={() => goToStep(step - 1)}
+                className="gap-1.5"
               >
                 <ArrowLeft size={14} />
                 上一步
               </Button>
               {step < 4 ? (
                 <Button
+                  variant="default"
                   size="sm"
                   disabled={busy || unknown}
                   onClick={() => goToStep(step + 1)}
+                  className="gap-1.5"
                 >
                   下一步
                   <ArrowRight size={14} />
                 </Button>
               ) : (
                 <Button
+                  variant="default"
                   size="sm"
                   disabled={busy || (!unknown && !ready)}
                   onClick={() => void freeze()}
+                  className="gap-1.5"
                 >
                   {busy ? (
                     <>

@@ -41,15 +41,6 @@
   .campaign-status-line {
     @apply flex items-center gap-3 mt-3 text-meta;
   }
-  .acceptance-workbench .workspace-home {
-    @apply border-0 mb-2;
-  }
-  .acceptance-workbench .workspace-project-select {
-    @apply mb-3;
-  }
-  .acceptance-workbench .workspace-project-select .ui-select-trigger {
-    @apply py-2;
-  }
   .acceptance-workbench .workspace-sidebar-heading {
     @apply mb-2;
   }

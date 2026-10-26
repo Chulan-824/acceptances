@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Shield,
 } from "lucide-react";
+import { SiteHeader } from "../components/site-header";
 import { Scrollspy } from "../components/reui/scrollspy";
 import { Badge } from "../components/reui/badge";
 import { StrictMode, useRef, useState } from "react";
@@ -74,73 +75,57 @@ function Landing() {
   }
   return (
     <>
-      <header className="sticky top-0 z-40 bg-canvas/90 backdrop-blur-md border-b border-border transition-colors">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+      <SiteHeader
+        brandHref="/landing.html"
+        brandExtra={
+          <Badge className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-subtle border border-border text-xs text-muted font-mono">
+            <span>个人本机使用</span>
+          </Badge>
+        }
+      >
+        <Scrollspy targetRef={scrollTarget} offset={80}>
+          <nav aria-label="产品导航">
             <a
-              href="landing.html"
-              className="flex items-center gap-3 font-medium text-base tracking-tight hover:opacity-90"
+              href="#showcase"
+              data-scrollspy-anchor="showcase"
+              className="text-muted hover:text-fg transition-colors hidden md:inline-flex"
             >
-              <div className="w-7 h-7 rounded-default bg-brand text-brand-fg flex items-center justify-center font-medium text-sm shadow-none">
-                A
-              </div>
-              <span>Acceptances</span>
-              <span className="text-xs text-muted font-normal border-l border-border pl-3 hidden sm:inline">
-                交付验证系统
-              </span>
+              界面参考
             </a>
-            <Badge className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-subtle border border-border text-xs text-muted font-mono">
-              <span>个人本机使用</span>
-            </Badge>
-          </div>
-
-          <Scrollspy targetRef={scrollTarget} offset={80}>
-            <nav className="flex items-center gap-4 text-sm font-medium">
-              <a
-                href="#showcase"
-                data-scrollspy-anchor="showcase"
-                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-              >
-                界面参考
+            <a
+              href="#features"
+              data-scrollspy-anchor="features"
+              className="text-muted hover:text-fg transition-colors hidden md:inline-flex"
+            >
+              功能特性
+            </a>
+            <a
+              href="#workflow"
+              data-scrollspy-anchor="workflow"
+              className="text-muted hover:text-fg transition-colors hidden md:inline-flex"
+            >
+              交付流程
+            </a>
+            <a
+              href="#specification"
+              data-scrollspy-anchor="specification"
+              className="text-muted hover:text-fg transition-colors hidden md:inline-flex"
+            >
+              归档与规范
+            </a>
+            <Separator
+              orientation="vertical"
+              className="h-4 w-px bg-border hidden md:block"
+            ></Separator>
+            <Button asChild variant="default">
+              <a href="/" className="text-xs">
+                <span>进入工作台</span>
+                <ArrowRight size={12} aria-hidden="true" />
               </a>
-              <a
-                href="#features"
-                data-scrollspy-anchor="features"
-                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-              >
-                功能特性
-              </a>
-              <a
-                href="#workflow"
-                data-scrollspy-anchor="workflow"
-                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-              >
-                交付流程
-              </a>
-              <a
-                href="#specification"
-                data-scrollspy-anchor="specification"
-                className="text-muted hover:text-fg transition-colors hidden md:inline-block"
-              >
-                归档与规范
-              </a>
-              <Separator
-                orientation="vertical"
-                className="h-4 w-px bg-border hidden sm:block"
-              ></Separator>
-              <Button asChild variant="ghost">
-                <a
-                  href="index.html"
-                  className="px-3 py-1.5 rounded-default bg-brand hover:bg-brand-hover text-brand-fg transition-all text-xs font-medium shadow-none flex items-center gap-1.5"
-                >
-                  <span>进入工作台</span>
-                  <ArrowRight size={12} aria-hidden="true" />
-                </a>
-              </Button>
-            </nav>
-          </Scrollspy>
-        </div>
-      </header>
+            </Button>
+          </nav>
+        </Scrollspy>
+      </SiteHeader>
 
       <section
         className="pt-24 pb-16 px-6 relative overflow-hidden"

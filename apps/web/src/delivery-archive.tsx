@@ -71,7 +71,12 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
           <h1 className="m-0 text-xl font-medium tracking-tight">交付版本</h1>
         </div>
         <div className="actions">
-          <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="gap-1.5"
+          >
             <ArrowLeft size={14} />
             返回首页
           </Button>
@@ -79,6 +84,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
             variant="outline"
             size="sm"
             onClick={() => setRevision((r) => r + 1)}
+            className="gap-1.5"
           >
             <RefreshCw size={14} />
             刷新
@@ -93,7 +99,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
       <Frame spacing="none" className="delivery-archive-tools-panel my-5">
         <FrameHeader className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 p-4">
           <div className="flex flex-wrap items-end gap-3 flex-1">
-            <Label className="flex-1 min-w-56">
+            <Label className="flex-1 min-w-56 mb-0">
               <span className="text-xs text-muted font-medium mb-1.5 block">
                 搜索交付
               </span>
@@ -112,7 +118,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
               </div>
             </Label>
 
-            <Label className="min-w-40">
+            <Label className="min-w-40 mb-0">
               <span className="text-xs text-muted font-medium mb-1.5 block">
                 交付效力
               </span>
@@ -120,6 +126,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
                 value={status}
                 onValueChange={setStatus}
                 aria-label="交付效力筛选"
+                className="h-9 text-sm"
               >
                 {[
                   ["all", "全部状态"],
@@ -143,7 +150,7 @@ function DeliveryArchive({ navigate }: { navigate: (path: string) => void }) {
                   setQuery("");
                   setStatus("all");
                 }}
-                className="gap-1 h-9"
+                className="gap-1.5 h-9 text-sm"
               >
                 <X size={14} />
                 清除筛选

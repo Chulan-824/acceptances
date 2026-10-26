@@ -1,0 +1,40 @@
+@layer components {
+  .site-header {
+    @apply sticky top-0 z-40 block shrink-0 m-0 border-b border-border bg-topnav-bg backdrop-blur-md;
+  }
+  .site-header-inner {
+    @apply flex flex-wrap items-center justify-between gap-x-6 gap-y-2 min-h-16 w-full max-w-7xl mx-auto px-4 sm:px-6 py-2;
+  }
+  .site-header-identity {
+    @apply flex items-center gap-6 min-w-0;
+  }
+  .site-brand {
+    @apply inline-flex items-center gap-3 min-h-9 text-fg font-medium text-base no-underline whitespace-nowrap rounded-default transition-colors duration-150;
+  }
+  .site-brand:hover {
+    @apply text-fg-secondary;
+  }
+  .site-brand:focus-visible,
+  .site-header nav a:focus-visible {
+    @apply rounded-default outline-2 outline-solid outline-brand outline-offset-[3px];
+  }
+  .site-brand-mark {
+    @apply flex items-center justify-center size-7 shrink-0 rounded-default bg-brand text-brand-fg text-sm font-medium;
+  }
+  .site-brand-context {
+    @apply hidden sm:inline border-l border-border pl-3 text-xs text-muted font-normal;
+  }
+  .site-header-actions,
+  .site-header nav {
+    @apply flex items-center gap-4 min-w-0 m-0;
+  }
+  :where(.site-header nav a:not(.ui-button)) {
+    @apply inline-flex items-center min-h-11 text-sm text-muted no-underline whitespace-nowrap hover:text-fg transition-colors duration-150;
+  }
+  .site-header-account {
+    @apply flex items-center gap-3 min-w-0 border-l border-border pl-4 text-sm;
+  }
+  .site-header-username {
+    @apply max-w-36 truncate text-fg-secondary;
+  }
+}

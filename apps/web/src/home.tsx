@@ -143,40 +143,29 @@ export function Home({
       <a className="home-skip" href="#home-content">
         跳转至看板内容
       </a>
-      <header className="home-header">
-        <div className="home-container home-header-inner">
-          <a className="home-brand" href="/">
-            <span className="home-brand-mark">A</span>Acceptances
-            <span className="home-brand-context">交付看板</span>
-          </a>
-          <div className="home-header-actions">
-            <a className="home-intro" href="/landing.html">
-              产品介绍 <ArrowRight size={14} />
-            </a>
-            <Button
-              variant="default"
-              onClick={() => {
-                setCreateOpen(true);
-                requestAnimationFrame(() => {
-                  document
-                    .getElementById("home-name")
-                    ?.scrollIntoView({ block: "center" });
-                  document.getElementById("home-name")?.focus();
-                });
-              }}
-            >
-              创建项目 <ArrowRight size={14} />
-            </Button>
-          </div>
-        </div>
-      </header>
       <main
         className="home-container home-content"
         id="home-content"
         tabIndex={-1}
       >
         <DeletionNotices destination="/" />
-        <h1 className="sr-only">交付验证看板</h1>
+        <div className="home-page-heading">
+          <h1>交付看板</h1>
+          <Button
+            variant="default"
+            onClick={() => {
+              setCreateOpen(true);
+              requestAnimationFrame(() => {
+                document
+                  .getElementById("home-name")
+                  ?.scrollIntoView({ block: "center" });
+                document.getElementById("home-name")?.focus();
+              });
+            }}
+          >
+            创建项目 <ArrowRight size={14} />
+          </Button>
+        </div>
         <div className="home-stats" aria-label="需求状态统计">
           {filters.map(({ value, label, icon: MetricIcon }) => (
             <FramePanel key={value} asChild>

@@ -6,6 +6,7 @@
 @import "./theme.css";
 @import "./ui.css";
 @import "./reui.css";
+@import "./components/site-header.css";
 
 /* 保留现有浏览器默认样式，页面迁移前不加载 Preflight。 */
 @layer components {
@@ -113,7 +114,7 @@
     @apply w-full;
   }
   .workspace {
-    @apply relative h-[100dvh] min-w-[1120px] overflow-hidden bg-surface;
+    @apply relative h-full min-w-[1120px] overflow-hidden bg-surface;
     --workspace-left-width: 256px;
     --workspace-right-width: 288px;
   }
@@ -130,31 +131,6 @@
     @apply flex-1 min-h-0 overflow-y-auto p-1;
     scrollbar-width: thin;
     scrollbar-color: var(--color-border-dark) transparent;
-  }
-  .workspace-home {
-    @apply justify-between flex-nowrap gap-2 mt-[-16px] mr-[-12px] mb-4 ml-[-12px] p-3 border-b border-border;
-  }
-  .workspace-home a {
-    @apply inline-flex items-center gap-2 text-ui font-medium no-underline whitespace-nowrap;
-  }
-  .workspace-home button {
-    @apply relative shrink-0 pt-[6px] pr-2 pb-[6px] pl-2 text-meta min-h-8;
-  }
-  .workspace-home button::after {
-    content: "";
-    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-11 min-h-11 w-full h-full pointer-events-auto;
-  }
-  .workspace-home button:disabled::after {
-    display: none;
-  }
-  .workspace-brand {
-    @apply grid [place-items:center] w-6 h-6 rounded-default bg-brand text-brand-fg text-caption;
-  }
-  .workspace-project-select {
-    @apply text-meta text-muted;
-  }
-  .workspace-project-select .ui-select-trigger {
-    @apply w-full text-caption text-fg;
   }
   .workspace-sidebar-heading {
     @apply min-h-9 mb-3;
