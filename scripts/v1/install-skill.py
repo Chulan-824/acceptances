@@ -22,10 +22,10 @@ parser.add_argument(
 )
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[2]
-source = root / "skills" / "acceptances-v1"
+source = root / "skills" / "Acceptances-Cl"
 destination = (
     args.destination
-    or Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "skills" / "acceptances-v1"
+    or Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "skills" / "Acceptances-Cl"
 ).absolute()
 binary = args.bin_dir.absolute() / "acceptances"
 if destination == source or source in destination.parents or destination in source.parents:
@@ -38,7 +38,7 @@ if destination.exists() and (not destination.is_dir() or destination.is_symlink(
 if destination.exists() and not (destination / "SKILL.md").is_file():
     raise SystemExit("目标没有 SKILL.md；拒绝替换非 skill 目录")
 with tempfile.TemporaryDirectory(prefix="acceptances-install-") as temp:
-    staged = Path(temp) / "acceptances-v1"
+    staged = Path(temp) / "Acceptances-Cl"
     shutil.copytree(source, staged)
     # Optional Jev location hint; CLI/skill remain usable if this checkout is absent.
     (staged / "scripts" / "jev-runtime.json").write_text(

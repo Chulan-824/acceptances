@@ -57,13 +57,13 @@ make build
 make install-skill
 ```
 
-安装器交付新版 CLI 和 `acceptances-v1` skill，已有安装时默认拒绝覆盖。替换旧版 CLI 和 skill，在本仓库执行 `make replace-skill`（等价于 `python3 scripts/v1/install-skill.py --replace`）。安装路径以命令输出为准。
+安装器交付新版 CLI 和 `Acceptances-Cl` skill，已有安装时默认拒绝覆盖。替换旧版 CLI 和 skill，在本仓库执行 `make replace-skill`（等价于 `python3 scripts/v1/install-skill.py --replace`）。安装路径以命令输出为准。
 
 浏览器注册账号后，先在本机执行 `acceptances login --url <服务地址> --username <用户名> --password-stdin`，通过标准输入传入密码（不要把密码写在参数或聊天中）。会话保存在用户配置目录的私有文件中，按服务地址分别保存，有效期七天；`whoami` 查看身份，`logout` 撤销当前 CLI 会话，均可指定 `--url`。Web 和 CLI 会话相互独立。
 
 切换到业务目录，在加载新版 skill 的聊天中说：
 
-> 使用 $acceptances-v1，将当前仓库关联到已有项目，并验证这次需求。需求依据是……，验证环境是……。
+> 使用 $Acceptances-Cl，将当前仓库关联到已有项目，并验证这次需求。需求依据是……，验证环境是……。
 
 首次由 skill 选择已有 Project，后续复用宿主机关联。同仓库 worktree 共用关联，多个仓库可关联同一个 Project。日常调用复用本机已登录会话，无需反复传入账号凭据。验证任务不自动授权修改业务代码或作出人工接受决定。
 
@@ -71,7 +71,7 @@ make install-skill
 
 ## 冻结正式交付与业务说明
 
-在实际验证报告发布前，项目侧 Agent 按[正式交付材料](skills/acceptances-v1/references/delivery.md)准备需求、地图、说明素材、真实构建及截图，以普通附件随报告整包保存。完成最新完整 Run 的全部人审后，点击“冻结正式交付”，确认版本、必验范围、说明内容与敏感信息检查；原始未通过项须有具体接受理由。
+在实际验证报告发布前，项目侧 Agent 按[正式交付材料](skills/Acceptances-Cl/references/delivery.md)准备需求、地图、说明素材、真实构建及截图，以普通附件随报告整包保存。完成最新完整 Run 的全部人审后，点击“冻结正式交付”，确认版本、必验范围、说明内容与敏感信息检查；原始未通过项须有具体接受理由。
 
 冻结快照保存当时结论及独立证据副本。绑定 Run 的改判、撤回、作废或删除让交付失效，原内容保留；再次接受不会自动恢复。新一轮自待审，新的明确冻结才替代旧版本。首页“交付归档”可查看效力历史，来源 Project/Campaign/Run 删除后仍可访问归档。
 
@@ -83,7 +83,7 @@ make install-skill
 
 在原业务聊天中发送：
 
-> 使用 $acceptances-v1，读取 Campaign「需求名称」中 Run「ID」的逐项人工判断和评论。授权修复当前人工不通过项及本次指定的新问题，执行复验和必要回归。保留原始验证结果，实际完成后在同一 Campaign 保存新 Run，明确完整或局部范围，逐条关联来源反馈、处理说明及本次检查项，交给我再次评审。
+> 使用 $Acceptances-Cl，读取 Campaign「需求名称」中 Run「ID」的逐项人工判断和评论。授权修复当前人工不通过项及本次指定的新问题，执行复验和必要回归。保留原始验证结果，实际完成后在同一 Campaign 保存新 Run，明确完整或局部范围，逐条关联来源反馈、处理说明及本次检查项，交给我再次评审。
 
 Agent 使用 `acceptances feedback --campaign <标题或ID>` 读取反馈，`acceptances status --run <ID>` 核对指定 Run。人工通过的项不因 Agent 原来判断失败就自动进入修复范围。未处理或受阻如实说明，新 Run 各项重新待审；局部 Run 通过后需求整体仍待审。保存评论不会自动触发 Agent。
 
@@ -115,7 +115,7 @@ make test SUITE=platform
 | apps/web                    | React Web                         |
 | packages/api-client         | Web 使用的 HTTP 客户端与类型      |
 | deploy                      | 应用与 MySQL 的构建和 Compose     |
-| skills/acceptances-v1       | 宿主机 Agent 接入                 |
+| skills/Acceptances-Cl       | 宿主机 Agent 接入                 |
 
 领域词汇见 [GLOSSARY](GLOSSARY.md)，架构决策见 [ADR-0001](docs/adr/0001-local-report-archive.md) 和[逐项评审决策](docs/adr/0002-per-check-human-review.md)。旧 V1 文档及 Git 历史保留为历史依据，不用于补回已删除能力。
 

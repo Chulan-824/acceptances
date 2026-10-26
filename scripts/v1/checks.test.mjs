@@ -114,7 +114,7 @@ test("Go format, whitespace errors, ignored files and staged deletion", (t) => {
 
 test("directory checks cover skill, CLI, Jev and shared gate changes", () => {
   for (const path of [
-    "skills/acceptances-v1/SKILL.md",
+    "skills/Acceptances-Cl/SKILL.md",
     "scripts/v1/install-skill.py",
     "internal/cli/run.go",
     "cmd/acceptances/main.go",
@@ -149,20 +149,20 @@ test("directory checks cover skill, CLI, Jev and shared gate changes", () => {
 
 test("directory detection includes unstaged, untracked, removed and renamed paths", (t) => {
   const { cwd, git, write } = fixture(t);
-  write("skills/acceptances-v1/SKILL.md", "skill\n");
+  write("skills/Acceptances-Cl/SKILL.md", "skill\n");
   git("add", ".");
   git("-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "skill");
   const base = git("rev-parse", "HEAD").trim();
-  git("mv", "skills/acceptances-v1/SKILL.md", "moved.md");
+  git("mv", "skills/Acceptances-Cl/SKILL.md", "moved.md");
   write("tools/jev-browser/new file.py", "# fixture\n");
   const dirty = changedPaths("", cwd);
-  assert.ok(dirty.includes("skills/acceptances-v1/SKILL.md"));
+  assert.ok(dirty.includes("skills/Acceptances-Cl/SKILL.md"));
   assert.ok(dirty.includes("moved.md"));
   assert.ok(dirty.includes("tools/jev-browser/new file.py"));
   assert.deepEqual(selectExtraChecks(dirty), { agent: true, jev: true });
   git("add", ".");
   git("-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "move");
-  assert.ok(changedPaths(base, cwd).includes("skills/acceptances-v1/SKILL.md"));
+  assert.ok(changedPaths(base, cwd).includes("skills/Acceptances-Cl/SKILL.md"));
   assert.deepEqual(selectExtraChecks(changedPaths("all", cwd)), {
     agent: true,
     jev: true,

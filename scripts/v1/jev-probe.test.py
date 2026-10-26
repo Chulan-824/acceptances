@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "skills/acceptances-v1/scripts/jev-probe.py"
+SCRIPT = ROOT / "skills/Acceptances-Cl/scripts/jev-probe.py"
 SPEC = importlib.util.spec_from_file_location("jev_probe", SCRIPT)
 PROBE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PROBE)
@@ -99,7 +99,7 @@ class JevProbeTests(unittest.TestCase):
         self,
     ):
         self.doctor({"api_key_configured": True, "dependencies": {"jev": "fixture"}})
-        source_skill = self.runtime / "skills/acceptances-v1"
+        source_skill = self.runtime / "skills/Acceptances-Cl"
         self.assertEqual(PROBE.probe(URL, source_skill, {})["executor"], "jev")
         (self.skill / "scripts/jev-runtime.json").write_text(
             json.dumps({"root": str(self.runtime)})

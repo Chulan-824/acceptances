@@ -18,7 +18,7 @@ export function selectExtraChecks(paths) {
   const agent =
     jev ||
     paths.some((path) =>
-      /^(?:skills\/acceptances-v1\/|internal\/cli\/|cmd\/acceptances\/|scripts\/v1\/(?:install-skill.*|jev-probe\.test)\.py$)/.test(
+      /^(?:skills\/Acceptances-Cl\/|internal\/cli\/|cmd\/acceptances\/|scripts\/v1\/(?:install-skill.*|jev-probe\.test)\.py$)/.test(
         path,
       ),
     );

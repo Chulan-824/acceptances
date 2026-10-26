@@ -29,7 +29,7 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 ## Operating Context
 
 1. 用户在本机启动服务，在 Web 创建 Project。
-2. 用户在业务目录调用 `acceptances-v1` skill，选择已有 Project 并建立宿主机关联。同仓库 worktree 共用关联，多个仓库可以归属同一个 Project。
+2. 用户在业务目录调用 `Acceptances-Cl` skill，选择已有 Project 并建立宿主机关联。同仓库 worktree 共用关联，多个仓库可以归属同一个 Project。
 3. Agent 为一次需求交付创建或选择 Campaign，在业务环境执行本次验证。
 4. CLI 整包保存结构化报告和截图、录像、日志等证据。上传失败后使用原提交 ID 与原内容重试。
 5. 用户在 Web 逐项通过、不通过、撤回或评论，也可批量人工通过，在汇总弹窗中确认本轮全部检查项人工通过。系统按当前判断计算本轮状态；用户也可评论整轮或作废 Run。
@@ -75,7 +75,7 @@ Acceptances 围绕 Project → Campaign → Run 组织验证记录。每次实�
 ## Evidence on Hand
 
 - [领域词汇表](GLOSSARY.md)、[ADR-0001](docs/adr/0001-local-report-archive.md)、[ADR-0002](docs/adr/0002-per-check-human-review.md)、[ADR-0003](docs/adr/0003-bulk-human-acceptance.md)、[Agent 接入](docs/agents/v1-integration.md) 和 [实现交接](docs/v1-implementation-handoff.md) 记录产品契约与验证方法。
-- `apps/web/src/` 包含实际网页实现；`packages/api-client/` 包含其 HTTP 客户端与类型；`skills/acceptances-v1/` 包含宿主机验证接入流程与报告格式。
+- `apps/web/src/` 包含实际网页实现；`packages/api-client/` 包含其 HTTP 客户端与类型；`skills/Acceptances-Cl/` 包含宿主机验证接入流程与报告格式。
 - 本地 `.scratch/local-simplification/verification/REPORT.md` 记录 2026-10-09 的平台实施验收，相关回执和截图位于 `artifacts/local-simplification/`。这些目录不进入 Git，其他 checkout 不保证存在；该记录不代表此后每次代码变更或业务需求已验收。
 - 本地 `artifacts/workbench/` 与 `artifacts/reviewbar/` 存有桌面和窄屏界面截图。使用前核对截图与当前实现是否一致。
 - 2026-10-10 的 init 只核对了文档和网页实现，未重新执行 Docker、CLI 或浏览器验收。逐项评审的实际验证结果另记，本文列出的产品规则不作为通过证据。平台测试数据与合成媒体不作为客户案例、业务成果或用户背书。

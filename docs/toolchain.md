@@ -46,7 +46,7 @@ GitHub Actions 的 `Checks / check` 在 PR、推送到 `main` 和手动触发时
 
 | 变更范围                                                                                     | 补跑入口                                     |
 | -------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `skills/acceptances-v1/`、`internal/cli/`、`cmd/acceptances/`、skill 安装器及 Jev probe 测试 | `make test SUITE=agent`                      |
+| `skills/Acceptances-Cl/`、`internal/cli/`、`cmd/acceptances/`、skill 安装器及 Jev probe 测试 | `make test SUITE=agent`                      |
 | `tools/jev-browser/`、Jev Compose 配置、Jev 接入文档                                         | 上述 agent 检查及 `make jev-setup jev-check` |
 | CI、Git hook、检查脚本、Makefile、工具链或依赖锁文件                                         | 两组均执行                                   |
 

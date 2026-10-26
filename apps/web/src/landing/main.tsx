@@ -523,7 +523,7 @@ function Landing() {
               <p className="text-xs text-muted leading-relaxed">
                 启动本地服务后在 Web 界面创建项目。首次接入时，在 Acceptances
                 源码目录执行 make build 和 make install-skill 安装 CLI 与
-                acceptances-v1 技能，随后在业务目录完成关联。支持同仓库多
+                Acceptances-Cl 技能，随后在业务目录完成关联。支持同仓库多
                 worktree 共用关联配置。
               </p>
               <div className="bg-brand text-brand-fg p-3 rounded-default font-mono text-xs overflow-x-auto shadow-none mt-1">

@@ -388,7 +388,7 @@ export function Home({
                 <ol>
                   <li>在下方创建项目，关联本地业务代码目录。</li>
                   <li>
-                    在业务目录使用 Agent 运行 <code>acceptances-v1</code>{" "}
+                    在业务目录使用 Agent 运行 <code>Acceptances-Cl</code>{" "}
                     执行验证并归档报告。
                   </li>
                   <li>打开需求详情，核对多模态证据并逐项记录人工评审结论。</li>

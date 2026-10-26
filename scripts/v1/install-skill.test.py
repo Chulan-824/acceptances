@@ -21,20 +21,23 @@ class InstallSkill(unittest.TestCase):
                 cwd=ROOT,
                 check=True,
             )
-            destination = base / "skill"
+            codex_home = base / "codex"
+            destination = codex_home / "skills" / "Acceptances-Cl"
+            install_env = {**os.environ, "CODEX_HOME": str(codex_home)}
             binary_dir = base / "bin"
             command = [
                 "python3",
                 str(ROOT / "scripts/v1/install-skill.py"),
                 "--cli",
                 str(cli),
-                "--destination",
-                str(destination),
                 "--bin-dir",
                 str(binary_dir),
             ]
-            installed = subprocess.run(command, check=True, capture_output=True, text=True)
+            installed = subprocess.run(
+                command, env=install_env, check=True, capture_output=True, text=True
+            )
             self.assertEqual(json.loads(installed.stdout)["skill"], str(destination))
+            self.assertIn("name: Acceptances-Cl\n", (destination / "SKILL.md").read_text())
             business = base / "business"
             business.mkdir()
             for binary in (binary_dir / "acceptances", destination / "bin/acceptances"):
@@ -46,8 +49,15 @@ class InstallSkill(unittest.TestCase):
                     check=True,
                 )
                 self.assertEqual(json.loads(result.stdout)["version"]["commit"], "unknown")
-            self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
-            subprocess.run(command + ["--replace"], check=True, capture_output=True)
+            self.assertNotEqual(
+                subprocess.run(command, env=install_env, capture_output=True).returncode, 0
+            )
+            subprocess.run(
+                command + ["--replace", "--destination", str(destination)],
+                env=install_env,
+                check=True,
+                capture_output=True,
+            )
             self.assertTrue((destination / "references/report.md").is_file())
             self.assertFalse((destination / "installation.json").exists())
             self.assertTrue((destination / "references/jev-browser.md").is_file())

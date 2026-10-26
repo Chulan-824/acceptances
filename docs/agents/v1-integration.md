@@ -1,10 +1,10 @@
 # 本地项目与 Agent 接入
 
-先按 README 启动服务，在 Web 注册并登录后创建 Project。安装新版 CLI 和 `acceptances-v1` skill 后，从业务目录调用 skill，选择已有 Project。关联保存在宿主机，后续调用复用；同仓库 worktree 共用关联，多仓库可归属同一 Project。
+先按 README 启动服务，在 Web 注册并登录后创建 Project。安装新版 CLI 和 `Acceptances-Cl` skill 后，从业务目录调用 skill，选择已有 Project。关联保存在宿主机，后续调用复用；同仓库 worktree 共用关联，多仓库可归属同一 Project。
 
-CLI 需要与 Web 相同的平台账号。先在本机执行 `acceptances login --url <API地址> --username <用户名> --password-stdin`，由用户通过标准输入提供密码；会话按服务地址保存在私有配置文件中，Agent 不读取或回显凭据。后续命令复用会话；401 时请用户重新登录。CLI 不需要旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/acceptances-v1/SKILL.md)和[报告格式](../../skills/acceptances-v1/references/report.md) 为准。
+CLI 需要与 Web 相同的平台账号。先在本机执行 `acceptances login --url <API地址> --username <用户名> --password-stdin`，由用户通过标准输入提供密码；会话按服务地址保存在私有配置文件中，Agent 不读取或回显凭据。后续命令复用会话；401 时请用户重新登录。CLI 不需要旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/Acceptances-Cl/SKILL.md)和[报告格式](../../skills/Acceptances-Cl/references/report.md) 为准。
 
-浏览器验证按 skill 的 [可选 Jev 执行](../../skills/acceptances-v1/references/jev-browser.md) 先探测执行者本机配置，可用时优先尝试 Jev；无 Key、无执行器或调用不可用时，继续原有真实浏览器流程。安装器仅记录可选源码路径，迁移后可用 `ACCEPTANCES_JEV_ROOT` 指向本机已有源码；不分发私有配置，也不要求其他使用者安装 Jev。部署服务不提供共享 Key。
+浏览器验证按 skill 的 [可选 Jev 执行](../../skills/Acceptances-Cl/references/jev-browser.md) 先探测执行者本机配置，可用时优先尝试 Jev；无 Key、无执行器或调用不可用时，继续原有真实浏览器流程。安装器仅记录可选源码路径，迁移后可用 `ACCEPTANCES_JEV_ROOT` 指向本机已有源码；不分发私有配置，也不要求其他使用者安装 Jev。部署服务不提供共享 Key。
 
 ## 交付一次验证
 
@@ -32,7 +32,7 @@ Web 删除前展示影响范围，删除同时清理所属原报告、证据和�
 
 ## 正式冻结与业务说明
 
-用户要求正式交付时，发布前按[正式交付材料](../../skills/acceptances-v1/references/delivery.md)准备版本清单、需求原文、地图、结构化说明和真实截图。现有 publish 上传普通附件即可，Report schema 不增加未知字段。源码、实际构建、范围覆盖及材料不满足门槛时仍可如实归档，但不能正式冻结。
+用户要求正式交付时，发布前按[正式交付材料](../../skills/Acceptances-Cl/references/delivery.md)准备版本清单、需求原文、地图、结构化说明和真实截图。现有 publish 上传普通附件即可，Report schema 不增加未知字段。源码、实际构建、范围覆盖及材料不满足门槛时仍可如实归档，但不能正式冻结。
 
 用户在 Web 对最新完整且全项人工接受的 Run 明确冻结，同时确认地图版本/范围、说明内容及敏感信息检查，并为原始未通过项记录具体理由。Agent 准备材料和读取反馈，不代替人作出这些确认。
 
@@ -55,7 +55,7 @@ Agent 读取 API 返回的 `checkReviews` 当前判断、`reviewCounts` 计数�
 
 `feedbackResponses` 可从原反馈找到后续 Run，`status --run <后续ID>` 可查看处理说明和复验证据。这些响应不关闭原反馈、不继承人工判断，用户重新逐项评审。来源之后被删除，后续 Run 保留原引用及说明，并通过 `sourceRunAvailable: false` 表示来源不可读。
 
-CLI `publish` 原样上传报告；`publish`、只读 `status` 和 `move-run` 添加完整 Run 路由的 `webUrl`，其余 API 字段保留。`--url` 是 API 地址；API 与 Web 分离时，用 `acceptances link --url http://127.0.0.1:8765 --web-url http://127.0.0.1:5173 --project <名称或ID>` 保存两个入口。同源部署省略 `--web-url`，默认复用 API 地址。旧关联可对同一 Project 重新 link 更新；只修正回执时运行 `status --run <ID>`，不创建或移动 Run。字段细节和执行顺序见 [反馈处理](../../skills/acceptances-v1/references/feedback.md)。
+CLI `publish` 原样上传报告；`publish`、只读 `status` 和 `move-run` 添加完整 Run 路由的 `webUrl`，其余 API 字段保留。`--url` 是 API 地址；API 与 Web 分离时，用 `acceptances link --url http://127.0.0.1:8765 --web-url http://127.0.0.1:5173 --project <名称或ID>` 保存两个入口。同源部署省略 `--web-url`，默认复用 API 地址。旧关联可对同一 Project 重新 link 更新；只修正回执时运行 `status --run <ID>`，不创建或移动 Run。字段细节和执行顺序见 [反馈处理](../../skills/Acceptances-Cl/references/feedback.md)。
 
 ## 存储升级
 

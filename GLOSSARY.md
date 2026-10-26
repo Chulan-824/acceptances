@@ -42,7 +42,7 @@ _Avoid_：Run、Business Guide，不将需求输入与验证记录或交付后�
 
 **Void**：因报告整体有误而将 Run 标记为作废，保留原报告及作废原因。作废记录不能接受，作废不同于删除。
 
-以下术语用于正式交付与业务说明。具体材料规则见[交付材料](skills/acceptances-v1/references/delivery.md)，决策与对齐历史见[规划记录](.scratch/delivery-snapshot-business-doc/spec.md)。
+以下术语用于正式交付与业务说明。具体材料规则见[交付材料](skills/Acceptances-Cl/references/delivery.md)，决策与对齐历史见[规划记录](.scratch/delivery-snapshot-business-doc/spec.md)。
 
 **Verification Map**：列出某版需求的业务功能及其必验检查项的范围地图，是核对一次交付验证是否覆盖约定范围的依据。
 

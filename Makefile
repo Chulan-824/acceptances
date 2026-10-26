@@ -5,7 +5,7 @@ export GOMODCACHE := $(CURDIR)/.cache/go-mod
 SUITE ?= all
 DOCKER_COMPOSE := docker compose -p acceptances -f deploy/compose.yaml
 MYSQL_DSN_FILE := $(CURDIR)/.cache/mysql/dev.dsn
-FORMAT_PATHS := .github package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md db/README.md docs/mysql-storage.md docs/adr/0010-mysql-archive.md docs/adr/0011-mysql-file-content.md docs/adr/0012-mysql-only.md docs/licensing/runtime-materials.json skills/acceptances-v1
+FORMAT_PATHS := .github package.json pnpm-workspace.yaml toolchain.lock.json eslint.config.js apps/web packages/api-client deploy scripts/v1 docs/toolchain.md docs/agents/v1-integration.md docs/v1-implementation-handoff.md README.md db/README.md docs/mysql-storage.md docs/adr/0010-mysql-archive.md docs/adr/0011-mysql-file-content.md docs/adr/0012-mysql-only.md docs/licensing/runtime-materials.json skills/Acceptances-Cl
 
 .PHONY: dev dev-up dev-status dev-stop services-status services-stop fmt lint typecheck test build toolchain docker-build docker-up docker-rebuild mysql-up mysql-files-migrate mysql-status mysql-stop install-skill replace-skill hooks-install check-staged check-extra release-check
 

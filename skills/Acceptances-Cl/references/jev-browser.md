@@ -7,7 +7,7 @@ Jev 辅助 Agent 操作本机真实 Chrome，验证结果仍由 Agent 核对并�
 先确定本次允许使用的真实浏览器工具和待测 URL。用户明确禁用 Jev、只允许某个工具或不允许页面内容发送到 TypeSafe 时，直接使用原工具。其他浏览器验证先执行一次以下探测，路径替换为当前加载的 skill 目录：
 
 ```sh
-python3 /绝对路径/acceptances-v1/scripts/jev-probe.py --url http://127.0.0.1:5173/
+python3 /绝对路径/Acceptances-Cl/scripts/jev-probe.py --url http://127.0.0.1:5173/
 ```
 
 探测仅运行 Jev 的 `doctor`，不连接 Chrome、不调用模型、不修改数据，也不安装依赖。输出 `executor`、`reason` 和可定位时的 `root`；正常选择退出码为 0，包括回退选择。`executor=jev` 只表示配置及依赖检查通过，`browser_checked` 和 `model_checked` 仍为 false，Key 有效性及 Chrome 连接需要后续实际执行确认。

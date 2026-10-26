@@ -1,5 +1,5 @@
 ---
-name: acceptances-v1
+name: Acceptances-Cl
 description: 在业务目录执行真实验证并向本机 Acceptances 保存报告与附件；处理首次关联、上传重试、逐项反馈复验，以及正式交付所需的地图和业务说明素材准备。
 ---
 
