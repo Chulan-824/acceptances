@@ -136,6 +136,9 @@ func TestLarkFixture(t *testing.T) {
 		if scenario == "embedded_html" {
 			content += `<source token="FileToken123" name="prototype.html" mime="text/html"/>`
 		}
+		if scenario == "checkboxes" {
+			content += `<checkbox id="CheckedBlock123" done="true"><b>已完成</b>验收项</checkbox><checkbox id="UncheckedBlock123" done="false"><b>待验证</b>验收项</checkbox>`
+		}
 		if strings.Contains(joined, "--doc-format markdown") {
 			content = "# PRD fixture\n\nRequirement\n"
 			if scenario == "code" {
@@ -152,6 +155,9 @@ func TestLarkFixture(t *testing.T) {
 			}
 			if scenario == "embedded_html" {
 				content += "\n<source token=\"FileToken123\" name=\"prototype.html\" mime=\"text/html\"/>\n"
+			}
+			if scenario == "checkboxes" {
+				content += "\n- [x] **已完成**验收项\n- [ ] **待验证**验收项\n"
 			}
 		}
 		json.NewEncoder(os.Stdout).Encode(map[string]any{"ok": true, "identity": "user", "data": map[string]any{"document": map[string]any{"document_id": "DocToken123", "revision_id": revision, "content": content, "reference_map": references}}})
@@ -385,6 +391,38 @@ func TestLarkConnectResolvesWikiAndRetainsAvailableResources(t *testing.T) {
 	}
 }
 
+func TestLarkConnectKeepsCheckedAndUncheckedItemsWithoutWarnings(t *testing.T) {
+	t.Setenv("LARK_FIXTURE_SCENARIO", "checkboxes")
+	h := newConnectorHarness(t, "https://team.feishu.cn/docx/DocToken123")
+	cmd, output, dir := connectorProcess(t, h.server.URL)
+	select {
+	case bundle := <-h.uploads:
+		m := bundle.Manifest
+		if m.NormalizerVersion != "lark-prd-v4-zh-CN" || m.Completeness != "complete" || len(m.Warnings) != 0 || len(m.Resources) != 0 {
+			t.Fatalf("checkboxes caused incomplete import: %#v", m)
+		}
+		var source prd.SourceDocument
+		if err := json.Unmarshal(bundle.Files["source.json"], &source); err != nil {
+			t.Fatal(err)
+		}
+		for _, item := range []struct{ xml, markdown string }{
+			{`<checkbox done="true" id="CheckedBlock123"><b>已完成</b>验收项</checkbox>`, "- [x] **已完成**验收项"},
+			{`<checkbox done="false" id="UncheckedBlock123"><b>待验证</b>验收项</checkbox>`, "- [ ] **待验证**验收项"},
+		} {
+			if !strings.Contains(source.Content, item.xml) || !strings.Contains(string(bundle.Files["document.md"]), item.markdown) {
+				t.Fatalf("checkbox state or content lost in source or reading view: %s", item.markdown)
+			}
+		}
+	case problem := <-h.failures:
+		t.Fatalf("unexpected failure: %#v", problem)
+	case <-time.After(larkProcessTimeout):
+		cmd.Process.Signal(os.Interrupt)
+		cmd.Wait()
+		t.Fatalf("checkbox upload timed out: %s", output.String())
+	}
+	stopConnector(t, cmd, output, dir)
+}
+
 func TestLarkConnectImportsSrcImagesWithoutMisclassifyingMentionsAndFormatting(t *testing.T) {
 	t.Setenv("LARK_FIXTURE_SCENARIO", "src_resources")
 	h := newConnectorHarness(t, "https://team.feishu.cn/docx/DocToken123")
@@ -392,7 +430,7 @@ func TestLarkConnectImportsSrcImagesWithoutMisclassifyingMentionsAndFormatting(t
 	select {
 	case bundle := <-h.uploads:
 		m := bundle.Manifest
-		if m.NormalizerVersion != "lark-prd-v3-zh-CN" || m.Completeness != "partial" || len(m.Resources) != 3 || len(bundle.Files) != 4 || len(m.Warnings) != 0 {
+		if m.NormalizerVersion != "lark-prd-v4-zh-CN" || m.Completeness != "partial" || len(m.Resources) != 3 || len(bundle.Files) != 4 || len(m.Warnings) != 0 {
 			t.Fatalf("incorrect normalized document: %#v", m)
 		}
 		if m.Resources[0].Kind != "image" || m.Resources[0].Status != "saved" || m.Resources[0].ResourceID != "ImageToken123" || len(bundle.Files[m.Resources[0].Filename]) == 0 {

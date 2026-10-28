@@ -48,7 +48,7 @@ result 为 multipart/form-data，总请求不超过 128 MiB：
 
 manifest 至少包含 schemaVersion、documentId、realm、revisionId、title、fetchedAt、normalizerVersion、completeness、warnings、files 和 resources。revisionId 使用字符串，避免整数精度变化。正文结构、Markdown、来源和 manifest 必须属于同一文档及修订。SourceDocument 是剔除评论和临时 URL 后的结构副本，不是未经筛选的 API 响应。
 
-当前规范化版本为 `lark-prd-v3-zh-CN`。图片 `src` 中的不透明资源 token 保留并交由个人 Lark CLI 下载，真正的 URL 不作为 token，也不直接请求。人员提及、普通 Doc/Wiki 链接及表格列、删除线、figure 容器不作为缺失资源；明确带有 workbook token 和 sheet-id 的嵌入 Sheet 由个人 CLI 读取；没有子表定位信息的 Sheet 引用及 Base 等嵌入仍明确列为不支持。同类未知块按类型汇总数量。
+当前规范化版本为 `lark-prd-v4-zh-CN`。图片 `src` 中的不透明资源 token 保留并交由个人 Lark CLI 下载，真正的 URL 不作为 token，也不直接请求。人员提及、普通 Doc/Wiki 链接及表格列、删除线、figure 容器不作为缺失资源；明确带有 workbook token 和 sheet-id 的嵌入 Sheet 由个人 CLI 读取；没有子表定位信息的 Sheet 引用及 Base 等嵌入仍明确列为不支持。待办复选框 `checkbox` 的正文和 `done` 状态保留在结构副本中，阅读视图沿用 Lark Markdown 的 `- [x]` / `- [ ]`，不作为缺失块。同类未知块按类型汇总数量。
 
 阅读视图将 Lark Markdown 中残留的 HTML 图片替换为已归档图片，将人员提及和普通文档引用转换为转义后的可见名称，将 XML 表格转换为 Markdown 表格，保留文字、删除线、列表编号和图片。单元格内段落及列表按行内文本排列，不还原原版式；合并单元格仍提示降级。代码示例中的标记保持原文，预览继续禁用原始 HTML。
 

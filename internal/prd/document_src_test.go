@@ -44,6 +44,24 @@ func TestDocumentDoesNotTreatImageURLsAsResourceTokens(t *testing.T) {
 	}
 }
 
+func TestDocumentKeepsCheckboxStatesWithoutWarnings(t *testing.T) {
+	for _, done := range []string{"true", "false"} {
+		t.Run(done, func(t *testing.T) {
+			content := `<title>PRD</title><checkbox done="` + done + `" id="CheckboxBlock123"><b>验收项</b>：保留状态。</checkbox>`
+			doc, err := prd.SanitizeDocument(prd.SourceDocument{Content: content})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(doc.Warnings) != 0 || len(doc.Resources) != 0 || doc.Excluded {
+				t.Fatalf("checkbox was classified as missing or excluded: %#v", doc)
+			}
+			if doc.Source.Content != content {
+				t.Fatalf("checkbox state or content changed: %s", doc.Source.Content)
+			}
+		})
+	}
+}
+
 func TestDocumentKeepsMentionsLinksAndFormattingWithoutMissingResources(t *testing.T) {
 	source := prd.SourceDocument{Content: `<title>PRD</title><p><cite type="user" user-id="UserToken123" user-name="测试成员"/>审阅<cite type="doc" file-type="wiki" doc-id="WikiToken123" title="关联说明"/></p><table><colgroup><col width="100"/></colgroup><tbody><tr><td><del>旧需求</del></td></tr></tbody></table><figure id="FigureBlock123"><img src="ImageToken123"/></figure><sheet id="SheetBlock123" token="SheetToken123"/><source id="FileBlock123" token="FileToken123" name="prototype.html"/>`}
 	doc, err := prd.SanitizeDocument(source)

@@ -344,5 +344,5 @@ func transientMediaAttribute(name, value string) bool {
 }
 
 func supportedElement(name string) bool {
-	return strings.Contains("|doc|document|body|content|section|div|column|columns|col|colgroup|table|tr|thead|tbody|td|th|p|para|title|h1|h2|h3|h4|h5|h6|h7|h8|h9|li|ul|ol|todo|list|code|pre|hr|br|a|link|u|b|s|del|i|span|strong|em|text|quote|blockquote|callout|mention|user|cite|equation|latex|date|inline-code|inline_code|highlight|font|sup|sub|math|line-break|divider|cell|row|task|caption|figure|img|image|whiteboard|source|file|sheet|bitable|synced_reference|vc-transcribe-tab|", "|"+name+"|")
+	return strings.Contains("|doc|document|body|content|section|div|column|columns|col|colgroup|table|tr|thead|tbody|td|th|p|para|title|h1|h2|h3|h4|h5|h6|h7|h8|h9|li|ul|ol|todo|checkbox|list|code|pre|hr|br|a|link|u|b|s|del|i|span|strong|em|text|quote|blockquote|callout|mention|user|cite|equation|latex|date|inline-code|inline_code|highlight|font|sup|sub|math|line-break|divider|cell|row|task|caption|figure|img|image|whiteboard|source|file|sheet|bitable|synced_reference|vc-transcribe-tab|", "|"+name+"|")
 }

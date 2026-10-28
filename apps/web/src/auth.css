@@ -1,6 +1,10 @@
 @reference "./style.css";
 
 @layer components {
+  .auth-layout > .site-header .site-header-inner,
+  .authenticated-workspace > .site-header .site-header-inner {
+    @apply max-w-none;
+  }
   .auth-page {
     @apply flex flex-1 items-center justify-center min-h-0 w-full max-w-none m-0 bg-surface-subtle p-6;
   }

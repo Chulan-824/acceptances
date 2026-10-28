@@ -263,7 +263,7 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
                     controller.acknowledgeSharing(value === true)
                   }
                 />
-                <Label htmlFor={`${prefix}-sharing`} className="leading-6">
+                <Label htmlFor={`${prefix}-sharing`} className="mb-0 leading-6">
                   我有权将文档复制到平台，并知晓确认后的全员共享与快照保留规则。
                 </Label>
               </div>
@@ -349,7 +349,7 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
                       sourceURL={task.url}
                     />
                     {task.manifest.completeness === "partial" && (
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-2">
                         <Checkbox
                           id={`${prefix}-partial`}
                           checked={view.acceptPartial}
@@ -360,7 +360,7 @@ export function CampaignPRD({ campaignId }: { campaignId: string }) {
                         />
                         <Label
                           htmlFor={`${prefix}-partial`}
-                          className="leading-6"
+                          className="mb-0 leading-6"
                         >
                           我已审阅上述缺失内容，仍确认导入。这些缺口会保留到共享快照中。
                         </Label>
