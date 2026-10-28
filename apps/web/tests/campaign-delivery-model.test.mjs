@@ -1,6 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { describeCampaignDelivery } from "../src/campaign-delivery-model.ts";
+import {
+  buildDeliveryRegressionPrompt,
+  describeCampaignDelivery,
+} from "../src/campaign-delivery-model.ts";
+
+test("regression prompt identifies the current Campaign and its encoded page URL", () => {
+  const prompt = buildDeliveryRegressionPrompt(
+    { id: "campaign?#", projectId: "project /1", title: "字幕交付" },
+    "https://acceptances.example.com",
+  );
+  assert.ok(prompt.includes("字幕交付"));
+  assert.ok(prompt.includes("Project ID：project /1"));
+  assert.ok(prompt.includes("Campaign ID：campaign?#"));
+  assert.ok(
+    prompt.includes(
+      "https://acceptances.example.com/projects/project%20%2F1/campaigns/campaign%3F%23",
+    ),
+  );
+});
+
 const base = {
   campaignId: "campaign",
   preparation: {

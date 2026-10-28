@@ -8,6 +8,7 @@ import { Button } from "./components/ui/button";
 import { Alert } from "./components/reui/alert";
 import { Badge } from "./components/reui/badge";
 import { Status } from "./client";
+import { DeliveryRegressionPrompt } from "./delivery-regression-prompt";
 
 export function CampaignDelivery({
   navigate,
@@ -166,6 +167,12 @@ export function CampaignDelivery({
               本轮人工验收与需求交付分别记录。确认交付会保存版本、范围、人工判断和证据副本；业务指南与测试报告可在交付详情中分别生成。
             </p>
           </>
+        )}
+        {view.campaign.data && (
+          <DeliveryRegressionPrompt
+            key={view.campaign.data.id}
+            campaign={view.campaign.data}
+          />
         )}
       </section>
     </FramePanel>

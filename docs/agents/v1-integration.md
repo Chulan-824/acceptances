@@ -4,7 +4,7 @@
 
 CLI 需要与 Web 相同的平台账号。先在本机执行 `acceptances login --url <API地址> --username <用户名> --password-stdin`，由用户通过标准输入提供密码；会话按服务地址保存在私有配置文件中，Agent 不读取或回显凭据。后续命令复用会话；401 时请用户重新登录。CLI 不需要旧 contracts 目录。容器不读取业务代码，实际测试由宿主机 Agent 执行。CLI 命令和报告示例以 [skill 工作流](../../skills/Acceptances-Cl/SKILL.md)和[报告格式](../../skills/Acceptances-Cl/references/report.md) 为准。
 
-浏览器验证按 skill 的 [可选 Jev 执行](../../skills/Acceptances-Cl/references/jev-browser.md) 先探测执行者本机配置，可用时优先尝试 Jev；无 Key、无执行器或调用不可用时，继续原有真实浏览器流程。安装器仅记录可选源码路径，迁移后可用 `ACCEPTANCES_JEV_ROOT` 指向本机已有源码；不分发私有配置，也不要求其他使用者安装 Jev。部署服务不提供共享 Key。
+浏览器验证方式由本次调用参数或自然语言指定；未指定时结合当前会话已明确的用户偏好、业务仓库规则和实际可用工具选择。指定方式不可用时说明阻塞，继续其他可执行检查，不因本机已有配置自动换用其他方式。本次选用 Jev 时才读取 skill 的[可选 Jev 执行](../../skills/Acceptances-Cl/references/jev-browser.md)。安装器仅记录可选源码路径，不分发私有配置，部署服务不提供共享 Key。
 
 ## 交付一次验证
 
@@ -15,6 +15,10 @@ CLI 需要与 Web 相同的平台账号。先在本机执行 `acceptances login 
 5. 读取保存结果与人工反馈。报告归档成功不代表通过或人工接受。
 
 同 ID 同内容返回既有 Run，不重复创建；同 ID 不同内容返回冲突。全部附件和报告保存后才可见。局部复验明确展示范围，不跨 Run 自动合并通过结果。
+
+## 需求交付前全量回归
+
+多轮验证后准备整体交付时，按 skill 的[需求交付前全量回归](../../skills/Acceptances-Cl/references/pre-delivery-regression.md)结合当前需求、范围地图、全部历史 Run 和反馈整理完整清单，在待交付版本上重新验证。补齐历史未覆盖的需求及跨功能流程，保留重复项合并、需求变更和多轮反馈的来源映射。实际完成后向原 Campaign 保存新的最终 Run，归档覆盖清单及本轮证据；失败、阻塞、跳过和资料缺口如实交接，人工评审及正式冻结仍由用户完成。
 
 ## 人工反馈与纠错
 
