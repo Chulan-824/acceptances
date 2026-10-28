@@ -106,6 +106,7 @@ export interface Run {
   consolidatedInto?: RunConsolidation;
   consolidatedRuns?: ConsolidatedRun[];
   moves?: RunMove[];
+  supplements?: RunSupplement[];
   id: string;
   campaignId: string;
   submissionId: string;
@@ -122,6 +123,19 @@ export interface Run {
   reviewCounts: ReviewCounts;
   sourceRunAvailable?: boolean;
   feedbackResponses: FeedbackResponse[];
+}
+export interface RunSupplement {
+  id: string;
+  createdAt: string;
+  createdBy?: User;
+  requestId: string;
+  reason: string;
+  verificationUnchanged: boolean;
+  previousVersions: Report["versions"];
+  versions?: Report["versions"];
+  evidence: Evidence[];
+  checkEvidence?: Record<string, string[]>;
+  files: { path: string; sha256: string; size: number }[];
 }
 export interface DeletePreview {
   projects: number;

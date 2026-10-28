@@ -14,7 +14,11 @@
 6. 材料定稿后计算附件 SHA-256，形成固定名称 delivery-manifest.json。全部附件平铺，逐个声明在 report.evidence 中，与实物一一对应。执行 `acceptances validate --bundle <目录> --formal --project <实际ID> --campaign <实际ID>`，通过后使用 `acceptances publish --bundle <目录> --campaign <实际ID> --formal` 发布真实 Run。两者复用冻结材料校验；离线预检不创建 Run 或 submission ID，不代表人工接受。
 7. 用户逐项评审或一键接受后，在 Web 从需求顶部点击“确认需求交付”。用户确认地图版本/范围、说明内容与敏感信息检查，并为原始未通过项确认具体接受理由。Agent 提供材料和事实，不代替人执行冻结、接受或撤销。
 
-发布后不能补挂或修改材料。缺材料时保留既有审核结果，下一次真实验证准备完整材料；读取反馈、补文案本身不产生 Run。
+已完成验证只缺版本记录或交付材料时，可为原 Run 追加资料，不要求重复验证或新建 Run。项目侧先确认补充材料属于同一次验证，运行 `acceptances preparation --run <ID>` 获取当前 token，在补充目录准备 `supplement.json` 和新附件，再运行 `acceptances supplement --run <ID> --bundle <目录>`。原结果、验证时间、原附件和人审保持不变，补充历史单独记录。源码或实际受验版本确实变化时才重新判断验证范围，不能用补录冒充对新版本的验证。
+
+supplement.json 示例结构：`{"requestId":"本次稳定唯一标识","token":"准备回执token","reason":"补充依据及版本对应关系","verificationUnchanged":true,"versions":[{"repository":"实际来源","commit":"完整提交摘要","dirty":false}],"evidence":[{"path":"delivery-manifest.json","description":"正式交付清单"}],"checkEvidence":{}}`。实际还须逐一声明和上传清单引用的新文件；checkEvidence 可将后补真实证据关联原检查项。同名附件不能覆盖，重名时改用新文件名并重算引用摘要。已有附件可直接引用，不重复上传；新增图片使用 JPEG。固定 manifest 尚不存在时再补入，已经冻结的 Run 不再接受补充。
+
+提交成功后使用 `status` 和 `preparation` 确认原 Run ID、结果与人工计数不变，材料摘要通过并查看 Web 补充历史。重试保留原 supplement.json、token、requestId 和附件，陈旧 token 先回读确认是否已成功，不换标识掩盖冲突。补充不自动冻结；原始未 passed 项的具体接受理由仍由人在最终冻结时确认。
 
 ## 三份 JSON 的契约
 
@@ -103,7 +107,7 @@ feature-map.json：
 }
 ```
 
-feature/check ID 使用小写字母、数字、点、下划线和连字符，首字符为字母或数字，最长 200 字符。每份地图的 feature ID 和 check ID 分别唯一；每个纳入交付的功能至少一个必验项。一项 check 在地图中归属一个功能。候选地图的模块、场景和检查变体须由项目侧明确映射，不把场景数直接当作实际 Run 检查数。
+feature ID 使用小写字母、数字、点、下划线和连字符；check ID 同时接受大写 ASCII 字母，以保留既有 Run 的稳定标识。两者首字符为字母或数字，最长 200 字符，大小写敏感，不自动改名。每份地图的 feature ID 和 check ID 分别唯一；每个纳入交付的功能至少一个必验项。一项 check 在地图中归属一个功能。候选地图的模块、场景和检查变体须由项目侧明确映射，不把场景数直接当作实际 Run 检查数。
 
 business-materials.json：
 

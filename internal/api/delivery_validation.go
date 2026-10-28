@@ -16,6 +16,7 @@ import (
 )
 
 var stableIdentity = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,199}$`)
+var stableCheckIdentity = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$`)
 
 func validateVerificationMap(m VerificationMap, prep DeliveryPreparation) error {
 	if m.SchemaVersion != 1 || m.ProjectID != prep.Project.ID || m.RequirementSHA256 != prep.Manifest.Requirement.SHA256 || len(m.Features) == 0 {
@@ -33,7 +34,7 @@ func validateVerificationMap(m VerificationMap, prep DeliveryPreparation) error 
 		features[feature.ID] = true
 		required := 0
 		for _, check := range feature.Checks {
-			if !stableIdentity.MatchString(check.ID) || checks[check.ID] || strings.TrimSpace(check.Title) == "" || strings.TrimSpace(check.Expected) == "" {
+			if !stableCheckIdentity.MatchString(check.ID) || checks[check.ID] || strings.TrimSpace(check.Title) == "" || strings.TrimSpace(check.Expected) == "" {
 				return fmt.Errorf("地图检查项 ID 须唯一、稳定且有明确预期。")
 			}
 			checks[check.ID] = true

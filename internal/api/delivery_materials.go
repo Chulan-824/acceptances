@@ -170,7 +170,7 @@ func loadDeliveryMaterials(root fs.FS, prep *DeliveryPreparation) error {
 		hashes[file.Path] = file
 	}
 	if _, exists := hashes[deliveryManifestName]; !exists {
-		return fmt.Errorf("缺少 %s，请在真实验证报告发布前准备说明素材和版本清单。", deliveryManifestName)
+		return fmt.Errorf("缺少 %s，请通过项目侧补齐本 Run 的说明素材和版本清单。", deliveryManifestName)
 	}
 	var manifest DeliveryManifest
 	if err := readMaterial(root, deliveryManifestName, &manifest); err != nil {

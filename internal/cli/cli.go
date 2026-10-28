@@ -57,7 +57,7 @@ func run(args []string, log io.Writer) (any, error) {
 			"lark connect --url <server> [--name <computer>]",
 			"projects [--url http://127.0.0.1:8765]", "link --project <name-or-id> [--repo .] [--url ...] [--web-url ...]",
 			"context [--repo .]", "campaigns [--title <new-title>] [--description ...] [--repo .]",
-			"validate --bundle <directory> [--formal] [--project <id>] [--campaign <id>]", "publish --bundle <directory> --campaign <title-or-id> [--formal] [--repo .]", "status --run <id> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
+			"validate --bundle <directory> [--formal] [--project <id>] [--campaign <id>]", "publish --bundle <directory> --campaign <title-or-id> [--formal] [--repo .]", "status --run <id> [--repo .]", "preparation --run <id> [--repo .]", "supplement --run <id> --bundle <directory> [--repo .]", "move-run --run <id> --from-campaign <id> --campaign <target-title-or-id> --reason <text> --request-id <id> [--repo .]", "feedback --campaign <title-or-id> [--repo .]",
 		}, "bundle": "report.json and declared evidence files; .submission-id retained for retries; use a new directory for each actual verification"}, nil
 	}
 	if args[0] == "version" {
@@ -189,6 +189,28 @@ func run(args []string, log io.Writer) (any, error) {
 		return c.request("POST", campaigns, bytes.NewReader(payload), "application/json")
 	case "move-run":
 		return c.moveRun(campaigns, saved.ProjectID, *runID, *fromCampaign, *campaign, *reason, *requestID)
+	case "preparation", "supplement":
+		if *runID == "" {
+			return nil, fmt.Errorf("--run is required")
+		}
+		if args[0] == "preparation" {
+			return c.request("GET", "/runs/"+url.PathEscape(*runID)+"/delivery-preparation", nil, "")
+		}
+		if *bundle == "" {
+			return nil, fmt.Errorf("--bundle is required")
+		}
+		input, err := api.ReadRunSupplement(*bundle)
+		if err != nil {
+			return nil, fmt.Errorf("supplement preflight: %w", err)
+		}
+		raw, err := json.Marshal(input)
+		if err != nil {
+			return nil, err
+		}
+		if _, err = c.uploadFiles("/runs/"+url.PathEscape(*runID)+"/delivery-supplements", *bundle, map[string]string{"supplement": string(raw)}, input.Evidence); err != nil {
+			return nil, err
+		}
+		return c.status(*runID)
 	case "status":
 		if *runID == "" {
 			return nil, fmt.Errorf("--run is required")
@@ -399,9 +421,7 @@ func (c client) publish(campaign, directory string) (json.RawMessage, error) {
 		return nil, err
 	}
 	var report struct {
-		Evidence []struct {
-			Path string `json:"path"`
-		} `json:"evidence"`
+		Evidence []api.Evidence `json:"evidence"`
 	}
 	if err = json.Unmarshal(raw, &report); err != nil {
 		return nil, fmt.Errorf("report.json: %w", err)
@@ -435,6 +455,10 @@ func (c client) publish(campaign, directory string) (json.RawMessage, error) {
 	if strings.TrimSpace(string(id)) == "" {
 		return nil, fmt.Errorf("empty .submission-id; preserve a valid submission ID for retries")
 	}
+	return c.uploadFiles("/campaigns/"+campaign+"/runs", directory, map[string]string{"report": string(raw), "submissionId": strings.TrimSpace(string(id))}, report.Evidence)
+}
+
+func (c client) uploadFiles(path, directory string, fields map[string]string, evidence []api.Evidence) (json.RawMessage, error) {
 	// Spool the complete request to disk so large videos don't occupy memory.
 	temp, err := os.CreateTemp("", "acceptances-upload-*")
 	if err != nil {
@@ -443,14 +467,13 @@ func (c client) publish(campaign, directory string) (json.RawMessage, error) {
 	defer os.Remove(temp.Name())
 	defer temp.Close()
 	w := multipart.NewWriter(temp)
-	if err = w.WriteField("report", string(raw)); err != nil {
-		return nil, err
-	}
-	if err = w.WriteField("submissionId", strings.TrimSpace(string(id))); err != nil {
-		return nil, err
+	for name, value := range fields {
+		if err = w.WriteField(name, value); err != nil {
+			return nil, err
+		}
 	}
 	seen := map[string]bool{}
-	for _, e := range report.Evidence {
+	for _, e := range evidence {
 		if e.Path == "" || e.Path == "." || e.Path == ".." || strings.ContainsAny(e.Path, "/\\") || seen[e.Path] {
 			return nil, fmt.Errorf("invalid or duplicate evidence filename %q", e.Path)
 		}
@@ -491,5 +514,5 @@ func (c client) publish(campaign, directory string) (json.RawMessage, error) {
 	if _, err = temp.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
-	return c.request("POST", "/campaigns/"+campaign+"/runs", temp, w.FormDataContentType())
+	return c.request("POST", path, temp, w.FormDataContentType())
 }

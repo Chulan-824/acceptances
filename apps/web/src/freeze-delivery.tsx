@@ -232,7 +232,7 @@ function FreezeConfirmation({
             ))}
           </ul>
           <p className="text-xs text-muted mb-0">
-            已发布报告不能补挂附件，也不能为补材料伪造验证 Run。
+            可由项目侧为当前报告补齐源码版本和交付资料，原验证结果、附件及人工评审保留。补充资料不产生新的验证记录。
           </p>
         </Alert>
       )}

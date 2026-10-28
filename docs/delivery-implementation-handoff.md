@@ -6,6 +6,8 @@
 
 ## 使用入口
 
+2026-10-28 起，既有完整验证可通过 CLI `preparation` / `supplement` 补齐版本及资料，不修改原验证、人审或附件。新增 migration 005 和 Web 补充历史，见[补充决策](adr/0015-supplement-existing-run-delivery-materials.md)及[API](../contracts/delivery.md#为既有-run-补齐交付资料)。下方“发布前准备”仍是首次归档的推荐顺序，不能据此要求仅缺资料的验证重新执行。
+
 1. 项目侧在真实报告发布前准备[正式交付材料](../skills/Acceptances-Cl/references/delivery.md)：需求、稳定身份地图、结构化说明素材、源码与真实构建清单及截图。通过原 CLI publish 上传平铺 evidence，不添加未知 Report 字段。
 2. 人审接受最新完整 Run。从需求顶部点击“确认需求交付”，审阅来源、必验范围、素材与异常项的具体接受理由，明确勾选范围、素材及敏感信息确认。
 3. 从交付详情生成业务说明，预览或下载独立版本的离线 HTML。审核撤回等变化使交付失效，原内容保留；再次人审接受仍须明确重新冻结。

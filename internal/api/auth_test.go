@@ -289,7 +289,7 @@ func TestLoginMigrationPreservesExistingProjects(t *testing.T) {
 		t.Fatalf("legacy data changed: %d %s", response.Code, response.Body.String())
 	}
 	var count int
-	if err := db.QueryRow("SELECT COUNT(*) FROM schema_migrations WHERE dirty=0 AND archive_id=?", archiveID).Scan(&count); err != nil || count != 4 {
+	if err := db.QueryRow("SELECT COUNT(*) FROM schema_migrations WHERE dirty=0 AND archive_id=?", archiveID).Scan(&count); err != nil || count != 5 {
 		t.Fatal("migration history not retained")
 	}
 }

@@ -251,7 +251,7 @@ export function Run({
             <Status value={run.status} context="run" />
           </p>
           <p className="muted">
-            保存成功不代表验证通过或人工接受。报告与附件不可原地修改。
+            保存成功不代表验证通过或人工接受。验证结果与原附件保留；源码版本和交付资料的补充单独留痕。
           </p>
           {run.status === "void" && (
             <Alert role="note" className="notice">
@@ -328,6 +328,36 @@ export function Run({
             </Alert>
           )}
           <h3>代码版本</h3>
+          {!!run.supplements?.length && (
+            <Disclosure title="交付资料补充记录">
+              <p className="muted">
+                下方版本与附件包含后补资料，不代表重新验证；验证结果和人工评审保持不变。
+              </p>
+              {run.supplements.map((addition) => (
+                <section key={addition.id}>
+                  <p>
+                    {formatDateTime(addition.createdAt)} ·{" "}
+                    {addition.createdBy?.username ?? "未知用户"}
+                  </p>
+                  <p className="prose">{addition.reason}</p>
+                  {!!addition.versions?.length && (
+                    <p className="muted">
+                      原版本：
+                      {addition.previousVersions
+                        .map(
+                          (v) =>
+                            `${v.repository} · ${v.commit} · dirty=${String(v.dirty)}`,
+                        )
+                        .join("；")}
+                    </p>
+                  )}
+                  <p className="muted">
+                    新增附件 {addition.evidence.length} 个
+                  </p>
+                </section>
+              ))}
+            </Disclosure>
+          )}
           {report.versions?.length ? (
             <ul>
               {report.versions.map((v, i) => (

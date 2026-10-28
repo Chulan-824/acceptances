@@ -28,6 +28,7 @@ var archiveTables = []archiveTable{
 	{"repositories", "id,project_id,name,source", false},
 	{"campaigns", "id,project_id,title,description,status,latest_run_id,created_at", false},
 	{"runs", "id,campaign_id,submission_id,hash,report,status,void_reason,created_at", true},
+	{"run_supplements", "id,run_id,request_id,request_hash,payload", true},
 	{"reviews", "id,run_id,kind,body,created_at,check_id,legacy", true},
 	{"delivery_snapshots", "id,project_id,campaign_id,source_run_id,version,request_id,request_hash,payload,content_hash,status,successor_id,created_at", true},
 	{"delivery_requests", "request_id,request_hash,delivery_id", false},

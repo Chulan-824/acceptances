@@ -85,6 +85,7 @@ type Run struct {
 	ConsolidatedInto   *RunConsolidation     `json:"consolidatedInto,omitempty"`
 	ConsolidatedRuns   []ConsolidatedRun     `json:"consolidatedRuns,omitempty"`
 	Moves              []RunMove             `json:"moves,omitempty"`
+	Supplements        []RunSupplement       `json:"supplements,omitempty"`
 	ID                 string                `json:"id"`
 	CampaignID         string                `json:"campaignId"`
 	SubmissionID       string                `json:"submissionId"`
@@ -386,6 +387,9 @@ func (s *Server) run(key string) (Run, error) {
 		return v, e
 	}
 	if e = rows.Close(); e != nil {
+		return v, e
+	}
+	if e = s.loadRunSupplements(&v); e != nil {
 		return v, e
 	}
 	v.deriveCheckReviews()

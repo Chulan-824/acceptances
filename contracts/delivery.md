@@ -1,6 +1,16 @@
 # 交付快照、业务指南与测试报告 API
 
-与原报告归档 API 共用 /api/v1、账号会话及 Host/Origin 校验。包括独立快照、附件和文档下载在内的业务路由均要求登录；当前所有登录用户共享访问与操作能力。Report schema 保持不变；素材作为平铺 evidence 随真实 Run 发布，冻结材料格式见[正式交付材料](../skills/Acceptances-Cl/references/delivery.md)。业务指南的独立文稿见下文。
+与原报告归档 API 共用 /api/v1、账号会话及 Host/Origin 校验。包括独立快照、附件和文档下载在内的业务路由均要求登录；当前所有登录用户共享访问与操作能力。Report schema 保持不变；素材可随真实 Run 发布，也可通过独立补充记录追加，冻结材料格式见[正式交付材料](../skills/Acceptances-Cl/references/delivery.md)。业务指南的独立文稿见下文。
+
+## 为既有 Run 补齐交付资料
+
+`POST /runs/{id}/delivery-supplements` 使用 multipart：一个 `supplement` JSON 字段及零或多个 `evidence` 文件。JSON 包含 requestId、GET delivery-preparation 返回的 token、reason、verificationUnchanged=true，可选 versions、evidence、checkEvidence。至少补充版本或附件之一。versions 须为完整提交、dirty=false，已有明确 Repository 身份保持一致；reason 说明版本归属和材料来自本次既有验证的依据。未知字段拒绝，不接受 checks、status、verifiedAt 或人工判断。
+
+evidence 为新附件的 path/description；checkEvidence 为既有 check ID 到新附件文件名数组的映射。上传与声明一一对应，附件不能覆盖原文件名或既有补充文件；新增图片仍执行 JPEG、完整解码和大小校验。每次请求总量及补充后附件总量不超过 256 MiB。包含 delivery-manifest.json 时，对合并后的版本、旧/新附件、地图及说明素材执行原冻结材料校验，不能绕过真实构建与覆盖门槛。
+
+首次成功返回 201 Run，同 requestId、Run、内容及附件摘要重放返回 200，异内容 409 SUPPLEMENT_REQUEST_CONFLICT；陈旧 token 返回 409 STALE_DELIVERY_CONFIRMATION；同名文件返回 409 EVIDENCE_EXISTS。作废、已合并来源和曾冻结的 Run 拒绝补充。接口仅支持 MySQL 附件存储，尚未迁移的归档返回 409 MYSQL_FILES_REQUIRED。
+
+新增 MySQL migration 005：run_supplements 独立保存追加内容、原版本、操作者、时间和理由，禁止 UPDATE；删除 Run 时按归属级联清理。原 runs.report/hash 不改写，原发布重试语义不变。读取 Run 时 report 合并后补版本、附件及检查项证据关联，supplements 展示完整补充历史；原结果、验证时间、人工评审与计数保持不变。确认 token 包含补充内容，补充后旧冻结确认自动过期。事务失败不会露出附件引用或补充记录。快照保存包含补充历史的 Run。
 
 ## 准备与明确冻结
 

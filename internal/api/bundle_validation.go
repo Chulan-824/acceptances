@@ -27,40 +27,10 @@ func ValidateBundle(directory, projectID, campaignID string, formal bool) (Repor
 		return report, fmt.Errorf("report.json: %w", err)
 	}
 	hasManifest := false
-	var total int64
+	if err := validateBundleFiles(root, report.Evidence); err != nil {
+		return report, err
+	}
 	for _, item := range report.Evidence {
-		info, err := root.Lstat(item.Path)
-		if err != nil || !info.Mode().IsRegular() {
-			return report, fmt.Errorf("附件 %s 必须为存在的普通文件，不接受符号链接。", item.Path)
-		}
-		total += info.Size()
-		if total > 256<<20 {
-			return report, fmt.Errorf("附件总量超过 256 MiB。")
-		}
-		file, err := root.Open(item.Path)
-		if err != nil {
-			return report, err
-		}
-		header := make([]byte, 512)
-		n, readErr := file.Read(header)
-		file.Close()
-		if readErr != nil && readErr != io.EOF {
-			return report, readErr
-		}
-		mime := http.DetectContentType(header[:n])
-		extension := strings.ToLower(filepath.Ext(item.Path))
-		if strings.HasPrefix(mime, "image/") || extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif" || extension == ".webp" || extension == ".svg" {
-			data, actual, err := readDocumentationImage(root.FS(), item.Path)
-			if err != nil {
-				return report, err
-			}
-			if actual != "image/jpeg" {
-				return report, fmt.Errorf("新增截图 %s 须先编码为 JPEG（.jpg/.jpeg），不能只改扩展名。", item.Path)
-			}
-			if _, _, err := image.Decode(bytes.NewReader(data)); err != nil {
-				return report, fmt.Errorf("截图 %s 内容不完整或无法解码。", item.Path)
-			}
-		}
 		hasManifest = hasManifest || item.Path == deliveryManifestName
 	}
 	if formal || hasManifest {
@@ -93,4 +63,43 @@ func ValidateBundle(directory, projectID, campaignID string, formal bool) (Repor
 		}
 	}
 	return report, nil
+}
+
+func validateBundleFiles(root *os.Root, evidence []Evidence) error {
+	var total int64
+	for _, item := range evidence {
+		info, err := root.Lstat(item.Path)
+		if err != nil || !info.Mode().IsRegular() {
+			return fmt.Errorf("附件 %s 必须为存在的普通文件，不接受符号链接。", item.Path)
+		}
+		total += info.Size()
+		if total > 256<<20 {
+			return fmt.Errorf("附件总量超过 256 MiB。")
+		}
+		file, err := root.Open(item.Path)
+		if err != nil {
+			return err
+		}
+		header := make([]byte, 512)
+		n, readErr := file.Read(header)
+		file.Close()
+		if readErr != nil && readErr != io.EOF {
+			return readErr
+		}
+		mime := http.DetectContentType(header[:n])
+		extension := strings.ToLower(filepath.Ext(item.Path))
+		if strings.HasPrefix(mime, "image/") || extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif" || extension == ".webp" || extension == ".svg" {
+			data, actual, err := readDocumentationImage(root.FS(), item.Path)
+			if err != nil {
+				return err
+			}
+			if actual != "image/jpeg" {
+				return fmt.Errorf("新增截图 %s 须先编码为 JPEG（.jpg/.jpeg），不能只改扩展名。", item.Path)
+			}
+			if _, _, err := image.Decode(bytes.NewReader(data)); err != nil {
+				return fmt.Errorf("截图 %s 内容不完整或无法解码。", item.Path)
+			}
+		}
+	}
+	return nil
 }
