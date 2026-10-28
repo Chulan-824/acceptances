@@ -1,6 +1,9 @@
 import { EmptyState } from "./components/reui/empty-state";
 import { Frame, FrameHeader } from "./components/reui/frame";
-import type { WriteResult } from "./campaign-run-controller";
+import type {
+  CheckReviewContinuation,
+  CheckReviewFlow,
+} from "./check-review-flow";
 import { Alert } from "./components/reui/alert";
 import { Disclosure } from "./components/disclosure";
 import { Input } from "./components/ui/input";
@@ -15,11 +18,10 @@ import {
   SelectValue,
 } from "./components/ui/select";
 import { filterChecklist } from "./checklist-filter";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   Report,
   Review,
-  ReviewInput,
   ReviewStatus,
   Run as RunData,
 } from "@acceptances/api-client";
@@ -33,6 +35,7 @@ export function Checklist({
   run,
   disabled,
   onReview,
+  continuation,
   query,
   status,
   humanStatus,
@@ -42,7 +45,8 @@ export function Checklist({
 }: {
   run: RunData;
   disabled: boolean;
-  onReview: (input: ReviewInput) => Promise<WriteResult>;
+  onReview: CheckReviewFlow["review"];
+  continuation: CheckReviewContinuation;
   query: string;
   status: string;
   humanStatus: string;
@@ -51,14 +55,6 @@ export function Checklist({
   onStatusChange: (value: string) => void;
 }) {
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
-  const [advance, setAdvance] = useState<{
-    checkId: string;
-    kind: "accepted" | "rejected";
-    query: string;
-    status: string;
-    humanStatus: string;
-  }>();
-  const revealed = useRef<typeof advance>(undefined);
   const report = run.report;
   const evidence = new Map(report.evidence?.map((item) => [item.path, item]));
   const humanStates = new Map(
@@ -84,57 +80,24 @@ export function Checklist({
     onStatusChange("all");
     onHumanStatusChange("all");
   }
-  const sourceIndex = report.checks.findIndex(
-    (check) => check.id === advance?.checkId,
-  );
-  const remaining = checks.filter(
-    (check) =>
-      check.id !== advance?.checkId && humanStates.get(check.id) !== "accepted",
-  );
-  const nextCheckId = (
-    remaining.find((check) => report.checks.indexOf(check) > sourceIndex) ||
-    remaining[0]
-  )?.id;
-  const confirmed = Boolean(
-    advance &&
-    !disabled &&
-    advance.query === query &&
-    advance.status === status &&
-    advance.humanStatus === humanStatus &&
-    humanStates.get(advance.checkId) === advance.kind,
-  );
-  const complete = confirmed && !nextCheckId;
   useEffect(() => {
-    if (!confirmed || !nextCheckId || revealed.current === advance) return;
-    const element = document.getElementById(`check-${nextCheckId}`);
-    if (!element || element.closest("[hidden]")) return;
-    element.dispatchEvent(new Event("reveal-disclosure"));
+    if (continuation.kind !== "reveal") return;
     const frame = requestAnimationFrame(() => {
-      element
-        .querySelector<HTMLButtonElement>("[data-slot=collapsible-trigger]")
-        ?.focus({ preventScroll: true });
-      element.scrollIntoView({ block: "start" });
-      revealed.current = advance;
+      continuation.apply(() => {
+        const element = document.getElementById(
+          `check-${continuation.checkId}`,
+        );
+        if (!element || element.closest("[hidden]")) return false;
+        element.dispatchEvent(new Event("reveal-disclosure"));
+        element
+          .querySelector<HTMLButtonElement>("[data-slot=collapsible-trigger]")
+          ?.focus({ preventScroll: true });
+        element.scrollIntoView({ block: "start" });
+        return true;
+      });
     });
     return () => cancelAnimationFrame(frame);
-  }, [advance, confirmed, nextCheckId]);
-  async function review(input: ReviewInput) {
-    setAdvance(undefined);
-    const result = await onReview(input);
-    if (
-      result.kind === "committed" &&
-      (input.kind === "accepted" || input.kind === "rejected") &&
-      input.checkId
-    )
-      setAdvance({
-        checkId: input.checkId,
-        kind: input.kind,
-        query,
-        status,
-        humanStatus,
-      });
-    return result;
-  }
+  }, [continuation]);
   return (
     <Frame asChild variant="ghost" spacing="none" className="bg-surface">
       <section aria-labelledby="checks-title">
@@ -195,12 +158,12 @@ export function Checklist({
             responses={run.feedbackResponses}
             isVoid={run.status === "void"}
             disabled={disabled}
-            onReview={review}
+            onReview={onReview}
           />
         ))}
-        {complete && (
+        {continuation.kind === "complete" && (
           <Alert role="status">
-            {advance?.kind === "rejected"
+            {continuation.judgment === "rejected"
               ? "当前筛选内没有下一项待审查的检查项。"
               : "当前筛选内的检查项已全部人工通过。"}
           </Alert>
@@ -296,7 +259,7 @@ function CheckItem({
   responses: RunData["feedbackResponses"];
   isVoid: boolean;
   disabled: boolean;
-  onReview: (input: ReviewInput) => Promise<WriteResult>;
+  onReview: CheckReviewFlow["review"];
 }) {
   const [expanded, setExpanded] = useState(humanStatus !== "accepted");
   const [moreExpanded, setMoreExpanded] = useState(false);
@@ -307,15 +270,6 @@ function CheckItem({
     (path) => evidence.has(path) && !isImageEvidence(path),
   );
   const missing = (check.evidence || []).filter((path) => !evidence.has(path));
-  async function review(input: ReviewInput) {
-    const result = await onReview(input);
-    if (
-      result.kind === "committed" &&
-      (input.kind === "accepted" || input.kind === "rejected")
-    )
-      setExpanded(false);
-    return result;
-  }
   return (
     <Disclosure
       className="check-item"
@@ -406,7 +360,7 @@ function CheckItem({
           humanStatus={humanStatus}
           isVoid={isVoid}
           disabled={disabled}
-          onSubmit={review}
+          onSubmit={(input) => onReview(input, () => setExpanded(false))}
         />
         <Disclosure title={<>评审历史 · {reviews.length} 条</>}>
           <ReviewHistory reviews={reviews} responses={responses} />

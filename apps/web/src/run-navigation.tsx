@@ -42,7 +42,10 @@ function resolveTab(run: Run, target: Target): Tab | undefined {
 const NavigationContext = createContext<RunNavigation | null>(null);
 export const RunNavigationProvider = NavigationContext.Provider;
 
-export function useRunNavigation(run: Run | undefined) {
+export function useRunNavigation(
+  run: Run | undefined,
+  cancelReview: () => void,
+) {
   const [target, setTarget] = useState<Target>(readTarget);
   const [selectedTab, setTab] = useState<Tab>();
   const [checkQuery, setCheckQuery] = useState("");
@@ -61,6 +64,7 @@ export function useRunNavigation(run: Run | undefined) {
   const missingTarget = Boolean(run && targetTab === undefined);
   const tab = selectedTab || targetTab || "checks";
   function showTarget(id: string) {
+    cancelReview();
     setTab(undefined);
     setCheckQuery("");
     setCheckStatus("all");
@@ -69,6 +73,7 @@ export function useRunNavigation(run: Run | undefined) {
   }
   useEffect(() => {
     const followLocation = () => {
+      cancelReview();
       setTab(undefined);
       setCheckQuery("");
       setCheckStatus("all");
@@ -81,7 +86,7 @@ export function useRunNavigation(run: Run | undefined) {
       window.removeEventListener("hashchange", followLocation);
       window.removeEventListener("popstate", followLocation);
     };
-  }, []);
+  }, [cancelReview]);
   useEffect(() => {
     if (!run) return;
     if (
@@ -120,13 +125,25 @@ export function useRunNavigation(run: Run | undefined) {
   }
   return {
     tab,
-    setTab,
+    setTab: (value: Tab) => {
+      if (value !== "checks") cancelReview();
+      setTab(value);
+    },
     checkQuery,
-    setCheckQuery,
+    setCheckQuery: (value: string) => {
+      cancelReview();
+      setCheckQuery(value);
+    },
     checkStatus,
-    setCheckStatus,
+    setCheckStatus: (value: string) => {
+      cancelReview();
+      setCheckStatus(value);
+    },
     humanStatus,
-    setHumanStatus,
+    setHumanStatus: (value: string) => {
+      cancelReview();
+      setHumanStatus(value);
+    },
     showTarget,
     missingTarget,
     returnToOverview,

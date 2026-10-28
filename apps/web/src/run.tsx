@@ -11,13 +11,20 @@ import { Disclosure } from "./components/disclosure";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { Label } from "./components/ui/label";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { ReviewInput } from "@acceptances/api-client";
 import { Status, Load } from "./client";
 import { DeleteButton, DeletionFeedback } from "./deletion-controls";
 import { useCampaignRun } from "./campaign-run";
 import { Evidence } from "./evidence";
 import { Checklist } from "./checklist";
+import { createCheckReviewFlow } from "./check-review-flow";
 import { CheckCounts } from "./check-counts";
 import { Icon } from "./workspace-controls";
 import { ReviewCounts, ReviewForm, ReviewHistory, ScopeType } from "./review";
@@ -52,6 +59,13 @@ export function Run({
   const [reason, setReason] = useState("");
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [deliveryError, setDeliveryError] = useState("");
+  const [reviewFlow] = useState(() =>
+    createCheckReviewFlow({ runId: id, review: saveReview }),
+  );
+  const continuation = useSyncExternalStore(
+    reviewFlow.subscribe,
+    reviewFlow.getSnapshot,
+  );
   const {
     tab,
     setTab,
@@ -66,7 +80,16 @@ export function Run({
     returnToOverview,
     reportTop,
     targetNotice,
-  } = useRunNavigation(run);
+  } = useRunNavigation(run, reviewFlow.cancel);
+  useLayoutEffect(() => {
+    reviewFlow.observe({
+      run,
+      writeLocked: busy,
+      filters: { query: checkQuery, status: checkStatus, humanStatus },
+      checklistVisible: tab === "checks",
+    });
+  }, [reviewFlow, run, busy, checkQuery, checkStatus, humanStatus, tab]);
+  useLayoutEffect(() => () => reviewFlow.dispose(), [reviewFlow]);
   const deliveryTrigger = useRef<HTMLButtonElement>(null);
   const reviewBar = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -387,7 +410,8 @@ export function Run({
           <Checklist
             run={run}
             disabled={busy}
-            onReview={saveReview}
+            onReview={reviewFlow.review}
+            continuation={continuation}
             query={checkQuery}
             status={checkStatus}
             humanStatus={humanStatus}
